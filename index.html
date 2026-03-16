@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kur'an - Arapça / Deutsch / Türkçe</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>Kur'an Okuma</h1>
+    <p>Arapça metin, Almanca meal, Türkçe meal ve sesli takip</p>
+
+    <audio id="player" controls>
+      <source src="audio/fatiha.mp3" type="audio/mpeg" />
+      Tarayıcınız audio etiketini desteklemiyor.
+    </audio>
+  </header>
+
+  <main>
+    <section id="ayahList" class="ayah-list"></section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
