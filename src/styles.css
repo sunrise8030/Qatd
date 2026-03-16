@@ -1,0 +1,182 @@
+:root {
+  --bg: #0f1115;
+  --panel: #151824;
+  --panel-2: #11131b;
+  --text: #e9ecf1;
+  --muted: #a7afc2;
+  --border: rgba(255, 255, 255, 0.08);
+  --accent: #63b3ff;
+  --row: rgba(255, 255, 255, 0.02);
+  --rowHover: rgba(255, 255, 255, 0.05);
+  --rowActive: rgba(99, 179, 255, 0.18);
+  --shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: radial-gradient(1200px 600px at 20% 0%, rgba(99, 179, 255, 0.12), transparent 60%),
+    radial-gradient(1000px 500px at 90% 20%, rgba(255, 107, 107, 0.08), transparent 60%),
+    var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+}
+
+#root { height: 100%; }
+
+.appShell { height: 100%; display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: 340px;
+  min-width: 280px;
+  border-right: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 25%), var(--panel-2);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebarHeader { padding: 16px 16px 12px; border-bottom: 1px solid var(--border); }
+.appTitle { margin: 0 0 10px; font-size: 18px; letter-spacing: 0.2px; }
+.searchLabel { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+
+.searchInput {
+  width: 100%;
+  padding: 10px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  outline: none;
+}
+.searchInput:focus { border-color: rgba(99, 179, 255, 0.5); box-shadow: 0 0 0 3px rgba(99, 179, 255, 0.12); }
+
+.surahList { padding: 10px; overflow: auto; flex: 1; }
+
+.surahItem {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+.surahItem:hover { background: rgba(255, 255, 255, 0.04); }
+.surahItem.active { border-color: rgba(99, 179, 255, 0.55); background: rgba(99, 179, 255, 0.09); }
+
+.surahItemTop { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.surahId { font-weight: 700; font-size: 13px; color: var(--accent); }
+.surahSlug { font-size: 12px; color: var(--muted); }
+
+.surahItemNames { display: grid; gap: 2px; margin-bottom: 6px; }
+.nameStrong { font-weight: 700; font-size: 14px; }
+.nameMuted { font-size: 12px; color: var(--muted); }
+.nameAr { font-size: 16px; text-align: right; line-height: 1.4; font-family: "Noto Naskh Arabic", "Amiri", serif; }
+
+.surahMeta { font-size: 12px; color: var(--muted); }
+.emptyState { padding: 12px; color: var(--muted); }
+
+.content { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 16px; gap: 12px; }
+.emptyContent { padding: 18px; border: 1px dashed var(--border); border-radius: 14px; color: var(--muted); }
+
+.surahHeader {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 65%), var(--panel);
+  padding: 14px 14px 12px;
+  box-shadow: var(--shadow);
+}
+
+.surahTitleRow { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; }
+.surahTitleMain { font-size: 18px; font-weight: 800; }
+.surahTitleSub { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }
+.surahTitleAr { font-size: 22px; text-align: right; font-family: "Noto Naskh Arabic", "Amiri", serif; }
+
+.surahInfo { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+.pill { border: 1px solid var(--border); background: rgba(255, 255, 255, 0.03); padding: 6px 10px; border-radius: 999px; font-size: 12px; color: var(--muted); }
+
+.errorBanner { border: 1px solid rgba(255, 107, 107, 0.4); background: rgba(255, 107, 107, 0.12); padding: 10px 12px; border-radius: 12px; }
+.loadingState { padding: 14px; color: var(--muted); }
+
+.audioPanel { border: 1px solid var(--border); border-radius: 16px; background: var(--panel); padding: 12px; box-shadow: var(--shadow); }
+.audioControls { display: flex; align-items: center; gap: 12px; justify-content: space-between; flex-wrap: wrap; }
+
+.primaryButton {
+  border: 1px solid rgba(99, 179, 255, 0.55);
+  background: rgba(99, 179, 255, 0.18);
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.primaryButton:hover { background: rgba(99, 179, 255, 0.25); }
+.audioHint { font-size: 12px; color: var(--muted); }
+
+.versesPanel {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+}
+
+.tableHeader {
+  display: grid;
+  grid-template-columns: 64px 1.2fr 1.6fr 1.6fr;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.tableBody { overflow: auto; }
+
+.row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 64px 1.2fr 1.6fr 1.6fr;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.row:nth-child(odd) { background: var(--row); }
+.row:hover { background: var(--rowHover); }
+
+.rowActive {
+  background: var(--rowActive) !important;
+  outline: 2px solid rgba(99, 179, 255, 0.35);
+  outline-offset: -2px;
+}
+
+.cell { padding: 12px 12px; font-size: 13px; line-height: 1.35; }
+.cellNo { color: var(--muted); font-weight: 700; }
+
+.cellAr { direction: rtl; text-align: right; font-size: 18px; line-height: 1.7; font-family: "Noto Naskh Arabic", "Amiri", serif; }
+
+@media (max-width: 980px) {
+  .appShell { flex-direction: column; }
+  .sidebar { width: 100%; min-width: 0; border-right: 0; border-bottom: 1px solid var(--border); }
+  .content { padding: 12px; }
+  .tableHeader, .row { grid-template-columns: 52px 1.1fr 1.2fr 1.2fr; }
+  .cellAr { font-size: 16px; }
+}
+
+@media (max-width: 700px) {
+  .tableHeader, .row { grid-template-columns: 52px 1fr; }
+  .cellDe, .cellTr { display: none; }
+  .cellAr { font-size: 17px; }
+  .surahTitleRow { flex-direction: column; align-items: flex-start; }
+  .surahTitleAr { align-self: flex-end; }
+}

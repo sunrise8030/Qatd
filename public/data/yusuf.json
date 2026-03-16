@@ -1,0 +1,10 @@
+[
+  { "ayah": 1, "ar": "الر ۚ تِلْكَ آيَاتُ الْكِتَابِ الْمُبِينِ", "de": "Alif-Lam-Ra. Dies sind die Verse der deutlichen Schrift.", "tr": "Elif, Lâm, Râ. İşte bunlar apaçık Kitab'ın ayetleridir.", "start": 0, "end": 5 },
+  { "ayah": 2, "ar": "إِنَّا أَنزَلْنَاهُ قُرْآنًا عَرَبِيًّا لَعَلَّكُمْ تَعْقِلُونَ", "de": "Wir sandten ihn als arabischen Koran herab, damit ihr begreift.", "tr": "Biz onu, anlayasınız diye Arapça bir Kur'an olarak indirdik.", "start": 5, "end": 12 },
+  { "ayah": 3, "ar": "نَحْنُ نَقُصُّ عَلَيْكَ أَحْسَنَ الْقَصَصِ", "de": "Wir erzählen dir die beste Geschichte.", "tr": "Sana kıssaların en güzelini anlatıyoruz.", "start": 12, "end": 18 },
+  { "ayah": 4, "ar": "إِذْ قَالَ يُوسُفُ لِأَبِيهِ يَا أَبَتِ إِنِّي رَأَيْتُ...", "de": "Als Josef zu seinem Vater sagte: O mein Vater, ich sah ...", "tr": "Yusuf babasına dedi ki: Babacığım! Rüyamda ...", "start": 18, "end": 30 },
+  { "ayah": 5, "ar": "قَالَ يَا بُنَيَّ لَا تَقْصُصْ رُؤْيَاكَ...", "de": "Er sagte: Mein Sohn, erzähle deinen Traum nicht ...", "tr": "Dedi ki: Yavrucuğum! Rüyanı kardeşlerine anlatma ...", "start": 30, "end": 42 },
+  { "ayah": 6, "ar": "وَكَذَٰلِكَ يَجْتَبِيكَ رَبُّكَ...", "de": "So wird dich dein Herr erwählen ...", "tr": "İşte böylece Rabbin seni seçecek ...", "start": 42, "end": 55 },
+  { "ayah": 7, "ar": "لَقَدْ كَانَ فِي يُوسُفَ وَإِخْوَتِهِ آيَاتٌ...", "de": "Wahrlich, in Josef und seinen Brüdern sind Zeichen ...", "tr": "Andolsun Yusuf ve kardeşlerinde ibretler vardır ...", "start": 55, "end": 68 },
+  { "ayah": 8, "ar": "إِذْ قَالُوا لَيُوسُفُ وَأَخُوهُ أَحَبُّ...", "de": "Als sie sagten: Josef und sein Bruder sind unserem Vater lieber ...", "tr": "Dediler ki: Yusuf ve kardeşi babamıza daha sevgili ...", "start": 68, "end": 82 }
+]
