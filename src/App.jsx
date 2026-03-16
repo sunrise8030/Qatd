@@ -1,3 +1,4 @@
+// src/App.jsx
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 
 const SURAH_METADATA = [
@@ -21,10 +22,11 @@ function resolvePublicUrl(maybeAbsolutePath) {
 }
 
 function normalizeForSearch(value) {
+  // Unicode property escape kullanmıyoruz (bazı ortamlarda parse error → boş sayfa).
   return String(value ?? "")
     .toLowerCase()
     .normalize("NFKD")
-    .replace(/\p{Diacritic}/gu, "");
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
 function findActiveVerseIndex(verses, t) {
@@ -138,10 +140,9 @@ function VerseTable({ verses, activeIndex, onVerseClick, rowRefs }) {
       <div className="tableBody" role="rowgroup">
         {verses.map((v, idx) => {
           const isActive = idx === activeIndex;
-          const ayah = v.ayah;
           return (
             <button
-              key={`${ayah}-${idx}`}
+              key={`${v.ayah}-${idx}`}
               type="button"
               className={`row ${isActive ? "rowActive" : ""}`}
               onClick={() => onVerseClick(v, idx)}
@@ -152,7 +153,7 @@ function VerseTable({ verses, activeIndex, onVerseClick, rowRefs }) {
               aria-current={isActive ? "true" : "false"}
               title={`Seek to ${Number(v.start).toFixed(2)}s`}
             >
-              <div className="cell cellNo">{ayah}</div>
+              <div className="cell cellNo">{v.ayah}</div>
               <div className="cell cellAr" dir="rtl" lang="ar">
                 {v.ar}
               </div>
@@ -311,54 +312,50 @@ export default function App() {
     }
   };
 
+  if (!selectedSurah) return <div style={{ padding: 16 }}>Select a surah.</div>;
+
   return (
     <div className="appShell">
       <SurahList
         surahs={filteredSurahs}
-        selectedSlug={selectedSurah?.slug}
+        selectedSlug={selectedSurah.slug}
         query={query}
         onQueryChange={setQuery}
-        onSelect={(s) => s?.slug !== selectedSurah?.slug && setSelectedSurah(s)}
+        onSelect={(s) => s?.slug !== selectedSurah.slug && setSelectedSurah(s)}
       />
 
       <main className="content" aria-label="Surah content">
-        {!selectedSurah ? (
-          <div className="emptyContent">Select a surah.</div>
+        <header className="surahHeader">
+          <div className="surahTitleRow">
+            <div className="surahTitle">
+              <span className="surahTitleMain">
+                #{selectedSurah.id} — {selectedSurah.nameTr}
+              </span>
+              <span className="surahTitleSub">{selectedSurah.nameDe}</span>
+            </div>
+            <div className="surahTitleAr" dir="rtl" lang="ar">
+              {selectedSurah.nameAr}
+            </div>
+          </div>
+          <div className="surahInfo">
+            <span className="pill">Slug: {selectedSurah.slug}</span>
+            <span className="pill">Ayahs: {selectedSurah.ayahCount}</span>
+            <span className="pill">Loaded: {Array.isArray(verses) ? verses.length : 0}</span>
+          </div>
+        </header>
+
+        {errorMsg ? (
+          <div className="errorBanner" role="alert">
+            {errorMsg}
+          </div>
+        ) : null}
+
+        <AudioControls audioRef={audioRef} audioSrc={audioSrc} isPlaying={isPlaying} onTogglePlay={togglePlay} />
+
+        {loading ? (
+          <div className="loadingState">Loading verses…</div>
         ) : (
-          <>
-            <header className="surahHeader">
-              <div className="surahTitleRow">
-                <div className="surahTitle">
-                  <span className="surahTitleMain">
-                    #{selectedSurah.id} — {selectedSurah.nameTr}
-                  </span>
-                  <span className="surahTitleSub">{selectedSurah.nameDe}</span>
-                </div>
-                <div className="surahTitleAr" dir="rtl" lang="ar">
-                  {selectedSurah.nameAr}
-                </div>
-              </div>
-              <div className="surahInfo">
-                <span className="pill">Slug: {selectedSurah.slug}</span>
-                <span className="pill">Ayahs: {selectedSurah.ayahCount}</span>
-                <span className="pill">Loaded: {Array.isArray(verses) ? verses.length : 0}</span>
-              </div>
-            </header>
-
-            {errorMsg ? (
-              <div className="errorBanner" role="alert">
-                {errorMsg}
-              </div>
-            ) : null}
-
-            <AudioControls audioRef={audioRef} audioSrc={audioSrc} isPlaying={isPlaying} onTogglePlay={togglePlay} />
-
-            {loading ? (
-              <div className="loadingState">Loading verses…</div>
-            ) : (
-              <VerseTable verses={verses} activeIndex={activeIndex} onVerseClick={handleVerseClick} rowRefs={rowRefs} />
-            )}
-          </>
+          <VerseTable verses={verses} activeIndex={activeIndex} onVerseClick={handleVerseClick} rowRefs={rowRefs} />
         )}
       </main>
     </div>
