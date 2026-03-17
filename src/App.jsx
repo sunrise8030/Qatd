@@ -38,6 +38,7 @@ function formatSec(sec) {
   return Number.isFinite(sec) ? `${sec.toFixed(2)}s` : "—";
 }
 
+// Overlap-safe
 function findActiveVerseIndex(verses, t) {
   if (!Array.isArray(verses) || verses.length === 0 || !Number.isFinite(t)) return -1;
 
@@ -56,6 +57,7 @@ function findActiveVerseIndex(verses, t) {
   }
   if (bestIdx !== -1) return bestIdx;
 
+  // fallback: closest start
   let closest = -1;
   let bestDelta = Infinity;
   for (let i = 0; i < verses.length; i += 1) {
@@ -74,7 +76,7 @@ function SurahList({ surahs, selectedId, query, onQuery, onSelect }) {
   return (
     <aside className="sidebar">
       <div className="sidebarHeader">
-        <h1 className="appTitle">Quran Surahs</h1>
+        <h1 className="appTitle">Türkçe-Almanca Kur’an Player</h1>
         <label className="fieldLabel" htmlFor="search">
           Search (name / id / slug)
         </label>
@@ -337,7 +339,6 @@ function SyncPanel({
   onRestoreDraft,
   onClearDraft,
   onJumpFirstUntimed,
-  onToast,
 }) {
   const [startInput, setStartInput] = useState("");
   const [endInput, setEndInput] = useState("");
@@ -359,14 +360,13 @@ function SyncPanel({
     setEndInput(Number.isFinite(e) ? String(e) : "");
   }, [activeIndex, active]);
 
-  // auto-apply (debounced)
+  // auto-apply debounced
   useEffect(() => {
     if (!active) return;
     const t = setTimeout(() => {
       const s = Number(startInput);
       const e = Number(endInput);
       const patch = {};
-
       if (Number.isFinite(s)) patch.start = clamp(s, 0, Math.max(0, duration || s));
       if (Number.isFinite(e)) patch.end = clamp(e, 0, Math.max(0, duration || e));
       if (Number.isFinite(patch.start) && Number.isFinite(patch.end) && patch.end <= patch.start) {
@@ -374,7 +374,6 @@ function SyncPanel({
       }
       if (Object.keys(patch).length) onUpdateVerse(activeIndex, patch);
     }, 250);
-
     return () => clearTimeout(t);
   }, [startInput, endInput, activeIndex, active, duration, onUpdateVerse]);
 
@@ -383,22 +382,11 @@ function SyncPanel({
   const deltaOk = Number.isFinite(startNum) && Number.isFinite(endNum) && endNum > startNum;
   const delta = deltaOk ? endNum - startNum : null;
 
-  const setStartToT = () => {
-    if (!active) return;
-    onUpdateVerse(activeIndex, { start: currentTime });
-    onToast?.(`Ayah ${active.ayah} START = ${currentTime.toFixed(2)}s`);
-  };
-
-  const setEndToT = () => {
-    if (!active) return;
-    onUpdateVerse(activeIndex, { end: currentTime });
-    onToast?.(`Ayah ${active.ayah} END = ${currentTime.toFixed(2)}s`);
-  };
-
+  const setStartToT = () => active && onUpdateVerse(activeIndex, { start: currentTime });
+  const setEndToT = () => active && onUpdateVerse(activeIndex, { end: currentTime });
   const setEndToTAndNext = () => {
     if (!active) return;
     onUpdateVerse(activeIndex, { end: currentTime });
-    onToast?.(`Ayah ${active.ayah} END = ${currentTime.toFixed(2)}s → next`);
     const nextIdx = Math.min(verses.length - 1, activeIndex + 1);
     onSeekVerse(nextIdx);
   };
@@ -409,7 +397,6 @@ function SyncPanel({
     if (!Number.isFinite(s)) return;
     onUpdateVerse(activeIndex, { start: Math.max(0, s + d) });
   };
-
   const nudgeEnd = (d) => {
     if (!active) return;
     const e = Number(active.end);
@@ -423,7 +410,6 @@ function SyncPanel({
     const idx = verses.findIndex((v) => Number(v?.ayah) === n);
     if (idx >= 0) onSeekVerse(idx);
   };
-
   const jumpToTime = () => {
     const t = Number(jumpTime);
     if (!Number.isFinite(t)) return;
@@ -460,23 +446,11 @@ function SyncPanel({
             <div className="syncInputs">
               <label className="miniLabel">
                 start
-                <input
-                  className="miniInput"
-                  value={startInput}
-                  onChange={(e) => setStartInput(e.target.value)}
-                  placeholder="sec"
-                  inputMode="decimal"
-                />
+                <input className="miniInput" value={startInput} onChange={(e) => setStartInput(e.target.value)} inputMode="decimal" />
               </label>
               <label className="miniLabel">
                 end
-                <input
-                  className="miniInput"
-                  value={endInput}
-                  onChange={(e) => setEndInput(e.target.value)}
-                  placeholder="sec"
-                  inputMode="decimal"
-                />
+                <input className="miniInput" value={endInput} onChange={(e) => setEndInput(e.target.value)} inputMode="decimal" />
               </label>
 
               <div className="syncMetaInline">
@@ -489,34 +463,18 @@ function SyncPanel({
           <div className="syncRow">
             <div className="syncNudgeGroup">
               <span className="muted">Start:</span>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.1)} disabled={!active}>
-                -0.1
-              </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.1)} disabled={!active}>
-                +0.1
-              </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.5)} disabled={!active}>
-                -0.5
-              </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.5)} disabled={!active}>
-                +0.5
-              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.1)} disabled={!active}>-0.1</button>
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.1)} disabled={!active}>+0.1</button>
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.5)} disabled={!active}>-0.5</button>
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.5)} disabled={!active}>+0.5</button>
             </div>
 
             <div className="syncNudgeGroup">
               <span className="muted">End:</span>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.1)} disabled={!active}>
-                -0.1
-              </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.1)} disabled={!active}>
-                +0.1
-              </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.5)} disabled={!active}>
-                -0.5
-              </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.5)} disabled={!active}>
-                +0.5
-              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.1)} disabled={!active}>-0.1</button>
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.1)} disabled={!active}>+0.1</button>
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.5)} disabled={!active}>-0.5</button>
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.5)} disabled={!active}>+0.5</button>
             </div>
           </div>
         </div>
@@ -525,56 +483,28 @@ function SyncPanel({
           <div className="syncRow">
             <label className="miniLabel">
               Jump ayah
-              <input
-                className="miniInput"
-                value={jumpAyah}
-                onChange={(e) => setJumpAyah(e.target.value)}
-                placeholder="e.g. 3"
-                inputMode="numeric"
-              />
+              <input className="miniInput" value={jumpAyah} onChange={(e) => setJumpAyah(e.target.value)} inputMode="numeric" />
             </label>
-            <button className="btnSmall" type="button" onClick={jumpToAyah}>
-              Go
-            </button>
+            <button className="btnSmall" type="button" onClick={jumpToAyah}>Go</button>
 
             <label className="miniLabel">
               Jump time (s)
-              <input
-                className="miniInput"
-                value={jumpTime}
-                onChange={(e) => setJumpTime(e.target.value)}
-                placeholder="e.g. 194.5"
-                inputMode="decimal"
-              />
+              <input className="miniInput" value={jumpTime} onChange={(e) => setJumpTime(e.target.value)} inputMode="decimal" />
             </label>
-            <button className="btnSmall" type="button" onClick={jumpToTime}>
-              Seek
-            </button>
+            <button className="btnSmall" type="button" onClick={jumpToTime}>Seek</button>
           </div>
 
           <div className="syncRow">
-            <button className="btnSmall" type="button" onClick={onJumpFirstUntimed}>
-              First untimed
-            </button>
+            <button className="btnSmall" type="button" onClick={onJumpFirstUntimed}>First untimed</button>
             <div className="divider" />
-            <button className="btnSmall" type="button" onClick={onSaveDraft}>
-              Save draft
-            </button>
-            <button className="btnSmall" type="button" onClick={onRestoreDraft}>
-              Restore draft
-            </button>
-            <button className="btnSmall" type="button" onClick={onClearDraft}>
-              Clear draft
-            </button>
+            <button className="btnSmall" type="button" onClick={onSaveDraft}>Save draft</button>
+            <button className="btnSmall" type="button" onClick={onRestoreDraft}>Restore draft</button>
+            <button className="btnSmall" type="button" onClick={onClearDraft}>Clear draft</button>
           </div>
 
           <div className="syncRow">
-            <button className="btnSmall" type="button" onClick={onExportJson}>
-              Export JSON
-            </button>
-            <button className="btnSmall" type="button" onClick={() => fileRef.current?.click()}>
-              Import JSON
-            </button>
+            <button className="btnSmall" type="button" onClick={onExportJson}>Export JSON</button>
+            <button className="btnSmall" type="button" onClick={() => fileRef.current?.click()}>Import JSON</button>
             <input
               ref={fileRef}
               type="file"
@@ -586,10 +516,6 @@ function SyncPanel({
                 e.target.value = "";
               }}
             />
-          </div>
-
-          <div className="syncRow muted">
-            Tip: use <span className="mono">S</span>/<span className="mono">E</span>/<span className="mono">N</span> while listening. Loop helps on hard edges.
           </div>
         </div>
       </div>
@@ -657,10 +583,12 @@ export default function App() {
   const [aPoint, setAPoint] = useState(null);
   const [bPoint, setBPoint] = useState(null);
 
-  const [toast, setToast] = useState(null);
-  const toastTimerRef = useRef(null);
-
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
+
+  // ✅ page title for link previews etc.
+  useEffect(() => {
+    document.title = "Türkçe-Almanca Kur’an Player";
+  }, []);
 
   useEffect(() => {
     try {
@@ -678,19 +606,6 @@ export default function App() {
       // ignore
     }
   }, [toolsCollapsed]);
-
-  const showToast = useCallback((msg) => {
-    if (!msg) return;
-    setToast(String(msg));
-    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    toastTimerRef.current = setTimeout(() => setToast(null), 1100);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    };
-  }, []);
 
   const versesRef = useRef(verses);
   const activeIndexRef = useRef(activeIndex);
@@ -972,17 +887,11 @@ export default function App() {
     }
   }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint]);
 
-  // Active verse update + autoscroll (✅ block:start to avoid sticky overlap)
+  // ✅ ACTIVE INDEX update ONLY (NO scrollIntoView)
   useEffect(() => {
     if (!verses.length) return;
     const idx = findActiveVerseIndex(verses, currentTime);
-    if (idx !== activeIndex) {
-      setActiveIndex(idx);
-      const el = rowRefs.current[idx];
-      if (el && typeof el.scrollIntoView === "function") {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    }
+    if (idx !== activeIndex) setActiveIndex(idx);
   }, [currentTime, verses, activeIndex]);
 
   const setA = useCallback(() => setAPoint(currentTimeRef.current), []);
@@ -1029,12 +938,10 @@ export default function App() {
       }
       if (k === "a") {
         setA();
-        showToast(`Set A = ${currentTimeRef.current.toFixed(2)}s`);
         return;
       }
       if (k === "b") {
         setB();
-        showToast(`Set B = ${currentTimeRef.current.toFixed(2)}s`);
         return;
       }
 
@@ -1043,16 +950,10 @@ export default function App() {
       const t = currentTimeRef.current;
 
       if (idx >= 0 && vs[idx]) {
-        const ay = vs[idx].ayah;
-        if (k === "s") {
-          updateVerse(idx, { start: t });
-          showToast(`Ayah ${ay} START = ${t.toFixed(2)}s`);
-        } else if (k === "e") {
+        if (k === "s") updateVerse(idx, { start: t });
+        else if (k === "e") updateVerse(idx, { end: t });
+        else if (k === "n") {
           updateVerse(idx, { end: t });
-          showToast(`Ayah ${ay} END = ${t.toFixed(2)}s`);
-        } else if (k === "n") {
-          updateVerse(idx, { end: t });
-          showToast(`Ayah ${ay} END = ${t.toFixed(2)}s → next`);
           const nextIdx = Math.min(vs.length - 1, idx + 1);
           seekVerse(nextIdx, true);
         }
@@ -1061,7 +962,7 @@ export default function App() {
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onPlayPause, nudge, prevAyah, nextAyah, updateVerse, seekVerse, setA, setB, showToast]);
+  }, [onPlayPause, nudge, prevAyah, nextAyah, updateVerse, seekVerse, setA, setB]);
 
   const header = selectedSurah ? (
     <div className="surahHeader">
@@ -1152,12 +1053,9 @@ export default function App() {
                 onRestoreDraft={restoreDraft}
                 onClearDraft={clearDraft}
                 onJumpFirstUntimed={jumpFirstUntimed}
-                onToast={showToast}
               />
             </>
           )}
-
-          {toast ? <div className="toast">{toast}</div> : null}
         </div>
 
         <VersesTable
