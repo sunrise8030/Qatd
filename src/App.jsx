@@ -38,7 +38,7 @@ function formatSec(sec) {
   return Number.isFinite(sec) ? `${sec.toFixed(2)}s` : "—";
 }
 
-// Overlap-safe: if multiple verses match, pick the one with the greatest start (most recent)
+// Overlap-safe
 function findActiveVerseIndex(verses, t) {
   if (!Array.isArray(verses) || verses.length === 0 || !Number.isFinite(t)) return -1;
 
@@ -119,16 +119,7 @@ function SurahList({ surahs, selectedId, query, onQuery, onSelect }) {
   );
 }
 
-function Timeline({
-  duration,
-  currentTime,
-  verses,
-  activeIndex,
-  onSeek,
-  onSeekVerse,
-  showMarkers,
-  markerEvery,
-}) {
+function Timeline({ duration, currentTime, verses, activeIndex, onSeek, onSeekVerse, showMarkers, markerEvery }) {
   const trackRef = useRef(null);
 
   const markers = useMemo(() => {
@@ -140,7 +131,9 @@ function Timeline({
         const leftPct = clamp((start / duration) * 100, 0, 100);
         const ay = Number(v?.ayah);
         const show =
-          idx === activeIndex || markerEvery === 1 || (Number.isFinite(ay) && ay > 0 && ay % markerEvery === 0);
+          idx === activeIndex ||
+          markerEvery === 1 ||
+          (Number.isFinite(ay) && ay > 0 && ay % markerEvery === 0);
         return { idx, leftPct, ayah: v.ayah, show };
       })
       .filter(Boolean)
@@ -211,6 +204,8 @@ function PlayerControls({
   isPlaying,
   currentTime,
   duration,
+  collapsed,
+  onToggleCollapsed,
   onPlayPause,
   onPrev,
   onNext,
@@ -238,88 +233,100 @@ function PlayerControls({
           <span className="liveSec">
             {Number.isFinite(currentTime) ? currentTime.toFixed(2) : "0.00"}s
           </span>
+          <span className="liveDur muted">/ {Number.isFinite(duration) ? duration.toFixed(2) : "0.00"}s</span>
         </div>
-        <div className="liveDur muted">/ {Number.isFinite(duration) ? duration.toFixed(2) : "0.00"}s</div>
+
+        <div className="liveActions">
+          <button className="btnSmall" type="button" onClick={onPlayPause}>
+            {isPlaying ? "Pause" : "Play"}
+          </button>
+          <button className="btnSmall" type="button" onClick={onPrev}>
+            ◀
+          </button>
+          <button className="btnSmall" type="button" onClick={onNext}>
+            ▶
+          </button>
+          <button
+            className="btnSmall btnToggle"
+            type="button"
+            onClick={onToggleCollapsed}
+            title="Toggle tools"
+          >
+            {collapsed ? "Open tools" : "Close tools"}
+          </button>
+        </div>
       </div>
 
-      <div className="btnRow">
-        <button className="btn" type="button" onClick={onPlayPause}>
-          {isPlaying ? "Pause" : "Play"}
-        </button>
-        <button className="btn" type="button" onClick={onPrev}>
-          ◀ Prev ayah
-        </button>
-        <button className="btn" type="button" onClick={onNext}>
-          Next ayah ▶
-        </button>
+      {collapsed ? null : (
+        <>
+          <div className="btnRow">
+            <button className="btnSmall" type="button" onClick={() => onNudge(-1)}>
+              -1s
+            </button>
+            <button className="btnSmall" type="button" onClick={() => onNudge(-0.1)}>
+              -0.1
+            </button>
+            <button className="btnSmall" type="button" onClick={() => onNudge(+0.1)}>
+              +0.1
+            </button>
+            <button className="btnSmall" type="button" onClick={() => onNudge(+1)}>
+              +1s
+            </button>
 
-        <div className="divider" />
+            <div className="divider" />
 
-        <button className="btnSmall" type="button" onClick={() => onNudge(-1)}>
-          -1s
-        </button>
-        <button className="btnSmall" type="button" onClick={() => onNudge(-0.1)}>
-          -0.1
-        </button>
-        <button className="btnSmall" type="button" onClick={() => onNudge(+0.1)}>
-          +0.1
-        </button>
-        <button className="btnSmall" type="button" onClick={() => onNudge(+1)}>
-          +1s
-        </button>
+            <label className="chip" title="Loop current ayah (L)">
+              <input type="checkbox" checked={loopAyah} onChange={onToggleLoopAyah} />
+              Loop ayah (L)
+            </label>
 
-        <div className="divider" />
+            <label className="chip" title="Loop A..B (Shift+L)">
+              <input type="checkbox" checked={loopAB} onChange={onToggleLoopAB} />
+              Loop A..B (Shift+L)
+            </label>
 
-        <label className="chip" title="Loop current ayah (L)">
-          <input type="checkbox" checked={loopAyah} onChange={onToggleLoopAyah} />
-          Loop ayah (L)
-        </label>
+            <button className="btnSmall" type="button" onClick={onSetA} title="Set A (A)">
+              Set A {aPoint != null ? `(${formatTime(aPoint)})` : ""}
+            </button>
+            <button className="btnSmall" type="button" onClick={onSetB} title="Set B (B)">
+              Set B {bPoint != null ? `(${formatTime(bPoint)})` : ""}
+            </button>
 
-        <label className="chip" title="Loop A..B (Shift+L)">
-          <input type="checkbox" checked={loopAB} onChange={onToggleLoopAB} />
-          Loop A..B (Shift+L)
-        </label>
+            <div className="divider" />
 
-        <button className="btnSmall" type="button" onClick={onSetA} title="Set A (A)">
-          Set A {aPoint != null ? `(${formatTime(aPoint)})` : ""}
-        </button>
-        <button className="btnSmall" type="button" onClick={onSetB} title="Set B (B)">
-          Set B {bPoint != null ? `(${formatTime(bPoint)})` : ""}
-        </button>
+            <label className="chip">
+              <input type="checkbox" checked={markersOn} onChange={onToggleMarkers} />
+              Markers
+            </label>
 
-        <div className="divider" />
+            <label className="rate">
+              Markers:
+              <select value={markerEvery} onChange={(e) => onMarkerEvery(Number(e.target.value))}>
+                <option value={1}>All</option>
+                <option value={2}>Every 2</option>
+                <option value={5}>Every 5</option>
+              </select>
+            </label>
 
-        <label className="chip">
-          <input type="checkbox" checked={markersOn} onChange={onToggleMarkers} />
-          Markers
-        </label>
+            <div className="divider" />
 
-        <label className="rate">
-          Markers:
-          <select value={markerEvery} onChange={(e) => onMarkerEvery(Number(e.target.value))}>
-            <option value={1}>All</option>
-            <option value={2}>Every 2</option>
-            <option value={5}>Every 5</option>
-          </select>
-        </label>
+            <label className="rate">
+              Speed:
+              <select value={rate} onChange={(e) => onRate(Number(e.target.value))}>
+                <option value={0.75}>0.75×</option>
+                <option value={1}>1×</option>
+                <option value={1.25}>1.25×</option>
+                <option value={1.5}>1.5×</option>
+              </select>
+            </label>
+          </div>
 
-        <div className="divider" />
-
-        <label className="rate">
-          Speed:
-          <select value={rate} onChange={(e) => onRate(Number(e.target.value))}>
-            <option value={0.75}>0.75×</option>
-            <option value={1}>1×</option>
-            <option value={1.25}>1.25×</option>
-            <option value={1.5}>1.5×</option>
-          </select>
-        </label>
-      </div>
-
-      <div className="kbdHelp muted">
-        Space play/pause • ↑/↓ prev/next • ←/→ ±1s • Shift+←/→ ±0.1s • S start • E end • N end+next • L loop ayah •
-        Shift+L loop AB • A/B set points
-      </div>
+          <div className="kbdHelp muted">
+            Space play/pause • ↑/↓ prev/next • ←/→ ±1s • Shift+←/→ ±0.1s • S start • E end • N end+next • L loop ayah •
+            Shift+L loop AB • A/B set points
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -370,15 +377,9 @@ function SyncPanel({
 
       if (Number.isFinite(s)) patch.start = clamp(s, 0, Math.max(0, duration || s));
       if (Number.isFinite(e)) patch.end = clamp(e, 0, Math.max(0, duration || e));
-
-      if (
-        Number.isFinite(patch.start) &&
-        Number.isFinite(patch.end) &&
-        patch.end <= patch.start
-      ) {
+      if (Number.isFinite(patch.start) && Number.isFinite(patch.end) && patch.end <= patch.start) {
         patch.end = patch.start + 0.01;
       }
-
       if (Object.keys(patch).length) onUpdateVerse(activeIndex, patch);
     }, 250);
 
@@ -443,8 +444,10 @@ function SyncPanel({
         <div className="syncTitle">Sync tools</div>
         <div className="syncMeta muted">
           Active: <span className="mono">{active ? active.ayah : "-"}</span> • t=
-          <span className="mono">{formatTime(currentTime)}</span> •{" "}
-          <span className="mono muted">{formatSec(currentTime)}</span>
+          <span className="mono">{formatSec(currentTime)}</span>
+          <span className="muted"> (</span>
+          <span className="mono muted">{formatTime(currentTime)}</span>
+          <span className="muted">)</span>
         </div>
       </div>
 
@@ -457,12 +460,7 @@ function SyncPanel({
             <button className="btnSmall" type="button" onClick={setEndToT} disabled={!active}>
               Set END = t (E)
             </button>
-            <button
-              className="btnSmall"
-              type="button"
-              onClick={setEndToTAndNext}
-              disabled={!active}
-            >
+            <button className="btnSmall" type="button" onClick={setEndToTAndNext} disabled={!active}>
               END=t + Next (N)
             </button>
           </div>
@@ -492,9 +490,7 @@ function SyncPanel({
 
               <div className="syncMetaInline">
                 <div className="autoSaved muted">Auto-save</div>
-                <div className={`deltaPill ${deltaOk ? "" : "muted"}`}>
-                  Δ {deltaOk ? `${delta.toFixed(2)}s` : "—"}
-                </div>
+                <div className={`deltaPill ${deltaOk ? "" : "muted"}`}>Δ {deltaOk ? `${delta.toFixed(2)}s` : "—"}</div>
               </div>
             </div>
           </div>
@@ -585,12 +581,7 @@ function SyncPanel({
             <button className="btnSmall" type="button" onClick={onExportJson}>
               Export JSON
             </button>
-            <button
-              className="btnSmall"
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              title="Import a previously exported JSON"
-            >
+            <button className="btnSmall" type="button" onClick={() => fileRef.current?.click()}>
               Import JSON
             </button>
             <input
@@ -678,11 +669,32 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(null);
 
+  // ✅ default collapsed (tools hidden)
+  const [toolsCollapsed, setToolsCollapsed] = useState(true);
+
+  useEffect(() => {
+    // persist toggle (optional)
+    try {
+      const raw = localStorage.getItem("qatd:toolsCollapsed");
+      if (raw === "0") setToolsCollapsed(false);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("qatd:toolsCollapsed", toolsCollapsed ? "1" : "0");
+    } catch {
+      // ignore
+    }
+  }, [toolsCollapsed]);
+
   const showToast = useCallback((msg) => {
     if (!msg) return;
     setToast(String(msg));
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    toastTimerRef.current = setTimeout(() => setToast(null), 1200);
+    toastTimerRef.current = setTimeout(() => setToast(null), 1100);
   }, []);
 
   useEffect(() => {
@@ -718,14 +730,8 @@ export default function App() {
     });
   }, [query]);
 
-  const audioSrc = useMemo(
-    () => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""),
-    [selectedSurah]
-  );
-  const versesSrc = useMemo(
-    () => (selectedSurah ? resolvePublicUrl(selectedSurah.versesUrl) : ""),
-    [selectedSurah]
-  );
+  const audioSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""), [selectedSurah]);
+  const versesSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.versesUrl) : ""), [selectedSurah]);
 
   useEffect(() => {
     let cancelled = false;
@@ -759,6 +765,7 @@ export default function App() {
           setVerses(data);
         }
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.error("[verses] load failed:", e);
         if (!cancelled) setError(`Verses could not be loaded: ${e.message}`);
       }
@@ -777,10 +784,7 @@ export default function App() {
     const onMeta = () => setDuration(a.duration || 0);
     const onPlay = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
-    const onErr = () => {
-      console.error("[audio] error", a.error);
-      setError("Audio could not be played. Check console for details.");
-    };
+    const onErr = () => setError("Audio could not be played. Check console for details.");
 
     a.addEventListener("timeupdate", onTime);
     a.addEventListener("loadedmetadata", onMeta);
@@ -817,8 +821,7 @@ export default function App() {
 
   const seekVerse = useCallback(
     (idx, autoPlay = true) => {
-      const vs = versesRef.current;
-      const v = vs[idx];
+      const v = versesRef.current[idx];
       if (!v) return;
       const start = Number(v.start);
       if (!Number.isFinite(start)) return;
@@ -879,22 +882,20 @@ export default function App() {
     });
   }, []);
 
-  // Autosave draft (debounced)
+  // autosave draft (debounced)
   useEffect(() => {
     const t = setTimeout(() => {
       try {
         localStorage.setItem(draftKey, JSON.stringify(versesRef.current));
-      } catch (e) {
-        console.error("[draft] autosave failed:", e);
+      } catch {
+        // ignore
       }
     }, 500);
     return () => clearTimeout(t);
   }, [draftKey, verses]);
 
   const exportJson = useCallback(() => {
-    const blob = new Blob([JSON.stringify(versesRef.current, null, 2)], {
-      type: "application/json",
-    });
+    const blob = new Blob([JSON.stringify(versesRef.current, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -914,7 +915,6 @@ export default function App() {
         setVerses(parsed);
         setError("");
       } catch (e) {
-        console.error("[import] failed:", e);
         setError(`Import failed: ${e.message}`);
       }
     };
@@ -924,8 +924,8 @@ export default function App() {
   const saveDraft = useCallback(() => {
     try {
       localStorage.setItem(draftKey, JSON.stringify(versesRef.current));
-    } catch (e) {
-      console.error("[draft] save failed:", e);
+    } catch {
+      // ignore
     }
   }, [draftKey]);
 
@@ -936,28 +936,26 @@ export default function App() {
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed)) return;
       setVerses(parsed);
-    } catch (e) {
-      console.error("[draft] restore failed:", e);
+    } catch {
+      // ignore
     }
   }, [draftKey]);
 
   const clearDraft = useCallback(() => {
     try {
       localStorage.removeItem(draftKey);
-    } catch (e) {
-      console.error("[draft] clear failed:", e);
+    } catch {
+      // ignore
     }
   }, [draftKey]);
 
   const jumpFirstUntimed = useCallback(() => {
     const vs = versesRef.current;
-    const idx = vs.findIndex(
-      (v) => !Number.isFinite(Number(v?.start)) || !Number.isFinite(Number(v?.end))
-    );
+    const idx = vs.findIndex((v) => !Number.isFinite(Number(v?.start)) || !Number.isFinite(Number(v?.end)));
     if (idx >= 0) seekVerse(idx, true);
   }, [seekVerse]);
 
-  // Loop behavior
+  // loop behavior
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -986,7 +984,7 @@ export default function App() {
     }
   }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint]);
 
-  // Active verse update + autoscroll
+  // Active verse + autoscroll
   useEffect(() => {
     if (!verses.length) return;
     const idx = findActiveVerseIndex(verses, currentTime);
@@ -1002,12 +1000,11 @@ export default function App() {
   const setA = useCallback(() => setAPoint(currentTimeRef.current), []);
   const setB = useCallback(() => setBPoint(currentTimeRef.current), []);
 
-  // Keyboard shortcuts
+  // keyboard shortcuts
   useEffect(() => {
     const onKey = (e) => {
       const tag = document.activeElement?.tagName?.toLowerCase();
-      const typing =
-        tag === "input" || tag === "textarea" || document.activeElement?.isContentEditable;
+      const typing = tag === "input" || tag === "textarea" || document.activeElement?.isContentEditable;
       if (typing) return;
 
       if (e.code === "Space") {
@@ -1111,13 +1108,15 @@ export default function App() {
         {header}
         {error ? <div className="errorBox">{error}</div> : null}
 
-        <div className="playerCard playerSticky">
+        <div className={`playerCard playerSticky ${toolsCollapsed ? "collapsed" : ""}`}>
           <audio ref={audioRef} src={audioSrc} preload="metadata" />
 
           <PlayerControls
             isPlaying={isPlaying}
             currentTime={currentTime}
             duration={duration}
+            collapsed={toolsCollapsed}
+            onToggleCollapsed={() => setToolsCollapsed((x) => !x)}
             onPlayPause={onPlayPause}
             onPrev={prevAyah}
             onNext={nextAyah}
@@ -1138,33 +1137,37 @@ export default function App() {
             onSetB={setB}
           />
 
-          <Timeline
-            duration={duration}
-            currentTime={currentTime}
-            verses={verses}
-            activeIndex={activeIndex}
-            onSeek={(t) => seekTo(t, false)}
-            onSeekVerse={(idx) => seekVerse(idx, true)}
-            showMarkers={markersOn}
-            markerEvery={markerEvery}
-          />
+          {toolsCollapsed ? null : (
+            <>
+              <Timeline
+                duration={duration}
+                currentTime={currentTime}
+                verses={verses}
+                activeIndex={activeIndex}
+                onSeek={(t) => seekTo(t, false)}
+                onSeekVerse={(idx) => seekVerse(idx, true)}
+                showMarkers={markersOn}
+                markerEvery={markerEvery}
+              />
 
-          <SyncPanel
-            verses={verses}
-            activeIndex={activeIndex}
-            currentTime={currentTime}
-            duration={duration}
-            onUpdateVerse={updateVerse}
-            onSeek={(t) => seekTo(t, false)}
-            onSeekVerse={(idx) => seekVerse(idx, true)}
-            onExportJson={exportJson}
-            onImportJson={importJsonFile}
-            onSaveDraft={saveDraft}
-            onRestoreDraft={restoreDraft}
-            onClearDraft={clearDraft}
-            onJumpFirstUntimed={jumpFirstUntimed}
-            onToast={showToast}
-          />
+              <SyncPanel
+                verses={verses}
+                activeIndex={activeIndex}
+                currentTime={currentTime}
+                duration={duration}
+                onUpdateVerse={updateVerse}
+                onSeek={(t) => seekTo(t, false)}
+                onSeekVerse={(idx) => seekVerse(idx, true)}
+                onExportJson={exportJson}
+                onImportJson={importJsonFile}
+                onSaveDraft={saveDraft}
+                onRestoreDraft={restoreDraft}
+                onClearDraft={clearDraft}
+                onJumpFirstUntimed={jumpFirstUntimed}
+                onToast={showToast}
+              />
+            </>
+          )}
 
           {toast ? <div className="toast">{toast}</div> : null}
         </div>
