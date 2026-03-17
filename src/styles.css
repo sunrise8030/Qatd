@@ -1,182 +1,416 @@
+// src/styles.css
 :root {
-  --bg: #0f1115;
-  --panel: #151824;
-  --panel-2: #11131b;
-  --text: #e9ecf1;
-  --muted: #a7afc2;
+  --bg: #0b0f16;
+  --panel: #0f1520;
+  --panel2: #0c111a;
   --border: rgba(255, 255, 255, 0.08);
-  --accent: #63b3ff;
-  --row: rgba(255, 255, 255, 0.02);
-  --rowHover: rgba(255, 255, 255, 0.05);
-  --rowActive: rgba(99, 179, 255, 0.18);
-  --shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+  --text: rgba(255, 255, 255, 0.92);
+  --muted: rgba(255, 255, 255, 0.62);
+  --accent: rgba(99, 179, 237, 1);
+  --accent2: rgba(99, 179, 237, 0.25);
+  --danger: rgba(255, 120, 120, 0.18);
 }
 
-* { box-sizing: border-box; }
-html, body { height: 100%; }
+* {
+  box-sizing: border-box;
+}
 
+html,
 body {
+  height: 100%;
   margin: 0;
-  background: radial-gradient(1200px 600px at 20% 0%, rgba(99, 179, 255, 0.12), transparent 60%),
-    radial-gradient(1000px 500px at 90% 20%, rgba(255, 107, 107, 0.08), transparent 60%),
+  background: radial-gradient(1200px 800px at 30% 15%, rgba(120, 120, 255, 0.12), transparent 55%),
+    radial-gradient(1200px 800px at 70% 35%, rgba(255, 120, 120, 0.10), transparent 55%),
     var(--bg);
   color: var(--text);
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans",
+    "Apple Color Emoji", "Segoe UI Emoji";
 }
 
-#root { height: 100%; }
+.appShell {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  min-height: 100vh;
+}
 
-.appShell { height: 100%; display: flex; min-height: 100vh; }
+@media (max-width: 980px) {
+  .appShell {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+}
 
 .sidebar {
-  width: 340px;
-  min-width: 280px;
   border-right: 1px solid var(--border);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 25%), var(--panel-2);
-  display: flex;
-  flex-direction: column;
+  background: rgba(15, 21, 32, 0.72);
+  backdrop-filter: blur(10px);
+  padding: 16px;
 }
 
-.sidebarHeader { padding: 16px 16px 12px; border-bottom: 1px solid var(--border); }
-.appTitle { margin: 0 0 10px; font-size: 18px; letter-spacing: 0.2px; }
-.searchLabel { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.sidebarHeader {
+  margin-bottom: 12px;
+}
+
+.appTitle {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+.fieldLabel {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin: 8px 0 6px;
+}
 
 .searchInput {
   width: 100%;
-  padding: 10px 10px;
-  border-radius: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(0, 0, 0, 0.25);
   color: var(--text);
   outline: none;
 }
-.searchInput:focus { border-color: rgba(99, 179, 255, 0.5); box-shadow: 0 0 0 3px rgba(99, 179, 255, 0.12); }
 
-.surahList { padding: 10px; overflow: auto; flex: 1; }
+.surahList {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
 
-.surahItem {
-  width: 100%;
+.surahCard {
   text-align: left;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.02);
-  color: var(--text);
-  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 14px;
   padding: 12px;
-  margin-bottom: 10px;
   cursor: pointer;
+  color: inherit;
 }
-.surahItem:hover { background: rgba(255, 255, 255, 0.04); }
-.surahItem.active { border-color: rgba(99, 179, 255, 0.55); background: rgba(99, 179, 255, 0.09); }
 
-.surahItemTop { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
-.surahId { font-weight: 700; font-size: 13px; color: var(--accent); }
-.surahSlug { font-size: 12px; color: var(--muted); }
+.surahCard:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+}
 
-.surahItemNames { display: grid; gap: 2px; margin-bottom: 6px; }
-.nameStrong { font-weight: 700; font-size: 14px; }
-.nameMuted { font-size: 12px; color: var(--muted); }
-.nameAr { font-size: 16px; text-align: right; line-height: 1.4; font-family: "Noto Naskh Arabic", "Amiri", serif; }
+.surahCard.active {
+  border-color: rgba(99, 179, 237, 0.55);
+  box-shadow: 0 0 0 2px rgba(99, 179, 237, 0.15) inset;
+}
 
-.surahMeta { font-size: 12px; color: var(--muted); }
-.emptyState { padding: 12px; color: var(--muted); }
+.surahCardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--muted);
+  font-size: 12px;
+}
 
-.content { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 16px; gap: 12px; }
-.emptyContent { padding: 18px; border: 1px dashed var(--border); border-radius: 14px; color: var(--muted); }
+.surahNames {
+  margin-top: 8px;
+}
+
+.surahNameStrong {
+  font-weight: 650;
+  font-size: 16px;
+}
+
+.surahNameMuted {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+.surahNameAr {
+  color: var(--text);
+  font-size: 16px;
+  margin-top: 6px;
+  text-align: right;
+}
+
+.surahMeta {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.content {
+  padding: 16px;
+}
 
 .surahHeader {
   border: 1px solid var(--border);
+  background: rgba(15, 21, 32, 0.55);
   border-radius: 16px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 65%), var(--panel);
-  padding: 14px 14px 12px;
-  box-shadow: var(--shadow);
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
 }
 
-.surahTitleRow { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; }
-.surahTitleMain { font-size: 18px; font-weight: 800; }
-.surahTitleSub { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }
-.surahTitleAr { font-size: 22px; text-align: right; font-family: "Noto Naskh Arabic", "Amiri", serif; }
+.surahTitle {
+  margin: 0;
+  font-size: 20px;
+}
 
-.surahInfo { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
-.pill { border: 1px solid var(--border); background: rgba(255, 255, 255, 0.03); padding: 6px 10px; border-radius: 999px; font-size: 12px; color: var(--muted); }
+.surahSub {
+  color: var(--muted);
+  margin-top: 3px;
+}
 
-.errorBanner { border: 1px solid rgba(255, 107, 107, 0.4); background: rgba(255, 107, 107, 0.12); padding: 10px 12px; border-radius: 12px; }
-.loadingState { padding: 14px; color: var(--muted); }
+.surahHeaderRight {
+  font-size: 18px;
+  align-self: start;
+}
 
-.audioPanel { border: 1px solid var(--border); border-radius: 16px; background: var(--panel); padding: 12px; box-shadow: var(--shadow); }
-.audioControls { display: flex; align-items: center; gap: 12px; justify-content: space-between; flex-wrap: wrap; }
+.surahBadges {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
 
-.primaryButton {
-  border: 1px solid rgba(99, 179, 255, 0.55);
-  background: rgba(99, 179, 255, 0.18);
-  color: var(--text);
-  padding: 10px 14px;
+.badge {
+  font-size: 12px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.18);
+  padding: 6px 10px;
+  border-radius: 999px;
+}
+
+.errorBox {
+  margin-top: 12px;
+  border: 1px solid rgba(255, 120, 120, 0.35);
+  background: var(--danger);
   border-radius: 12px;
-  font-weight: 800;
+  padding: 10px 12px;
+}
+
+.playerCard {
+  margin-top: 14px;
+  border: 1px solid var(--border);
+  background: rgba(15, 21, 32, 0.55);
+  border-radius: 16px;
+  padding: 12px;
+}
+
+.playerControls {
+  display: grid;
+  gap: 8px;
+}
+
+.btnRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn,
+.btnSmall {
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 10px 12px;
   cursor: pointer;
 }
-.primaryButton:hover { background: rgba(99, 179, 255, 0.25); }
-.audioHint { font-size: 12px; color: var(--muted); }
 
-.versesPanel {
+.btnSmall {
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+
+.btn:hover,
+.btnSmall:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.divider {
+  width: 1px;
+  height: 28px;
+  background: var(--border);
+  margin: 0 2px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   border: 1px solid var(--border);
-  border-radius: 16px;
-  background: var(--panel);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-  min-height: 240px;
+  background: rgba(0, 0, 0, 0.18);
+  padding: 8px 10px;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.rate {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.18);
+  padding: 8px 10px;
+  border-radius: 999px;
+}
+
+.rate select {
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px 8px;
+}
+
+.kbdHelp {
+  font-size: 12px;
+}
+
+.timeline {
+  margin-top: 10px;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 14px;
+  padding: 10px;
+}
+
+.timelineTop {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.timeReadout {
+  font-size: 13px;
+}
+
+.mono {
+  font-variant-numeric: tabular-nums;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.timelineTrack {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.timelineProgress {
+  height: 100%;
+  background: rgba(99, 179, 237, 0.65);
+  width: 0%;
+}
+
+.timelineMarker {
+  position: absolute;
+  top: -4px;
+  width: 8px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateX(-50%);
+  cursor: pointer;
+}
+
+.timelineMarker.active {
+  background: rgba(99, 179, 237, 0.55);
+  border-color: rgba(99, 179, 237, 0.9);
+}
+
+.timelineSlider {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.tableWrap {
+  margin-top: 14px;
+  border: 1px solid var(--border);
+  background: rgba(15, 21, 32, 0.55);
+  border-radius: 16px;
+  overflow: hidden;
 }
 
 .tableHeader {
   display: grid;
-  grid-template-columns: 64px 1.2fr 1.6fr 1.6fr;
+  grid-template-columns: 70px 1.1fr 1fr 1fr;
+  gap: 0;
+  padding: 12px 12px;
   border-bottom: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
-  position: sticky;
-  top: 0;
-  z-index: 2;
+  color: var(--muted);
+  font-size: 13px;
 }
 
-.tableBody { overflow: auto; }
+.tableBody {
+  display: grid;
+}
 
 .row {
-  width: 100%;
   display: grid;
-  grid-template-columns: 64px 1.2fr 1.6fr 1.6fr;
-  border: 0;
-  background: transparent;
-  color: var(--text);
-  text-align: left;
-  cursor: pointer;
+  grid-template-columns: 70px 1.1fr 1fr 1fr;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-.row:nth-child(odd) { background: var(--row); }
-.row:hover { background: var(--rowHover); }
-
-.rowActive {
-  background: var(--rowActive) !important;
-  outline: 2px solid rgba(99, 179, 255, 0.35);
-  outline-offset: -2px;
+  padding: 10px 12px;
+  text-align: left;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
 }
 
-.cell { padding: 12px 12px; font-size: 13px; line-height: 1.35; }
-.cellNo { color: var(--muted); font-weight: 700; }
+.row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
 
-.cellAr { direction: rtl; text-align: right; font-size: 18px; line-height: 1.7; font-family: "Noto Naskh Arabic", "Amiri", serif; }
+.row.active {
+  background: rgba(99, 179, 237, 0.12);
+  box-shadow: 0 0 0 1px rgba(99, 179, 237, 0.35) inset;
+}
+
+.cell {
+  padding-right: 10px;
+}
+
+.colNo {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.colAr {
+  font-size: 18px;
+  line-height: 1.55;
+  text-align: right;
+  padding-left: 12px;
+}
+
+.colDe,
+.colTr {
+  font-size: 14px;
+  line-height: 1.5;
+}
 
 @media (max-width: 980px) {
-  .appShell { flex-direction: column; }
-  .sidebar { width: 100%; min-width: 0; border-right: 0; border-bottom: 1px solid var(--border); }
-  .content { padding: 12px; }
-  .tableHeader, .row { grid-template-columns: 52px 1.1fr 1.2fr 1.2fr; }
-  .cellAr { font-size: 16px; }
-}
-
-@media (max-width: 700px) {
-  .tableHeader, .row { grid-template-columns: 52px 1fr; }
-  .cellDe, .cellTr { display: none; }
-  .cellAr { font-size: 17px; }
-  .surahTitleRow { flex-direction: column; align-items: flex-start; }
-  .surahTitleAr { align-self: flex-end; }
+  .tableHeader,
+  .row {
+    grid-template-columns: 60px 1fr;
+  }
+  .colDe,
+  .colTr {
+    display: none;
+  }
 }
