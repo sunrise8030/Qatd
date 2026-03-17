@@ -20,8 +20,8 @@
     "ar": "إِنَّآ أَنزَلْنَٰهُ قُرْءَٰنًا عَرَبِيًّۭا لَّعَلَّكُمْ تَعْقِلُونَ",
     "tr": "Biz o Kitabı Arapça bir Kur’ân olarak indiriyoruz ki, düşünüp akledesiniz.",
     "de": "Wir haben es als einen arabischen Qur’an hinabgesandt, auf daß ihr begreifen möget.",
-    "start": 31.56,
-    "end": 37.22
+    "start": 25.559999999999913,
+    "end": 39.22
   },
   {
     "ayah": 3,
@@ -36,7 +36,7 @@
     "ar": "إِذْ قَالَ يُوسُفُ لِأَبِيهِ يَٰٓأَبَتِ إِنِّى رَأَيْتُ أَحَدَ عَشَرَ كَوْكَبًۭا وَٱلشَّمْسَ وَٱلْقَمَرَ رَأَيْتُهُمْ لِى سَٰجِدِينَ",
     "tr": "Bir zaman Yusuf babasına, “Babacığım!” dedi: “Ben, rüyamda onbir yıldızla güneşi ve ayı bana secde ederlerken gördüm.”",
     "de": "Als Yusuf zu seinem Vater sagte: O mein Vater, ich sah elf Sterne und die Sonne und den Mond, ich sah sie sich vor mir niederwerfen.",
-    "start": 61.32,
+    "start": 60.51999999999999,
     "end": 76.61
   },
   {
@@ -45,7 +45,7 @@
     "tr": "Yakup, “Oğulcuğum,” diye cevap verdi, “bu rüyanı kardeşlerine sakın anlatma. Olur ki, (kıskançlıkla) sana bir tuzak kurmaya kalkarlar. Çünkü şeytan, insan için apaçık bir düşmandır (ve onları böyle bir şeye sevk edebilir).",
     "de": "Er sagt: O mein lieber Sohn, erzähle dein (Traum)gesicht nicht deinen Brüdern, sonst werden sie eine List gegen dich schmieden. Gewiß, der Satan ist dem Menschen ein deutlicher Feind.",
     "start": 79.94,
-    "end": 91.9
+    "end": 99.9
   },
   {
     "ayah": 6,
@@ -68,7 +68,7 @@
     "ar": "إِذْ قَالُوا۟ لَيُوسُفُ وَأَخُوهُ أَحَبُّ إِلَىٰٓ أَبِينَا مِنَّا وَنَحْنُ عُصْبَةٌ إِنَّ أَبَانَا لَفِى ضَلَٰلٍۢ مُّبِينٍ",
     "tr": "Kardeşleri, aralarında toplanıp şöyle konuştular: “Doğrusu Yusuf ve kardeşi babamızın yanında bizden daha sevgili, oysa biz, güçlü kuvvetli, (dolayısıyla O’nun işine daha çok yarayan) bir ekibiz. Babamız, gerçekten açık bir hata işliyor.”",
     "de": "Als sie sagten: Wahrlich, Yusuf und sein Bruder sind unserem Vater lieber als wir, obwohl wir eine (ansehnliche) Schar sind. Unser Vater befindet sich fürwahr in deutlichem Irrtum.",
-    "start": 153.7,
+    "start": 153.00000000000014,
     "end": 171.8
   },
   {
@@ -76,15 +76,15 @@
     "ar": "ٱقْتُلُوا۟ يُوسُفَ أَوِ ٱطْرَحُوهُ أَرْضًۭا يَخْلُ لَكُمْ وَجْهُ أَبِيكُمْ وَتَكُونُوا۟ مِنۢ بَعْدِهِۦ قَوْمًۭا صَٰلِحِينَ",
     "tr": "İçlerinden biri, “Yusuf’u öldürün veya onu öyle bir yere bırakın ki (geri dönüp gelemesin). Artık babanızın teveccühü yalnızca size yönelir; sonra da tevbe eder ve salihlerden olursunuz.” dedi.",
     "de": "Tötet Yusuf oder werft ihn ins Land hinaus, so wird das Gesicht eures Vaters sich nur noch euch zuwenden, und danach werdet ihr rechtschaffene Leute sein.",
-    "start": 174.14,
-    "end": 190.1
+    "start": 172.64000000000007,
+    "end": 191.6
   },
   {
     "ayah": 10,
     "ar": "قَالَ قَآئِلٌۭ مِّنْهُمْ لَا تَقْتُلُوا۟ يُوسُفَ وَأَلْقُوهُ فِى غَيَٰبَتِ ٱلْجُبِّ يَلْتَقِطْهُ بَعْضُ ٱلسَّيَّارَةِ إِن كُنتُمْ فَٰعِلِينَ",
     "tr": "Bir diğeri, şu görüşte bulundu: “Hayır, Yusuf’u öldürmeyin. Onu bir kuyuya atın; bakarsınız bir kervan onu alır götürür. Eğer mutlaka bir şey yapacaksanız böyle yapın!”",
     "de": "Einer von ihnen sagte: Tötet Yusuf nicht, sondern werft ihn in die verborgene Tiefe des Brunnenlochs, so werden ihn schon einige der Reisenden auflesen, wenn ihr doch etwas tun wollt.",
-    "start": 195.0,
+    "start": 194.70000000000002,
     "end": 215.98
   },
   {
@@ -92,8 +92,8 @@
     "ar": "قَالُوا۟ يَٰٓأَبَانَا مَا لَكَ لَا تَأْمَ۫نَّا عَلَىٰ يُوسُفَ وَإِنَّا لَهُۥ لَنَٰصِحُونَ",
     "tr": "(Bu görüş üzerinde karar kılıp) babalarına geldiler ve “Ey bizim babamız!” dediler: “Gerçi sen Yusuf’u bize emanet etmezsin, halbuki biz, her zaman için onun iyiliğini isteyenleriz!",
     "de": "Sie sagten: O unser Vater, warum vertraust du uns Yusuf nicht an? Wir werden ihm wahrlich aufrichtig zugetan sein.",
-    "start": 221.36,
-    "end": 228.64
+    "start": 216.86000000000016,
+    "end": 231.64
   },
   {
     "ayah": 12,
@@ -101,14 +101,14 @@
     "tr": "“Ne olur, yarın onu bizimle gönder de yesin içsin, oynasın. Hiç şüphen olmasın ki, biz onu koruruz.”",
     "de": "Sende ihn morgen mit uns, daß er Spaß und Spiel finde; wir werden ihn fürwahr behüten.",
     "start": 232.26,
-    "end": 237.96
+    "end": 244.46
   },
   {
     "ayah": 13,
     "ar": "قَالَ إِنِّى لَيَحْزُنُنِىٓ أَن تَذْهَبُوا۟ بِهِۦ وَأَخَافُ أَن يَأْكُلَهُ ٱلذِّئْبُ وَأَنتُمْ عَنْهُ غَٰفِلُونَ",
     "tr": "Yakup, “O’nu alıp götürmeniz, beni gerçekten üzer.” mukabelesinde bulundu: “Siz O’nu unutup kendinizle meşgulken bir kurdun gelip O’nu yemesinden korkarım.”",
     "de": "Er sagte: Es macht mich fürwahr traurig, daß ihr ihn mitnehmt. Und ich fürchte, daß ihn der Wolf frißt, während ihr seiner unachtsam seid.",
-    "start": 244.52,
+    "start": 243.92000000000004,
     "end": 256.04
   },
   {
@@ -116,7 +116,7 @@
     "ar": "قَالُوا۟ لَئِنْ أَكَلَهُ ٱلذِّئْبُ وَنَحْنُ عُصْبَةٌ إِنَّآ إِذًۭا لَّخَٰسِرُونَ",
     "tr": "“”Andolsun,” dediler, “biz böyle güçlükuvvetli bir ekip iken eğer bir kurt gelip O’nu yerse, bu takdirde vallahi bize yazıklar olsun!”",
     "de": "Sie sagten: Wenn ihn der Wolf fressen sollte, wo wir doch eine (ansehnliche) Schar sind, dann wären wir fürwahr Verlierer.",
-    "start": 264.24,
+    "start": 262.5399999999996,
     "end": 271.81
   },
   {
@@ -124,7 +124,7 @@
     "ar": "فَلَمَّا ذَهَبُوا۟ بِهِۦ وَأَجْمَعُوٓا۟ أَن يَجْعَلُوهُ فِى غَيَٰبَتِ ٱلْجُبِّ ۚ وَأَوْحَيْنَآ إِلَيْهِ لَتُنَبِّئَنَّهُم بِأَمْرِهِمْ هَٰذَا وَهُمْ لَا يَشْعُرُونَ",
     "tr": "Derken, (babalarını razı edip) Yusuf’u yanlarında götürdüler ve O’nu kuyunun derinliklerine bırakma üzerinde mutabakata vardılar. (O, kuyunun dibinde iken) kendisine şöyle vahyettik: “Hiç şüphen olmasın ki, bir gün gelecek ve bu yaptıklarını hiç beklemedikleri ve olupbitenin fakında olmadıkları bir anda onlara hatırlatacaksın.”",
     "de": "Als sie ihn mitnahmen und sich geeinigt hatten, ihn in die verborgene Tiefe des Brunnenlochs zu stecken, gaben Wir ihm ein: Du wirst ihnen ganz gewiß noch diese ihre Tat kundtun, ohne daß sie merken.",
-    "start": 275.6,
+    "start": 275.5,
     "end": 299.89
   },
   {
@@ -133,15 +133,15 @@
     "tr": "Akşam karanlığı çökünce ağlayarak babalarına geldiler.",
     "de": "Und am Abend kamen sie weinend zu ihrem Vater.",
     "start": 301.71,
-    "end": 321.44
+    "end": 313.658888
   },
   {
     "ayah": 17,
     "ar": "قَالُوا۟ يَٰٓأَبَانَآ إِنَّا ذَهَبْنَا نَسْتَبِقُ وَتَرَكْنَا يُوسُفَ عِندَ مَتَٰعِنَا فَأَكَلَهُ ٱلذِّئْبُ ۖ وَمَآ أَنتَ بِمُؤْمِنٍۢ لَّنَا وَلَوْ كُنَّا صَٰدِقِينَ",
     "tr": "“Muhterem babamız!” dediler: “Aramızda yarışa çıkmış ve Yusuf’u da eşyamızın başında bırakmıştık. Geri döndüğümüzde bir de ne görelim: Yusuf’u kurt yemiş! Ama, biz ne kadar doğruyu söylüyor olsak da, biliyoruz ki sen bize inanmayacaksın!”",
     "de": "Sie sagten: O unser Vater, wir gingen, um einen Wettlauf zu machen, und ließen Yusuf bei unseren Sachen zurück. Da fraß ihn der Wolf. Aber du glaubst uns wohl nicht, auch wenn wir die Wahrheit sagen.",
-    "start": 321.44,
-    "end": 349.14
+    "start": 313.63999999999993,
+    "end": 345.147206
   },
   {
     "ayah": 18,
@@ -156,7 +156,7 @@
     "ar": "وَجَآءَتْ سَيَّارَةٌۭ فَأَرْسَلُوا۟ وَارِدَهُمْ فَأَدْلَىٰ دَلْوَهُۥ ۖ قَالَ يَٰبُشْرَىٰ هَٰذَا غُلَٰمٌۭ ۚ وَأَسَرُّوهُ بِضَٰعَةًۭ ۚ وَٱللَّهُ عَلِيمٌۢ بِمَا يَعْمَلُونَ",
     "tr": "Derken, öteden bir kervan geldi ve içlerinden birini su getirmesi için kuyuya gönderdiler. Sucu kovasını kuyuya saldı. (O da ne? Bir oğlan çocuğu kovaya tutunmuş, yukarı çıkıyordu.) Sucu bağırdı: “Hey, müjde! Bir civan!” dedi. O’nu bir ticaret malı olarak saklayıp korudular. Allah, ne yaptıklarını da, ne yapacaklarını da çok iyi biliyordu.",
     "de": "Reisende kamen vorbei. Sie sandten ihren Wasserschöpfer, und er ließ seinen Eimer hinunter. Er sagte: O frohe Botschaft! Da ist ein Junge. Sie verbargen ihn als Ware. Und Allah wußte wohl, was sie taten.",
-    "start": 373.26,
+    "start": 371.1600000000001,
     "end": 394.74
   },
   {
@@ -180,7 +180,7 @@
     "ar": "وَلَمَّا بَلَغَ أَشُدَّهُۥٓ ءَاتَيْنَٰهُ حُكْمًۭا وَعِلْمًۭا ۚ وَكَذَٰلِكَ نَجْزِى ٱلْمُحْسِنِينَ",
     "tr": "Derken Yusuf, tam ergenlik ve temyiz çağına ulaştı ve kendisine manevî sahada hakimiyet, bütün meselelerde doğru ve yerinde karar verebilme ve doğru ile yanlışı birbirinden ayırt edebilme kabiliyetiyle birlikte (bir tür) ilim bahşettik. Kendilerini iyiliğe adamış, daima Allah’ı görüyormuşçasına ve Allah’ın kendilerini gördüğünün şuuru içinde davrananları işte böyle mükâfatlandırırız.",
     "de": "Als er seine Vollreife erlangt hatte, gaben Wir ihm Urteil(skraft) und Wissen. So vergelten Wir den Gutes Tuenden.",
-    "start": 462.52,
+    "start": 462.1199999999999,
     "end": 475.99
   },
   {
@@ -188,7 +188,7 @@
     "ar": "وَرَٰوَدَتْهُ ٱلَّتِى هُوَ فِى بَيْتِهَا عَن نَّفْسِهِۦ وَغَلَّقَتِ ٱلْأَبْوَٰبَ وَقَالَتْ هَيْتَ لَكَ ۚ قَالَ مَعَاذَ ٱللَّهِ ۖ إِنَّهُۥ رَبِّىٓ أَحْسَنَ مَثْوَاىَ ۖ إِنَّهُۥ لَا يُفْلِحُ ٱلظَّٰلِمُونَ",
     "tr": "Bu arada, bulunduğu evin hanımı O’nun nefsinden murad almak istedi ve kapıları iyice kapatarak, “Hadi, gelsene!” dedi. Yusuf, hiç tereddütsüz, “Allah korusun! Doğrusu (eşiniz olan) efendim bana çok iyi baktı, çok iyi davrandı. Şurası bir gerçek ki, zalimler asla iflah olmaz!” mukabelesinde bulundu.",
     "de": "Und diejenige, in deren Haus er war, versuchte, ihn zu verführen. Sie schloß die Türen ab und sagte: Da bin ich für dich! Er sagte: Allah schütze mich (davor)! Er, mein Herr, hat mir einen schönen Aufenthalt bereitet. Gewiß, den Ungerechten wird es nicht wohl ergehen.",
-    "start": 480.02,
+    "start": 477.02,
     "end": 504.98
   },
   {
@@ -196,7 +196,7 @@
     "ar": "وَلَقَدْ هَمَّتْ بِهِۦ ۖ وَهَمَّ بِهَا لَوْلَآ أَن رَّءَا بُرْهَٰنَ رَبِّهِۦ ۚ كَذَٰلِكَ لِنَصْرِفَ عَنْهُ ٱلسُّوٓءَ وَٱلْفَحْشَآءَ ۚ إِنَّهُۥ مِنْ عِبَادِنَا ٱلْمُخْلَصِينَ",
     "tr": "Hanım, O’na sahip olmayı aklına koymuştu ve bütün düşünceleri O’nunla meşguldü. Yusuf’ta da ona karşı bir meyil uyanabilirdi, fakat O, (iffet ve doğru davranış konusunda) Rabbisinin açık ve kesin delilini görmüştü ve hanımdan kurtulmanın hesaplarını yapıyordu. İşte, (kendisine böyle bir delil göstermiş olmakla) fenalığı ve fuhşu O’ndan uzaklaştırdık. Doğrusu O, Bizim ihlâsa erdirilmiş kullarımızdandı.",
     "de": "Es verlangte sie nach ihm, und es hätte ihn nach ihr verlangt, wenn er nicht den Beweis seines Herrn gesehen hätte. Dies (geschah), damit Wir das Böse und das Schändliche von ihm abwendeten. Er gehört ja zu Unseren auserlesenen Dienern.",
-    "start": 507.79,
+    "start": 508.29,
     "end": 532.69
   },
   {
@@ -204,7 +204,7 @@
     "ar": "وَٱسْتَبَقَا ٱلْبَابَ وَقَدَّتْ قَمِيصَهُۥ مِن دُبُرٍۢ وَأَلْفَيَا سَيِّدَهَا لَدَا ٱلْبَابِ ۚ قَالَتْ مَا جَزَآءُ مَنْ أَرَادَ بِأَهْلِكَ سُوٓءًا إِلَّآ أَن يُسْجَنَ أَوْ عَذَابٌ أَلِيمٌۭ",
     "tr": "(Yusuf’un odadan çıkmaya yönelmesiyle birlikte) kapıya doğru koşuştular. (Yusuf’u yakalamaya çalışan hanım) O’nun gömleğini arkadan çekip yırttı. Kapının yanında hanımın beyiyle karşılaşıverdiler. Hanım atılıp, “Ailene kötülük yapmak isteyenin cezası zindana atılmak veya daha başka pek acı bir cezaya çarptırılmaktan başka ne olabilir?” dedi.",
     "de": "Sie versuchten beide als erster zur Tür zu gelangen. Sie zerriß ihm von hinten das Hemd. Und sie fanden ihren Herrn bei der Tür vor. Sie sagte: Der Lohn dessen, der deiner Familie Böses (antun) wollte, ist nur, daß er ins Gefängnis gesteckt wird, oder schmerzhafte Strafe.",
-    "start": 537.19,
+    "start": 535.79,
     "end": 563.64
   },
   {
@@ -412,7 +412,7 @@
     "ar": "قَالَ مَا خَطْبُكُنَّ إِذْ رَٰوَدتُّنَّ يُوسُفَ عَن نَّفْسِهِۦ ۚ قُلْنَ حَٰشَ لِلَّهِ مَا عَلِمْنَا عَلَيْهِ مِن سُوٓءٍۢ ۚ قَالَتِ ٱمْرَأَتُ ٱلْعَزِيزِ ٱلْـَٰٔنَ حَصْحَصَ ٱلْحَقُّ أَنَا۠ رَٰوَدتُّهُۥ عَن نَّفْسِهِۦ وَإِنَّهُۥ لَمِنَ ٱلصَّٰدِقِينَ",
     "tr": "Hükümdar, (kadınları toplayıp,) “Ne idi Yusuf’la aranızda geçen? O’nun nefsinden murat almak istediğinizde Yusuf size nasıl davranmıştı?” diye sordu. “Allah için, haşa, biz O’nun aleyhinde hiç bir kötülük bilmiyoruz!” dediler. Vezirin hanımı da, “İşte şimdi gerçek ortaya çıktı. Ben, O’nun nefsinden murat almak istemiştim. Hiç kuşku yok ki O, dürüst ve sadık insanlardandır.” itirafında bulundu.",
     "de": "Er sagte: Was war da mit euch, als ihr versuchtet, Yusuf zu verführen? Sie sagten: Allah behüte! Wir wissen nichts Böses gegen ihn (anzugeben). Die Frau des hohen Herrn sagte: Jetzt ist die Wahrheil ans Licht gekommen. Ich habe versucht, ihn zu verführen. Und er gehört fürwahr zu den Wahrhaftigen.",
-    "start": 1212.0,
+    "start": 1212,
     "end": 1246.93
   },
   {
@@ -460,7 +460,7 @@
     "ar": "وَلَأَجْرُ ٱلْءَاخِرَةِ خَيْرٌۭ لِّلَّذِينَ ءَامَنُوا۟ وَكَانُوا۟ يَتَّقُونَ",
     "tr": "Bununla birlikte, iman edip, kalbleri Allah’a karşı saygıyla dopdolu olan ve bütün hükümlerinde O’na karşı gelmekten sakınanlar için Âhiret’teki mükâfat hiç şüphesiz daha hayırlıdır.",
     "de": "Aber der Lohn des Jenseits ist wahrlich besser für diejenigen, die glauben und gottesfürchtig sind.",
-    "start": 1341.0,
+    "start": 1341,
     "end": 1345.22
   },
   {
