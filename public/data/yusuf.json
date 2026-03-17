@@ -1,10 +1,90 @@
 [
-  { "ayah": 1, "ar": "الر ۚ تِلْكَ آيَاتُ الْكِتَابِ الْمُبِينِ", "de": "Alif-Lam-Ra. Dies sind die Verse der deutlichen Schrift.", "tr": "Elif, Lâm, Râ. İşte bunlar apaçık Kitab'ın ayetleridir.", "start": 0, "end": 5 },
-  { "ayah": 2, "ar": "إِنَّا أَنزَلْنَاهُ قُرْآنًا عَرَبِيًّا لَعَلَّكُمْ تَعْقِلُونَ", "de": "Wir sandten ihn als arabischen Koran herab, damit ihr begreift.", "tr": "Biz onu, anlayasınız diye Arapça bir Kur'an olarak indirdik.", "start": 5, "end": 12 },
-  { "ayah": 3, "ar": "نَحْنُ نَقُصُّ عَلَيْكَ أَحْسَنَ الْقَصَصِ", "de": "Wir erzählen dir die beste Geschichte.", "tr": "Sana kıssaların en güzelini anlatıyoruz.", "start": 12, "end": 18 },
-  { "ayah": 4, "ar": "إِذْ قَالَ يُوسُفُ لِأَبِيهِ يَا أَبَتِ إِنِّي رَأَيْتُ...", "de": "Als Josef zu seinem Vater sagte: O mein Vater, ich sah ...", "tr": "Yusuf babasına dedi ki: Babacığım! Rüyamda ...", "start": 18, "end": 30 },
-  { "ayah": 5, "ar": "قَالَ يَا بُنَيَّ لَا تَقْصُصْ رُؤْيَاكَ...", "de": "Er sagte: Mein Sohn, erzähle deinen Traum nicht ...", "tr": "Dedi ki: Yavrucuğum! Rüyanı kardeşlerine anlatma ...", "start": 30, "end": 42 },
-  { "ayah": 6, "ar": "وَكَذَٰلِكَ يَجْتَبِيكَ رَبُّكَ...", "de": "So wird dich dein Herr erwählen ...", "tr": "İşte böylece Rabbin seni seçecek ...", "start": 42, "end": 55 },
-  { "ayah": 7, "ar": "لَقَدْ كَانَ فِي يُوسُفَ وَإِخْوَتِهِ آيَاتٌ...", "de": "Wahrlich, in Josef und seinen Brüdern sind Zeichen ...", "tr": "Andolsun Yusuf ve kardeşlerinde ibretler vardır ...", "start": 55, "end": 68 },
-  { "ayah": 8, "ar": "إِذْ قَالُوا لَيُوسُفُ وَأَخُوهُ أَحَبُّ...", "de": "Als sie sagten: Josef und sein Bruder sind unserem Vater lieber ...", "tr": "Dediler ki: Yusuf ve kardeşi babamıza daha sevgili ...", "start": 68, "end": 82 }
+  {
+    "ayah": 0,
+    "ar": "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
+    "tr": "Bismillahirrahmanirrahim.",
+    "de": "—",
+    "start": 0,
+    "end": 0
+  },
+  {
+    "ayah": 1,
+    "ar": "الر تِلْكَ آيَاتُ الْكِتَابِ الْمُبِينِ",
+    "tr": "ElifLâmRâ. (Kur’ân’a dahil olarak inen ve bu sûrede gelecek bütün) sözler, gerçeği açıklayan ve (Hak’tan geldiği) apaçık ortada olan Kitabın âyetleridir.",
+    "de": "—",
+    "start": 0,
+    "end": 0
+  },
+  {
+    "ayah": 2,
+    "ar": "إِنَّا أَنزَلْنَاهُ قُرْآنًا عَرَبِيًّا لَّعَلَّكُمْ تَعْقِلُونَ",
+    "tr": "Biz o Kitabı Arapça bir Kur’ân olarak indiriyoruz ki, düşünüp akledesiniz.",
+    "de": "—",
+    "start": 0,
+    "end": 0
+  },
+  {
+    "ayah": 3,
+    "ar": "نَحْنُ نَقُصُّ عَلَيْكَ أَحْسَنَ الْقَصَصِ بِمَا أَوْحَيْنَا إِلَيْكَ هَذَا الْقُرْآنَ وَإِن كُنتَ مِن قَبْلِهِ لَمِنَ الْغَافِلِينَ",
+    "tr": "(Ey Rasûlüm!) Biz sana bu Kur’ân’ı vahyetmekle, (bu sûrede) geçmişin ibretlerle dolu tarihinden en güzel bir sayfayı anlatacağız. Şurası bir gerçek ki, senin şu ana kadar bundan haberin yoktu.",
+    "de": "—",
+    "start": 0,
+    "end": 0
+  },
+  {
+    "ayah": 4,
+    "ar": "إِذْ قَالَ يُوسُفُ لِأَبِيهِ يَا أَبتِ إِنِّي رَأَيْتُ أَحَدَ عَشَرَ كَوْكَبًا وَالشَّمْسَ وَالْقَمَرَ رَأَيْتُهُمْ لِي سَاجِدِينَ",
+    "tr": "Bir zaman Yusuf babasına, “Babacığım!” dedi: “Ben, rüyamda onbir yıldızla güneşi ve ayı bana secde ederlerken gördüm.”",
+    "de": "—",
+    "start": 0,
+    "end": 0
+  },
+  {
+    "ayah": 5,
+    "ar": "قَالَ يَا بُنَيَّ لاَ تَقْصُصْ رُؤْيَاكَ عَلَى إِخْوَتِكَ فَيَكِيدُواْ لَكَ كَيْدًا إِنَّ الشَّيْطَانَ لِلإِنسَانِ عَدُوٌّ مُّبِينٌ",
+    "tr": "Yakup, “Oğulcuğum,” diye cevap verdi, “bu rüyanı kardeşlerine sakın anlatma. Olur ki, (kıskançlıkla) sana bir tuzak kurmaya kalkarlar. Çünkü şeytan, insan için apaçık bir düşmandır (ve onları böyle bir şeye sevk edebilir).",
+    "de": "—",
+    "start": 0,
+    "end": 0
+  },
+  {
+    "ayah": 6,
+    "ar": "وَكَذَلِكَ يَجْتَبِيكَ رَبُّكَ وَيُعَلِّمُكَ مِن تَأْوِيلِ الأَحَادِيثِ وَيُتِمُّ نِعْمَتَهُ عَلَيْكَ وَعَلَى آلِ يَعْقُوبَ كَمَا أَتَمَّهَا عَلَى أَبَوَيْكَ مِن قَبْلُ إِبْرَاهِيمَ وَإِسْحَقَ إِنَّ رَبَّكَ عَلِيمٌ حَكِيمٌ",
+    "tr": "“Rüyana gelince: Rabbin seni seçecek, sana belli seviyede (rüyalar dahil) eşya ve hadiselerin manâ ve yorumunu öğretecek ve daha önce ataların İbrahim’e ve İshak’a tamamladığı gibi, sana ve Yakup Ailesi’ne de nimetini tamamlayacaktır. Şüphesiz ki Rabbin, (her şeyi) hakkıyla bilendir; her hüküm ve icraatında pek çok hikmetler bulunandır.”",
+    "de": "—",
+    "start": 0,
+    "end": 0
+  },
+  {
+    "ayah": 7,
+    "ar": "لَّقَدْ كَانَ فِي يُوسُفَ وَإِخْوَتِهِ آيَاتٌ لِّلسَّائِلِينَ",
+    "tr": "Gerçeği arayanlar ve sorup ilgilenenler için Yusuf ile kardeşlerinin yaşadıklarında gerçekten çok büyük ibretler vardır.",
+    "de": "—",
+    "start": 0,
+    "end": 0
+  },
+  {
+    "ayah": 8,
+    "ar": "إِذْ قَالُواْ لَيُوسُفُ وَأَخُوهُ أَحَبُّ إِلَى أَبِينَا مِنَّا وَنَحْنُ عُصْبَةٌ إِنَّ أَبَانَا لَفِي ضَلاَلٍ مُّبِينٍ",
+    "tr": "Kardeşleri, aralarında toplanıp şöyle konuştular: “Doğrusu Yusuf ve kardeşi babamızın yanında bizden daha sevgili, oysa biz, güçlü kuvvetli, (dolayısıyla O’nun işine daha çok yarayan) bir ekibiz. Babamız, gerçekten açık bir hata işliyor.”",
+    "de": "—",
+    "start": 0,
+    "end": 0
+  },
+  {
+    "ayah": 9,
+    "ar": "اقْتُلُواْ يُوسُفَ أَوِ اطْرَحُوهُ أَرْضًا يَخْلُ لَكُمْ وَجْهُ أَبِيكُمْ وَتَكُونُواْ مِن بَعْدِهِ قَوْمًا صَالِحِينَ",
+    "tr": "İçlerinden biri, “Yusuf’u öldürün veya onu öyle bir yere bırakın ki (geri dönüp gelemesin). Artık babanızın teveccühü yalnızca size yönelir; sonra da tevbe eder ve salihlerden olursunuz.” dedi.",
+    "de": "—",
+    "start": 0,
+    "end": 0
+  },
+  {
+    "ayah": 10,
+    "ar": "قَالَ قَآئِلٌ مَّنْهُمْ لاَ تَقْتُلُواْ يُوسُفَ وَأَلْقُوهُ فِي غَيَابَةِ الْجُبِّ يَلْتَقِطْهُ بَعْضُ السَّيَّارَةِ إِن كُنتُمْ فَاعِلِينَ",
+    "tr": "Bir diğeri, şu görüşte bulundu: “Hayır, Yusuf’u öldürmeyin. Onu bir kuyuya atın; bakarsınız bir kervan onu alır götürür. Eğer mutlaka bir şey yapacaksanız böyle yapın!”",
+    "de": "—",
+    "start": 0,
+    "end": 0
+  }
 ]
