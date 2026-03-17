@@ -391,13 +391,17 @@ html,body{
 .cell:last-child{ border-right:none; }
 
 .colNo{ color:var(--muted); font-variant-numeric:tabular-nums; }
+/* FIX: Arabic alignment (force RTL + avoid flex bidi glitches) */
 .colAr{
-  font-size:18px;
-  line-height:1.55;
-  text-align:right;
-  justify-content:flex-end; /* ✅ align to right */
-  padding-left:12px;
+  display: block !important;        /* override .cell flex behavior */
+  direction: rtl;
+  unicode-bidi: isolate-override;   /* force RTL run */
+  text-align: right;
+  font-size: 18px;
+  line-height: 1.55;
+  padding-left: 12px;
   font-family: "Noto Naskh Arabic","Amiri","Scheherazade New","Noto Sans Arabic", serif;
+  white-space: normal;
 }
 .colDe, .colTr{ font-size:14px; line-height:1.5; }
 
