@@ -34,8 +34,8 @@ function formatTime(sec) {
   return `${mm}:${String(ss).padStart(2, "0")}.${String(ms).padStart(2, "0")}`;
 }
 
-function isFiniteNumber(x) {
-  return Number.isFinite(Number(x));
+function formatSec(sec) {
+  return Number.isFinite(sec) ? `${sec.toFixed(2)}s` : "—";
 }
 
 // Overlap-safe: if multiple verses match, pick the one with the greatest start (most recent)
@@ -57,7 +57,6 @@ function findActiveVerseIndex(verses, t) {
   }
   if (bestIdx !== -1) return bestIdx;
 
-  // fallback: closest start
   let closest = -1;
   let bestDelta = Infinity;
   for (let i = 0; i < verses.length; i += 1) {
@@ -104,7 +103,6 @@ function SurahList({ surahs, selectedId, query, onQuery, onSelect }) {
                 <div className="surahId">#{s.id}</div>
                 <div className="surahSlug">{s.slug}</div>
               </div>
-
               <div className="surahNames">
                 <div className="surahNameStrong">{s.nameTr}</div>
                 <div className="surahNameMuted">{s.nameDe}</div>
@@ -112,7 +110,6 @@ function SurahList({ surahs, selectedId, query, onQuery, onSelect }) {
                   {s.nameAr}
                 </div>
               </div>
-
               <div className="surahMeta">{s.ayahCount} ayahs</div>
             </button>
           );
@@ -141,12 +138,9 @@ function Timeline({
         const start = Number(v?.start);
         if (!Number.isFinite(start)) return null;
         const leftPct = clamp((start / duration) * 100, 0, 100);
-
+        const ay = Number(v?.ayah);
         const show =
-          idx === activeIndex ||
-          markerEvery === 1 ||
-          (Number(v?.ayah) > 0 && Number(v?.ayah) % markerEvery === 0);
-
+          idx === activeIndex || markerEvery === 1 || (Number.isFinite(ay) && ay > 0 && ay % markerEvery === 0);
         return { idx, leftPct, ayah: v.ayah, show };
       })
       .filter(Boolean)
@@ -168,10 +162,10 @@ function Timeline({
           <span className="mono">{formatTime(currentTime)}</span>
           <span className="muted"> / </span>
           <span className="mono muted">{formatTime(duration)}</span>
+          <span className="muted"> • </span>
+          <span className="mono muted">{formatSec(currentTime)}</span>
         </div>
-        <div className="timelineHint muted">
-          Drag • Click markers • Shift+←/→ ±0.1s
-        </div>
+        <div className="timelineHint muted">Drag • Click markers • Shift+←/→ ±0.1s</div>
       </div>
 
       <div className="timelineTrack" ref={trackRef} onClick={onClickTrack} role="presentation">
@@ -215,6 +209,8 @@ function Timeline({
 
 function PlayerControls({
   isPlaying,
+  currentTime,
+  duration,
   onPlayPause,
   onPrev,
   onNext,
@@ -236,6 +232,16 @@ function PlayerControls({
 }) {
   return (
     <div className="playerControls">
+      <div className="liveTimeBar">
+        <div className="liveTime">
+          <span className="liveLabel">LIVE</span>
+          <span className="liveSec">
+            {Number.isFinite(currentTime) ? currentTime.toFixed(2) : "0.00"}s
+          </span>
+        </div>
+        <div className="liveDur muted">/ {Number.isFinite(duration) ? duration.toFixed(2) : "0.00"}s</div>
+      </div>
+
       <div className="btnRow">
         <button className="btn" type="button" onClick={onPlayPause}>
           {isPlaying ? "Pause" : "Play"}
@@ -311,8 +317,8 @@ function PlayerControls({
       </div>
 
       <div className="kbdHelp muted">
-        Space play/pause • ↑/↓ prev/next • ←/→ ±1s • Shift+←/→ ±0.1s • S start • E end •
-        N end+next • L loop ayah • Shift+L loop AB • A/B set points
+        Space play/pause • ↑/↓ prev/next • ←/→ ±1s • Shift+←/→ ±0.1s • S start • E end • N end+next • L loop ayah •
+        Shift+L loop AB • A/B set points
       </div>
     </div>
   );
@@ -332,6 +338,7 @@ function SyncPanel({
   onRestoreDraft,
   onClearDraft,
   onJumpFirstUntimed,
+  onToast,
 }) {
   const [startInput, setStartInput] = useState("");
   const [endInput, setEndInput] = useState("");
@@ -353,36 +360,54 @@ function SyncPanel({
     setEndInput(Number.isFinite(e) ? String(e) : "");
   }, [activeIndex, active]);
 
+  // auto-apply (debounced)
+  useEffect(() => {
+    if (!active) return;
+    const t = setTimeout(() => {
+      const s = Number(startInput);
+      const e = Number(endInput);
+      const patch = {};
+
+      if (Number.isFinite(s)) patch.start = clamp(s, 0, Math.max(0, duration || s));
+      if (Number.isFinite(e)) patch.end = clamp(e, 0, Math.max(0, duration || e));
+
+      if (
+        Number.isFinite(patch.start) &&
+        Number.isFinite(patch.end) &&
+        patch.end <= patch.start
+      ) {
+        patch.end = patch.start + 0.01;
+      }
+
+      if (Object.keys(patch).length) onUpdateVerse(activeIndex, patch);
+    }, 250);
+
+    return () => clearTimeout(t);
+  }, [startInput, endInput, activeIndex, active, duration, onUpdateVerse]);
+
+  const startNum = Number(startInput);
+  const endNum = Number(endInput);
+  const deltaOk = Number.isFinite(startNum) && Number.isFinite(endNum) && endNum > startNum;
+  const delta = deltaOk ? endNum - startNum : null;
+
   const setStartToT = () => {
     if (!active) return;
     onUpdateVerse(activeIndex, { start: currentTime });
+    onToast?.(`Ayah ${active.ayah} START = ${currentTime.toFixed(2)}s`);
   };
+
   const setEndToT = () => {
     if (!active) return;
     onUpdateVerse(activeIndex, { end: currentTime });
+    onToast?.(`Ayah ${active.ayah} END = ${currentTime.toFixed(2)}s`);
   };
+
   const setEndToTAndNext = () => {
     if (!active) return;
     onUpdateVerse(activeIndex, { end: currentTime });
+    onToast?.(`Ayah ${active.ayah} END = ${currentTime.toFixed(2)}s → next`);
     const nextIdx = Math.min(verses.length - 1, activeIndex + 1);
     onSeekVerse(nextIdx);
-  };
-
-  const applyManual = () => {
-    if (!active) return;
-
-    const s = Number(startInput);
-    const e = Number(endInput);
-    const patch = {};
-
-    if (Number.isFinite(s)) patch.start = clamp(s, 0, Math.max(0, duration || s));
-    if (Number.isFinite(e)) patch.end = clamp(e, 0, Math.max(0, duration || e));
-
-    if (Number.isFinite(patch.start) && Number.isFinite(patch.end) && patch.end <= patch.start) {
-      patch.end = patch.start + 0.01;
-    }
-
-    onUpdateVerse(activeIndex, patch);
   };
 
   const nudgeStart = (d) => {
@@ -418,7 +443,8 @@ function SyncPanel({
         <div className="syncTitle">Sync tools</div>
         <div className="syncMeta muted">
           Active: <span className="mono">{active ? active.ayah : "-"}</span> • t=
-          <span className="mono">{formatTime(currentTime)}</span>
+          <span className="mono">{formatTime(currentTime)}</span> •{" "}
+          <span className="mono muted">{formatSec(currentTime)}</span>
         </div>
       </div>
 
@@ -450,6 +476,7 @@ function SyncPanel({
                   value={startInput}
                   onChange={(e) => setStartInput(e.target.value)}
                   placeholder="sec"
+                  inputMode="decimal"
                 />
               </label>
               <label className="miniLabel">
@@ -459,11 +486,16 @@ function SyncPanel({
                   value={endInput}
                   onChange={(e) => setEndInput(e.target.value)}
                   placeholder="sec"
+                  inputMode="decimal"
                 />
               </label>
-              <button className="btnSmall" type="button" onClick={applyManual} disabled={!active}>
-                Apply
-              </button>
+
+              <div className="syncMetaInline">
+                <div className="autoSaved muted">Auto-save</div>
+                <div className={`deltaPill ${deltaOk ? "" : "muted"}`}>
+                  Δ {deltaOk ? `${delta.toFixed(2)}s` : "—"}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -511,6 +543,7 @@ function SyncPanel({
                 value={jumpAyah}
                 onChange={(e) => setJumpAyah(e.target.value)}
                 placeholder="e.g. 3"
+                inputMode="numeric"
               />
             </label>
             <button className="btnSmall" type="button" onClick={jumpToAyah}>
@@ -524,6 +557,7 @@ function SyncPanel({
                 value={jumpTime}
                 onChange={(e) => setJumpTime(e.target.value)}
                 placeholder="e.g. 194.5"
+                inputMode="decimal"
               />
             </label>
             <button className="btnSmall" type="button" onClick={jumpToTime}>
@@ -573,8 +607,7 @@ function SyncPanel({
           </div>
 
           <div className="syncRow muted">
-            Tip: use <span className="mono">S</span>/<span className="mono">E</span>/<span className="mono">N</span>{" "}
-            while listening. Loop helps on hard edges.
+            Tip: use <span className="mono">S</span>/<span className="mono">E</span>/<span className="mono">N</span> while listening. Loop helps on hard edges.
           </div>
         </div>
       </div>
@@ -638,16 +671,31 @@ export default function App() {
   const [markersOn, setMarkersOn] = useState(true);
   const [markerEvery, setMarkerEvery] = useState(2);
 
-  // AB loop
   const [loopAB, setLoopAB] = useState(false);
   const [aPoint, setAPoint] = useState(null);
   const [bPoint, setBPoint] = useState(null);
 
-  // Refs for keyboard + loop (avoid stale closures)
+  const [toast, setToast] = useState(null);
+  const toastTimerRef = useRef(null);
+
+  const showToast = useCallback((msg) => {
+    if (!msg) return;
+    setToast(String(msg));
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToast(null), 1200);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
+
   const versesRef = useRef(verses);
   const activeIndexRef = useRef(activeIndex);
   const currentTimeRef = useRef(currentTime);
   const durationRef = useRef(duration);
+
   useEffect(() => {
     versesRef.current = verses;
     activeIndexRef.current = activeIndex;
@@ -679,7 +727,6 @@ export default function App() {
     [selectedSurah]
   );
 
-  // Load verses on surah select (no refetch on rate change)
   useEffect(() => {
     let cancelled = false;
 
@@ -722,7 +769,6 @@ export default function App() {
     };
   }, [versesSrc]);
 
-  // Audio listeners
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -751,27 +797,23 @@ export default function App() {
     };
   }, []);
 
-  // Playback rate sync
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
     a.playbackRate = rate;
   }, [rate]);
 
-  const seekTo = useCallback(
-    (t, autoPlay = false) => {
-      const a = audioRef.current;
-      if (!a || !Number.isFinite(t)) return;
+  const seekTo = useCallback((t, autoPlay = false) => {
+    const a = audioRef.current;
+    if (!a || !Number.isFinite(t)) return;
 
-      const d = Number.isFinite(a.duration) ? a.duration : durationRef.current;
-      const nextT = Number.isFinite(d) && d > 0 ? clamp(t, 0, d - 0.01) : Math.max(0, t);
+    const d = Number.isFinite(a.duration) ? a.duration : durationRef.current;
+    const nextT = Number.isFinite(d) && d > 0 ? clamp(t, 0, d - 0.01) : Math.max(0, t);
 
-      a.currentTime = nextT;
-      setCurrentTime(nextT);
-      if (autoPlay) a.play().catch(() => {});
-    },
-    []
-  );
+    a.currentTime = nextT;
+    setCurrentTime(nextT);
+    if (autoPlay) a.play().catch(() => {});
+  }, []);
 
   const seekVerse = useCallback(
     (idx, autoPlay = true) => {
@@ -850,7 +892,9 @@ export default function App() {
   }, [draftKey, verses]);
 
   const exportJson = useCallback(() => {
-    const blob = new Blob([JSON.stringify(versesRef.current, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(versesRef.current, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -907,16 +951,18 @@ export default function App() {
 
   const jumpFirstUntimed = useCallback(() => {
     const vs = versesRef.current;
-    const idx = vs.findIndex((v) => !isFiniteNumber(v?.start) || !isFiniteNumber(v?.end));
+    const idx = vs.findIndex(
+      (v) => !Number.isFinite(Number(v?.start)) || !Number.isFinite(Number(v?.end))
+    );
     if (idx >= 0) seekVerse(idx, true);
   }, [seekVerse]);
 
-  // Loop: ayah + AB
+  // Loop behavior
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
 
-    if (loopAB && aPoint != null && bPoint != null && Number.isFinite(aPoint) && Number.isFinite(bPoint)) {
+    if (loopAB && aPoint != null && bPoint != null) {
       const lo = Math.min(aPoint, bPoint);
       const hi = Math.max(aPoint, bPoint);
       if (currentTime >= hi) {
@@ -956,11 +1002,12 @@ export default function App() {
   const setA = useCallback(() => setAPoint(currentTimeRef.current), []);
   const setB = useCallback(() => setBPoint(currentTimeRef.current), []);
 
-  // Keyboard shortcuts (sync-focused + AB)
+  // Keyboard shortcuts
   useEffect(() => {
     const onKey = (e) => {
       const tag = document.activeElement?.tagName?.toLowerCase();
-      const typing = tag === "input" || tag === "textarea" || document.activeElement?.isContentEditable;
+      const typing =
+        tag === "input" || tag === "textarea" || document.activeElement?.isContentEditable;
       if (typing) return;
 
       if (e.code === "Space") {
@@ -968,7 +1015,6 @@ export default function App() {
         onPlayPause();
         return;
       }
-
       if (e.key === "ArrowLeft") {
         e.preventDefault();
         nudge(e.shiftKey ? -0.1 : -1);
@@ -991,34 +1037,37 @@ export default function App() {
       }
 
       const k = e.key.toLowerCase();
-
       if (k === "l") {
         if (e.shiftKey) setLoopAB((x) => !x);
         else setLoopAyah((x) => !x);
         return;
       }
-
       if (k === "a") {
         setA();
+        showToast(`Set A = ${currentTimeRef.current.toFixed(2)}s`);
         return;
       }
       if (k === "b") {
         setB();
+        showToast(`Set B = ${currentTimeRef.current.toFixed(2)}s`);
         return;
       }
 
-      // Sync hotkeys: S/E/N
       const idx = activeIndexRef.current;
       const vs = versesRef.current;
       const t = currentTimeRef.current;
 
       if (idx >= 0 && vs[idx]) {
+        const ay = vs[idx].ayah;
         if (k === "s") {
           updateVerse(idx, { start: t });
+          showToast(`Ayah ${ay} START = ${t.toFixed(2)}s`);
         } else if (k === "e") {
           updateVerse(idx, { end: t });
+          showToast(`Ayah ${ay} END = ${t.toFixed(2)}s`);
         } else if (k === "n") {
           updateVerse(idx, { end: t });
+          showToast(`Ayah ${ay} END = ${t.toFixed(2)}s → next`);
           const nextIdx = Math.min(vs.length - 1, idx + 1);
           seekVerse(nextIdx, true);
         }
@@ -1027,7 +1076,7 @@ export default function App() {
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onPlayPause, nudge, prevAyah, nextAyah, updateVerse, seekVerse, setA, setB]);
+  }, [onPlayPause, nudge, prevAyah, nextAyah, updateVerse, seekVerse, setA, setB, showToast]);
 
   const header = selectedSurah ? (
     <div className="surahHeader">
@@ -1062,11 +1111,13 @@ export default function App() {
         {header}
         {error ? <div className="errorBox">{error}</div> : null}
 
-        <div className="playerCard">
+        <div className="playerCard playerSticky">
           <audio ref={audioRef} src={audioSrc} preload="metadata" />
 
           <PlayerControls
             isPlaying={isPlaying}
+            currentTime={currentTime}
+            duration={duration}
             onPlayPause={onPlayPause}
             onPrev={prevAyah}
             onNext={nextAyah}
@@ -1112,7 +1163,10 @@ export default function App() {
             onRestoreDraft={restoreDraft}
             onClearDraft={clearDraft}
             onJumpFirstUntimed={jumpFirstUntimed}
+            onToast={showToast}
           />
+
+          {toast ? <div className="toast">{toast}</div> : null}
         </div>
 
         <VersesTable
