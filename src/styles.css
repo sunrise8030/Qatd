@@ -136,20 +136,35 @@ html, body {
   backdrop-filter: blur(10px);
 }
 
+.playerCard.collapsed {
+  padding-bottom: 10px;
+}
+
 .playerControls { display: grid; gap: 8px; }
 
 .liveTimeBar{
   display:flex;
-  align-items:baseline;
+  align-items:center;
   justify-content:space-between;
   gap:12px;
   padding: 6px 2px 0;
+  flex-wrap: wrap;
 }
+
 .liveTime{
   display:flex;
   align-items:baseline;
   gap:10px;
+  flex-wrap: wrap;
 }
+
+.liveActions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap: wrap;
+}
+
 .liveLabel{
   font-size:12px;
   color: var(--muted);
@@ -158,12 +173,14 @@ html, body {
   padding: 4px 8px;
   border-radius: 999px;
 }
+
 .liveSec{
   font-variant-numeric: tabular-nums;
   font-size: 26px;
   font-weight: 800;
   letter-spacing: 0.2px;
 }
+
 .liveDur{
   font-variant-numeric: tabular-nums;
   font-size: 12px;
@@ -181,6 +198,10 @@ html, body {
 .btn { border-radius: 12px; padding: 10px 12px; }
 .btnSmall { border-radius: 10px; padding: 8px 10px; }
 .btnTiny { border-radius: 10px; padding: 6px 8px; font-size: 12px; }
+
+.btnToggle{
+  border-color: rgba(255,255,255,0.14);
+}
 
 .btn:hover, .btnSmall:hover, .btnTiny:hover { border-color: rgba(255,255,255,0.16); }
 
