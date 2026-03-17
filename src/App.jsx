@@ -38,7 +38,6 @@ function formatSec(sec) {
   return Number.isFinite(sec) ? `${sec.toFixed(2)}s` : "—";
 }
 
-// Overlap-safe
 function findActiveVerseIndex(verses, t) {
   if (!Array.isArray(verses) || verses.length === 0 || !Number.isFinite(t)) return -1;
 
@@ -57,7 +56,6 @@ function findActiveVerseIndex(verses, t) {
   }
   if (bestIdx !== -1) return bestIdx;
 
-  // fallback: closest start
   let closest = -1;
   let bestDelta = Infinity;
   for (let i = 0; i < verses.length; i += 1) {
@@ -70,6 +68,28 @@ function findActiveVerseIndex(verses, t) {
     }
   }
   return closest;
+}
+
+function getStickyPlayerBottomPx() {
+  const el = document.querySelector(".playerSticky");
+  if (!el) return 0;
+  const r = el.getBoundingClientRect();
+  return Math.max(0, r.bottom);
+}
+
+function ensureRowVisible(el, padding = 10) {
+  if (!el) return;
+  const r = el.getBoundingClientRect();
+  const stickyBottom = getStickyPlayerBottomPx();
+  const topSafe = stickyBottom + padding;
+  const bottomSafe = window.innerHeight - padding;
+
+  const hiddenUnderSticky = r.top < topSafe;
+  const belowViewport = r.bottom > bottomSafe;
+
+  if (hiddenUnderSticky || belowViewport) {
+    el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
 }
 
 function SurahList({ surahs, selectedId, query, onQuery, onSelect }) {
@@ -325,6 +345,56 @@ function PlayerControls({
   );
 }
 
+function base64EncodeUtf8(text) {
+  return btoa(unescape(encodeURIComponent(text)));
+}
+
+async function githubGetFileSha({ owner, repo, path, token, branch }) {
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path).replaceAll(
+    "%2F",
+    "/"
+  )}?ref=${encodeURIComponent(branch)}`;
+  const res = await fetch(url, {
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${token}`,
+      "X-GitHub-Api-Version": "2022-11-28",
+    },
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`GitHub GET failed: ${res.status} ${res.statusText} :: ${t}`);
+  }
+  const data = await res.json();
+  return data?.sha || null;
+}
+
+async function githubPutFile({ owner, repo, path, token, branch, message, contentBase64, sha }) {
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path).replaceAll("%2F", "/")}`;
+  const body = {
+    message,
+    content: contentBase64,
+    branch,
+    ...(sha ? { sha } : {}),
+  };
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${token}`,
+      "X-GitHub-Api-Version": "2022-11-28",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`GitHub PUT failed: ${res.status} ${res.statusText} :: ${t}`);
+  }
+  return res.json();
+}
+
 function SyncPanel({
   verses,
   activeIndex,
@@ -339,12 +409,54 @@ function SyncPanel({
   onRestoreDraft,
   onClearDraft,
   onJumpFirstUntimed,
+
+  // ✅ NEW: commit hook
+  onCommitGithub,
 }) {
   const [startInput, setStartInput] = useState("");
   const [endInput, setEndInput] = useState("");
   const [jumpAyah, setJumpAyah] = useState("");
   const [jumpTime, setJumpTime] = useState("");
   const fileRef = useRef(null);
+
+  // ✅ commit UI
+  const [commitOpen, setCommitOpen] = useState(false);
+  const [ghRepo, setGhRepo] = useState("");
+  const [ghBranch, setGhBranch] = useState("main");
+  const [ghPath, setGhPath] = useState("public/data/yusuf.json");
+  const [ghToken, setGhToken] = useState("");
+  const [ghMsg, setGhMsg] = useState("");
+  const [ghRemember, setGhRemember] = useState(true);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("qatd:ghcfg");
+      if (!saved) return;
+      const cfg = JSON.parse(saved);
+      if (cfg?.repo) setGhRepo(cfg.repo);
+      if (cfg?.branch) setGhBranch(cfg.branch);
+      if (cfg?.path) setGhPath(cfg.path);
+      if (cfg?.token) setGhToken(cfg.token);
+      if (cfg?.remember === false) setGhRemember(false);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (!ghRemember) {
+        localStorage.removeItem("qatd:ghcfg");
+        return;
+      }
+      localStorage.setItem(
+        "qatd:ghcfg",
+        JSON.stringify({ repo: ghRepo, branch: ghBranch, path: ghPath, token: ghToken, remember: true })
+      );
+    } catch {
+      // ignore
+    }
+  }, [ghRepo, ghBranch, ghPath, ghToken, ghRemember]);
 
   const active = activeIndex >= 0 ? verses[activeIndex] : null;
 
@@ -416,12 +528,44 @@ function SyncPanel({
     onSeek(t);
   };
 
+  const doCommit = async () => {
+    const repoStr = ghRepo.trim();
+    const token = ghToken.trim();
+    const path = ghPath.trim();
+    const branch = ghBranch.trim() || "main";
+
+    if (!repoStr.includes("/")) {
+      alert("Repo format: owner/repo");
+      return;
+    }
+    if (!token) {
+      alert("Token required (fine-grained PAT: Contents RW on that repo).");
+      return;
+    }
+    if (!path) {
+      alert("File path required (e.g. public/data/yusuf.json)");
+      return;
+    }
+
+    const [owner, repo] = repoStr.split("/", 2);
+    const jsonText = JSON.stringify(verses, null, 2);
+    const content = base64EncodeUtf8(jsonText);
+
+    const message =
+      ghMsg.trim() ||
+      `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
+
+    await onCommitGithub({ owner, repo, path, branch, token, message, content });
+    setGhMsg("");
+  };
+
   return (
     <div className="syncPanel">
       <div className="syncHeader">
         <div className="syncTitle">Sync tools</div>
         <div className="syncMeta muted">
-          Active: <span className="mono">{active ? active.ayah : "-"}</span> • t=<span className="mono">{formatSec(currentTime)}</span>
+          Active: <span className="mono">{active ? active.ayah : "-"}</span> • t=
+          <span className="mono">{formatSec(currentTime)}</span>
           <span className="muted"> (</span>
           <span className="mono muted">{formatTime(currentTime)}</span>
           <span className="muted">)</span>
@@ -446,11 +590,21 @@ function SyncPanel({
             <div className="syncInputs">
               <label className="miniLabel">
                 start
-                <input className="miniInput" value={startInput} onChange={(e) => setStartInput(e.target.value)} inputMode="decimal" />
+                <input
+                  className="miniInput"
+                  value={startInput}
+                  onChange={(e) => setStartInput(e.target.value)}
+                  inputMode="decimal"
+                />
               </label>
               <label className="miniLabel">
                 end
-                <input className="miniInput" value={endInput} onChange={(e) => setEndInput(e.target.value)} inputMode="decimal" />
+                <input
+                  className="miniInput"
+                  value={endInput}
+                  onChange={(e) => setEndInput(e.target.value)}
+                  inputMode="decimal"
+                />
               </label>
 
               <div className="syncMetaInline">
@@ -463,18 +617,34 @@ function SyncPanel({
           <div className="syncRow">
             <div className="syncNudgeGroup">
               <span className="muted">Start:</span>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.1)} disabled={!active}>-0.1</button>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.1)} disabled={!active}>+0.1</button>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.5)} disabled={!active}>-0.5</button>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.5)} disabled={!active}>+0.5</button>
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.1)} disabled={!active}>
+                -0.1
+              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.1)} disabled={!active}>
+                +0.1
+              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.5)} disabled={!active}>
+                -0.5
+              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.5)} disabled={!active}>
+                +0.5
+              </button>
             </div>
 
             <div className="syncNudgeGroup">
               <span className="muted">End:</span>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.1)} disabled={!active}>-0.1</button>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.1)} disabled={!active}>+0.1</button>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.5)} disabled={!active}>-0.5</button>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.5)} disabled={!active}>+0.5</button>
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.1)} disabled={!active}>
+                -0.1
+              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.1)} disabled={!active}>
+                +0.1
+              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.5)} disabled={!active}>
+                -0.5
+              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.5)} disabled={!active}>
+                +0.5
+              </button>
             </div>
           </div>
         </div>
@@ -485,26 +655,42 @@ function SyncPanel({
               Jump ayah
               <input className="miniInput" value={jumpAyah} onChange={(e) => setJumpAyah(e.target.value)} inputMode="numeric" />
             </label>
-            <button className="btnSmall" type="button" onClick={jumpToAyah}>Go</button>
+            <button className="btnSmall" type="button" onClick={jumpToAyah}>
+              Go
+            </button>
 
             <label className="miniLabel">
               Jump time (s)
               <input className="miniInput" value={jumpTime} onChange={(e) => setJumpTime(e.target.value)} inputMode="decimal" />
             </label>
-            <button className="btnSmall" type="button" onClick={jumpToTime}>Seek</button>
+            <button className="btnSmall" type="button" onClick={jumpToTime}>
+              Seek
+            </button>
           </div>
 
           <div className="syncRow">
-            <button className="btnSmall" type="button" onClick={onJumpFirstUntimed}>First untimed</button>
+            <button className="btnSmall" type="button" onClick={onJumpFirstUntimed}>
+              First untimed
+            </button>
             <div className="divider" />
-            <button className="btnSmall" type="button" onClick={onSaveDraft}>Save draft</button>
-            <button className="btnSmall" type="button" onClick={onRestoreDraft}>Restore draft</button>
-            <button className="btnSmall" type="button" onClick={onClearDraft}>Clear draft</button>
+            <button className="btnSmall" type="button" onClick={onSaveDraft}>
+              Save draft
+            </button>
+            <button className="btnSmall" type="button" onClick={onRestoreDraft}>
+              Restore draft
+            </button>
+            <button className="btnSmall" type="button" onClick={onClearDraft}>
+              Clear draft
+            </button>
           </div>
 
           <div className="syncRow">
-            <button className="btnSmall" type="button" onClick={onExportJson}>Export JSON</button>
-            <button className="btnSmall" type="button" onClick={() => fileRef.current?.click()}>Import JSON</button>
+            <button className="btnSmall" type="button" onClick={onExportJson}>
+              Export JSON
+            </button>
+            <button className="btnSmall" type="button" onClick={() => fileRef.current?.click()}>
+              Import JSON
+            </button>
             <input
               ref={fileRef}
               type="file"
@@ -517,6 +703,64 @@ function SyncPanel({
               }}
             />
           </div>
+
+          <div className="syncRow">
+            <button className="btnSmall" type="button" onClick={() => setCommitOpen((x) => !x)}>
+              {commitOpen ? "Hide commit" : "Commit to GitHub"}
+            </button>
+          </div>
+
+          {commitOpen ? (
+            <>
+              <div className="syncRow">
+                <label className="miniLabel">
+                  Repo (owner/repo)
+                  <input className="miniInput" value={ghRepo} onChange={(e) => setGhRepo(e.target.value)} placeholder="yourname/yourrepo" />
+                </label>
+                <label className="miniLabel">
+                  Branch
+                  <input className="miniInput" value={ghBranch} onChange={(e) => setGhBranch(e.target.value)} placeholder="main" />
+                </label>
+              </div>
+
+              <div className="syncRow">
+                <label className="miniLabel">
+                  File path in repo
+                  <input className="miniInput" value={ghPath} onChange={(e) => setGhPath(e.target.value)} placeholder="public/data/yusuf.json" />
+                </label>
+                <label className="miniLabel">
+                  Commit message
+                  <input className="miniInput" value={ghMsg} onChange={(e) => setGhMsg(e.target.value)} placeholder="optional" />
+                </label>
+              </div>
+
+              <div className="syncRow">
+                <label className="miniLabel" style={{ minWidth: 290 }}>
+                  GitHub token (PAT)
+                  <input
+                    className="miniInput"
+                    value={ghToken}
+                    onChange={(e) => setGhToken(e.target.value)}
+                    placeholder="ghp_... / github_pat_..."
+                    type="password"
+                  />
+                </label>
+
+                <label className="chip" title="Store token in localStorage on this browser">
+                  <input type="checkbox" checked={ghRemember} onChange={(e) => setGhRemember(e.target.checked)} />
+                  Remember token
+                </label>
+
+                <button className="btnSmall" type="button" onClick={doCommit}>
+                  Commit now
+                </button>
+              </div>
+
+              <div className="syncRow muted">
+                Note: Needs PAT with <span className="mono">Contents: Read/Write</span> on that repo.
+              </div>
+            </>
+          ) : null}
         </div>
       </div>
     </div>
@@ -585,7 +829,6 @@ export default function App() {
 
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
 
-  // ✅ page title for link previews etc.
   useEffect(() => {
     document.title = "Türkçe-Almanca Kur’an Player";
   }, []);
@@ -887,11 +1130,16 @@ export default function App() {
     }
   }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint]);
 
-  // ✅ ACTIVE INDEX update ONLY (NO scrollIntoView)
+  // ✅ active index update + "nearest" ensure visible (no page-top jump)
   useEffect(() => {
     if (!verses.length) return;
     const idx = findActiveVerseIndex(verses, currentTime);
-    if (idx !== activeIndex) setActiveIndex(idx);
+    if (idx === -1 || idx === activeIndex) return;
+
+    setActiveIndex(idx);
+
+    const el = rowRefs.current[idx];
+    if (el) ensureRowVisible(el, 10);
   }, [currentTime, verses, activeIndex]);
 
   const setA = useCallback(() => setAPoint(currentTimeRef.current), []);
@@ -963,6 +1211,19 @@ export default function App() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onPlayPause, nudge, prevAyah, nextAyah, updateVerse, seekVerse, setA, setB]);
+
+  // ✅ GitHub commit action (called by SyncPanel)
+  const commitGithub = useCallback(async ({ owner, repo, path, branch, token, message, content }) => {
+    try {
+      setError("");
+      const sha = await githubGetFileSha({ owner, repo, path, token, branch });
+      await githubPutFile({ owner, repo, path, token, branch, message, contentBase64: content, sha });
+      alert(`Committed ✅ ${owner}/${repo}:${branch}/${path}`);
+    } catch (e) {
+      console.error(e);
+      alert(String(e?.message || e));
+    }
+  }, []);
 
   const header = selectedSurah ? (
     <div className="surahHeader">
@@ -1053,6 +1314,7 @@ export default function App() {
                 onRestoreDraft={restoreDraft}
                 onClearDraft={clearDraft}
                 onJumpFirstUntimed={jumpFirstUntimed}
+                onCommitGithub={commitGithub}
               />
             </>
           )}
