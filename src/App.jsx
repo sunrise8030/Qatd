@@ -22,11 +22,19 @@ function resolvePublicUrl(maybeAbsolutePath) {
 }
 
 function normalizeForSearch(value) {
-  // Unicode property escape kullanmıyoruz (bazı ortamlarda parse error → boş sayfa).
   return String(value ?? "")
     .toLowerCase()
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "");
+}
+
+function clamp(n, min, max) {
+  return Math.max(min, Math.min(max, n));
+}
+
+function safeText(v) {
+  const s = String(v ?? "").trim();
+  return s ? s : "—";
 }
 
 function findActiveVerseIndex(verses, t) {
@@ -105,7 +113,7 @@ function SurahList({ surahs, selectedSlug, query, onQueryChange, onSelect }) {
   );
 }
 
-function AudioControls({ audioRef, audioSrc, isPlaying, onTogglePlay }) {
+function AudioControls({ audioRef, audioSrc, isPlaying, onTogglePlay, currentTime }) {
   return (
     <section className="audioPanel" aria-label="Audio player">
       <audio ref={audioRef} src={audioSrc} preload="metadata" />
@@ -113,28 +121,116 @@ function AudioControls({ audioRef, audioSrc, isPlaying, onTogglePlay }) {
         <button type="button" className="primaryButton" onClick={onTogglePlay}>
           {isPlaying ? "Pause" : "Play"}
         </button>
-        <div className="audioHint">Tip: click a verse to seek &amp; play from its timestamp.</div>
+        <div className="audioHint">t={currentTime.toFixed(2)}s • click verse to seek & play</div>
       </div>
     </section>
   );
 }
 
-function VerseTable({ verses, activeIndex, onVerseClick, rowRefs }) {
+function SyncPanel({
+  enabled,
+  onToggle,
+  autoNext,
+  onToggleAutoNext,
+  autoSeek,
+  onToggleAutoSeek,
+  currentTime,
+  activeVerse,
+  onSetStart,
+  onSetEnd,
+  onNudgeStart,
+  onNudgeEnd,
+  onDownloadJson,
+}) {
+  return (
+    <section className="syncPanel" aria-label="Sync tools">
+      <div className="syncHeader">
+        <label className="syncToggle">
+          <input type="checkbox" checked={enabled} onChange={(e) => onToggle(e.target.checked)} />
+          <span>Sync Mode</span>
+        </label>
+
+        <label className="syncToggle">
+          <input
+            type="checkbox"
+            checked={autoNext}
+            disabled={!enabled}
+            onChange={(e) => onToggleAutoNext(e.target.checked)}
+          />
+          <span>Auto-next</span>
+        </label>
+
+        <label className="syncToggle">
+          <input
+            type="checkbox"
+            checked={autoSeek}
+            disabled={!enabled || !autoNext}
+            onChange={(e) => onToggleAutoSeek(e.target.checked)}
+          />
+          <span>Auto-seek</span>
+        </label>
+
+        <div className="syncTime">Current: {currentTime.toFixed(2)}s</div>
+      </div>
+
+      <div className="syncBody">
+        <div className="syncRow">
+          <div className="syncLabel">
+            Active ayah: <strong>{activeVerse?.ayah ?? "—"}</strong>
+          </div>
+          <div className="syncLabel">
+            start: <strong>{Number(activeVerse?.start ?? 0).toFixed(2)}</strong> • end:{" "}
+            <strong>{Number(activeVerse?.end ?? 0).toFixed(2)}</strong>
+          </div>
+        </div>
+
+        <div className="syncButtons">
+          <button type="button" className="ghostButton" disabled={!enabled || !activeVerse} onClick={onSetStart}>
+            Set START = t
+          </button>
+          <button type="button" className="ghostButton" disabled={!enabled || !activeVerse} onClick={onSetEnd}>
+            Set END = t (next)
+          </button>
+
+          <span className="syncSpacer" />
+
+          <button type="button" className="ghostButton" disabled={!enabled || !activeVerse} onClick={() => onNudgeStart(-0.1)}>
+            Start -0.1
+          </button>
+          <button type="button" className="ghostButton" disabled={!enabled || !activeVerse} onClick={() => onNudgeStart(0.1)}>
+            Start +0.1
+          </button>
+          <button type="button" className="ghostButton" disabled={!enabled || !activeVerse} onClick={() => onNudgeEnd(-0.1)}>
+            End -0.1
+          </button>
+          <button type="button" className="ghostButton" disabled={!enabled || !activeVerse} onClick={() => onNudgeEnd(0.1)}>
+            End +0.1
+          </button>
+
+          <span className="syncSpacer" />
+
+          <button type="button" className="primaryButton" disabled={!enabled} onClick={onDownloadJson}>
+            Export JSON
+          </button>
+        </div>
+
+        <div className="syncHelp">
+          Bu mp3 ile senkron: ayet başında <em>Set START</em>, bitince <em>Set END</em>. Auto-next açıkken END sonrası
+          otomatik sonraki ayete geçer (Auto-seek açıksa audio da oraya gider).
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function VerseTable({ verses, activeIndex, onVerseClick, rowRefs, syncEnabled, onPickActiveForSync }) {
   return (
     <section className="versesPanel" aria-label="Verses">
       <div className="tableHeader" role="row">
-        <div className="cell cellNo" role="columnheader">
-          No
-        </div>
-        <div className="cell cellAr" role="columnheader">
-          Arabic
-        </div>
-        <div className="cell cellDe" role="columnheader">
-          German
-        </div>
-        <div className="cell cellTr" role="columnheader">
-          Turkish
-        </div>
+        <div className="cell cellNo" role="columnheader">No</div>
+        <div className="cell cellAr" role="columnheader">Arabic</div>
+        <div className="cell cellDe" role="columnheader">German</div>
+        <div className="cell cellTr" role="columnheader">Turkish</div>
       </div>
 
       <div className="tableBody" role="rowgroup">
@@ -145,7 +241,10 @@ function VerseTable({ verses, activeIndex, onVerseClick, rowRefs }) {
               key={`${v.ayah}-${idx}`}
               type="button"
               className={`row ${isActive ? "rowActive" : ""}`}
-              onClick={() => onVerseClick(v, idx)}
+              onClick={() => {
+                if (syncEnabled) onPickActiveForSync(idx);
+                onVerseClick(v, idx);
+              }}
               ref={(el) => {
                 if (el) rowRefs.current.set(idx, el);
                 else rowRefs.current.delete(idx);
@@ -154,17 +253,27 @@ function VerseTable({ verses, activeIndex, onVerseClick, rowRefs }) {
               title={`Seek to ${Number(v.start).toFixed(2)}s`}
             >
               <div className="cell cellNo">{v.ayah}</div>
-              <div className="cell cellAr" dir="rtl" lang="ar">
-                {v.ar}
-              </div>
-              <div className="cell cellDe">{v.de}</div>
-              <div className="cell cellTr">{v.tr}</div>
+              <div className="cell cellAr" dir="rtl" lang="ar">{safeText(v.ar)}</div>
+              <div className="cell cellDe">{safeText(v.de)}</div>
+              <div className="cell cellTr">{safeText(v.tr)}</div>
             </button>
           );
         })}
       </div>
     </section>
   );
+}
+
+function downloadJson(filename, data) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 export default function App() {
@@ -177,6 +286,12 @@ export default function App() {
 
   const [activeIndex, setActiveIndex] = useState(-1);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+
+  const [syncEnabled, setSyncEnabled] = useState(true);
+  const [syncIndex, setSyncIndex] = useState(-1);
+  const [autoNext, setAutoNext] = useState(true);
+  const [autoSeek, setAutoSeek] = useState(true);
 
   const audioRef = useRef(null);
   const rowRefs = useRef(new Map());
@@ -185,11 +300,8 @@ export default function App() {
   const filteredSurahs = useMemo(() => {
     const q = normalizeForSearch(query.trim());
     if (!q) return SURAH_METADATA;
-
     return SURAH_METADATA.filter((s) => {
-      const haystack = [s.slug, s.id, s.nameTr, s.nameDe, s.nameAr]
-        .map((x) => normalizeForSearch(x))
-        .join(" | ");
+      const haystack = [s.slug, s.id, s.nameTr, s.nameDe, s.nameAr].map(normalizeForSearch).join(" | ");
       return haystack.includes(q);
     });
   }, [query]);
@@ -203,6 +315,8 @@ export default function App() {
     } catch {}
     setIsPlaying(false);
     setActiveIndex(-1);
+    setCurrentTime(0);
+    setSyncIndex(-1);
     lastScrolledIndexRef.current = -1;
   }, []);
 
@@ -218,6 +332,7 @@ export default function App() {
       setErrorMsg("");
       setVerses([]);
       setActiveIndex(-1);
+      setSyncIndex(-1);
       lastScrolledIndexRef.current = -1;
 
       stopAndResetAudio();
@@ -229,7 +344,10 @@ export default function App() {
         if (!res.ok) throw new Error(`Fetch failed (${res.status}) for ${url}`);
         const json = await res.json();
         if (!Array.isArray(json)) throw new Error("Invalid JSON: expected an array of verses");
-        if (!aborted) setVerses(json);
+        if (!aborted) {
+          setVerses(json);
+          setSyncIndex(json.length ? 0 : -1);
+        }
       } catch (err) {
         console.error("[Surah load error]", err);
         if (!aborted) setErrorMsg("Failed to load verses. Check console for details.");
@@ -250,6 +368,7 @@ export default function App() {
 
     const onTimeUpdate = () => {
       const t = audio.currentTime || 0;
+      setCurrentTime(t);
       const idx = findActiveVerseIndex(verses, t);
       setActiveIndex((prev) => (prev === idx ? prev : idx));
     };
@@ -312,6 +431,82 @@ export default function App() {
     }
   };
 
+  const activeVerseForSync = useMemo(() => {
+    if (syncIndex < 0) return null;
+    return verses[syncIndex] ?? null;
+  }, [verses, syncIndex]);
+
+  const updateVerseTiming = (idx, patch) => {
+    setVerses((prev) => {
+      if (!prev[idx]) return prev;
+      const next = prev.slice();
+      next[idx] = { ...next[idx], ...patch };
+      return next;
+    });
+  };
+
+  const setStartToNow = () => {
+    if (syncIndex < 0) return;
+    const s = clamp(currentTime, 0, Number.POSITIVE_INFINITY);
+    const end = Number(verses[syncIndex]?.end);
+    const safeEnd = Number.isFinite(end) ? Math.max(end, s + 0.01) : s + 0.01;
+    updateVerseTiming(syncIndex, { start: s, end: safeEnd });
+  };
+
+  const setEndToNow = async () => {
+    if (syncIndex < 0) return;
+
+    const e = clamp(currentTime, 0, Number.POSITIVE_INFINITY);
+    const start = Number(verses[syncIndex]?.start);
+    const safeStart = Number.isFinite(start) ? Math.min(start, e - 0.01) : Math.max(0, e - 0.5);
+    const safeEnd = Math.max(e, safeStart + 0.01);
+
+    updateVerseTiming(syncIndex, { start: Math.max(0, safeStart), end: safeEnd });
+
+    if (!autoNext) return;
+
+    const nextIdx = syncIndex + 1;
+    if (!verses[nextIdx]) return;
+
+    setSyncIndex(nextIdx);
+
+    if (!autoSeek) return;
+
+    const audio = audioRef.current;
+    const nextStart = Number(verses[nextIdx]?.start);
+    if (!audio || !Number.isFinite(nextStart)) return;
+
+    try {
+      audio.currentTime = Math.max(0, nextStart);
+      await audio.play();
+    } catch (err) {
+      console.error("[Auto-seek/play error]", err);
+    }
+  };
+
+  const nudgeStart = (delta) => {
+    if (syncIndex < 0) return;
+    const start = Number(verses[syncIndex]?.start);
+    const end = Number(verses[syncIndex]?.end);
+    const s = Number.isFinite(start) ? start + delta : delta;
+    const e = Number.isFinite(end) ? Math.max(end, s + 0.01) : s + 0.5;
+    updateVerseTiming(syncIndex, { start: Math.max(0, s), end: e });
+  };
+
+  const nudgeEnd = (delta) => {
+    if (syncIndex < 0) return;
+    const start = Number(verses[syncIndex]?.start);
+    const end = Number(verses[syncIndex]?.end);
+    const e = Number.isFinite(end) ? end + delta : delta;
+    const s = Number.isFinite(start) ? Math.min(start, e - 0.01) : Math.max(0, e - 0.5);
+    updateVerseTiming(syncIndex, { start: Math.max(0, s), end: Math.max(e, s + 0.01) });
+  };
+
+  const downloadSyncedJson = () => {
+    if (!selectedSurah) return;
+    downloadJson(`${selectedSurah.slug}.json`, verses);
+  };
+
   if (!selectedSurah) return <div style={{ padding: 16 }}>Select a surah.</div>;
 
   return (
@@ -350,12 +545,41 @@ export default function App() {
           </div>
         ) : null}
 
-        <AudioControls audioRef={audioRef} audioSrc={audioSrc} isPlaying={isPlaying} onTogglePlay={togglePlay} />
+        <AudioControls
+          audioRef={audioRef}
+          audioSrc={audioSrc}
+          isPlaying={isPlaying}
+          onTogglePlay={togglePlay}
+          currentTime={currentTime}
+        />
+
+        <SyncPanel
+          enabled={syncEnabled}
+          onToggle={setSyncEnabled}
+          autoNext={autoNext}
+          onToggleAutoNext={setAutoNext}
+          autoSeek={autoSeek}
+          onToggleAutoSeek={setAutoSeek}
+          currentTime={currentTime}
+          activeVerse={activeVerseForSync}
+          onSetStart={setStartToNow}
+          onSetEnd={setEndToNow}
+          onNudgeStart={nudgeStart}
+          onNudgeEnd={nudgeEnd}
+          onDownloadJson={downloadSyncedJson}
+        />
 
         {loading ? (
           <div className="loadingState">Loading verses…</div>
         ) : (
-          <VerseTable verses={verses} activeIndex={activeIndex} onVerseClick={handleVerseClick} rowRefs={rowRefs} />
+          <VerseTable
+            verses={verses}
+            activeIndex={activeIndex}
+            onVerseClick={handleVerseClick}
+            rowRefs={rowRefs}
+            syncEnabled={syncEnabled}
+            onPickActiveForSync={setSyncIndex}
+          />
         )}
       </main>
     </div>
