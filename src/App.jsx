@@ -38,7 +38,6 @@ function formatSec(sec) {
   return Number.isFinite(sec) ? `${sec.toFixed(2)}s` : "—";
 }
 
-// Overlap-safe
 function findActiveVerseIndex(verses, t) {
   if (!Array.isArray(verses) || verses.length === 0 || !Number.isFinite(t)) return -1;
 
@@ -230,28 +229,21 @@ function PlayerControls({
       <div className="liveTimeBar">
         <div className="liveTime">
           <span className="liveLabel">LIVE</span>
-          <span className="liveSec">
-            {Number.isFinite(currentTime) ? currentTime.toFixed(2) : "0.00"}s
-          </span>
+          <span className="liveSec">{Number.isFinite(currentTime) ? currentTime.toFixed(2) : "0.00"}s</span>
           <span className="liveDur muted">/ {Number.isFinite(duration) ? duration.toFixed(2) : "0.00"}s</span>
         </div>
 
         <div className="liveActions">
-          <button className="btnSmall" type="button" onClick={onPlayPause}>
+          <button className="btnPrimary" type="button" onClick={onPlayPause}>
             {isPlaying ? "Pause" : "Play"}
           </button>
-          <button className="btnSmall" type="button" onClick={onPrev}>
+          <button className="btnSmall" type="button" onClick={onPrev} title="Prev ayah">
             ◀
           </button>
-          <button className="btnSmall" type="button" onClick={onNext}>
+          <button className="btnSmall" type="button" onClick={onNext} title="Next ayah">
             ▶
           </button>
-          <button
-            className="btnSmall btnToggle"
-            type="button"
-            onClick={onToggleCollapsed}
-            title="Toggle tools"
-          >
+          <button className="btnSmall btnToggle" type="button" onClick={onToggleCollapsed} title="Toggle tools">
             {collapsed ? "Open tools" : "Close tools"}
           </button>
         </div>
@@ -443,8 +435,7 @@ function SyncPanel({
       <div className="syncHeader">
         <div className="syncTitle">Sync tools</div>
         <div className="syncMeta muted">
-          Active: <span className="mono">{active ? active.ayah : "-"}</span> • t=
-          <span className="mono">{formatSec(currentTime)}</span>
+          Active: <span className="mono">{active ? active.ayah : "-"}</span> • t=<span className="mono">{formatSec(currentTime)}</span>
           <span className="muted"> (</span>
           <span className="mono muted">{formatTime(currentTime)}</span>
           <span className="muted">)</span>
@@ -669,11 +660,9 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(null);
 
-  // ✅ default collapsed (tools hidden)
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
 
   useEffect(() => {
-    // persist toggle (optional)
     try {
       const raw = localStorage.getItem("qatd:toolsCollapsed");
       if (raw === "0") setToolsCollapsed(false);
@@ -765,7 +754,6 @@ export default function App() {
           setVerses(data);
         }
       } catch (e) {
-        // eslint-disable-next-line no-console
         console.error("[verses] load failed:", e);
         if (!cancelled) setError(`Verses could not be loaded: ${e.message}`);
       }
@@ -984,7 +972,7 @@ export default function App() {
     }
   }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint]);
 
-  // Active verse + autoscroll
+  // Active verse update + autoscroll (✅ block:start to avoid sticky overlap)
   useEffect(() => {
     if (!verses.length) return;
     const idx = findActiveVerseIndex(verses, currentTime);
@@ -992,7 +980,7 @@ export default function App() {
       setActiveIndex(idx);
       const el = rowRefs.current[idx];
       if (el && typeof el.scrollIntoView === "function") {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     }
   }, [currentTime, verses, activeIndex]);
