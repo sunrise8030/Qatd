@@ -8,11 +8,8 @@
   --accent:rgba(99,179,237,1);
   --danger:rgba(255,120,120,0.18);
 
-  /* column widths for gradient background */
-  --w-no: 70px;
-  --w-ar: 1.1fr;
-  --w-de: 1fr;
-  --w-tr: 1fr;
+  /* ✅ sticky player offset for scrollIntoView */
+  --sticky-offset: 240px;
 }
 
 *{ box-sizing:border-box; }
@@ -110,7 +107,6 @@ html,body{
   padding:10px 12px;
 }
 
-/* Player */
 .playerCard{
   margin-top:14px;
   border:1px solid var(--border);
@@ -119,12 +115,14 @@ html,body{
   padding:12px;
   position:relative;
 }
+
 .playerSticky{
   position:sticky;
   top:10px;
   z-index:20;
   backdrop-filter:blur(10px);
 }
+
 .playerControls{ display:grid; gap:10px; }
 
 .liveTimeBar{
@@ -134,18 +132,21 @@ html,body{
   gap:12px;
   flex-wrap:wrap;
 }
+
 .liveTime{
   display:flex;
   align-items:baseline;
   gap:10px;
   flex-wrap:wrap;
 }
+
 .liveActions{
   display:flex;
   align-items:center;
   gap:8px;
   flex-wrap:wrap;
 }
+
 .liveLabel{
   font-size:12px;
   color:var(--muted);
@@ -154,37 +155,48 @@ html,body{
   padding:4px 8px;
   border-radius:999px;
 }
+
 .liveSec{
   font-variant-numeric:tabular-nums;
   font-size:26px;
   font-weight:800;
+  letter-spacing:0.2px;
 }
+
 .liveDur{
   font-variant-numeric:tabular-nums;
   font-size:12px;
 }
 
-.btnSmall,.btnTiny,.btnPrimary{
+.btn, .btnSmall, .btnTiny, .btnPrimary{
   border:1px solid var(--border);
   background:rgba(0,0,0,0.22);
   color:var(--text);
   cursor:pointer;
-  border-radius:10px;
 }
-.btnSmall{ padding:8px 10px; }
-.btnTiny{ padding:6px 8px; font-size:12px; }
+
+.btn{ border-radius:12px; padding:10px 12px; }
+.btnSmall{ border-radius:10px; padding:8px 10px; }
+.btnTiny{ border-radius:10px; padding:6px 8px; font-size:12px; }
+
+/* ✅ Bigger Play/Pause */
 .btnPrimary{
-  padding:12px 18px;
   border-radius:12px;
+  padding:12px 18px;
   font-size:14px;
-  font-weight:800;
+  font-weight:750;
   border-color: rgba(99,179,237,0.35);
   box-shadow: 0 0 0 2px rgba(99,179,237,0.10) inset;
 }
+
 .btnToggle{ border-color:rgba(255,255,255,0.14); }
-.btnSmall:hover,.btnTiny:hover,.btnPrimary:hover{ border-color:rgba(255,255,255,0.16); }
+
+.btn:hover, .btnSmall:hover, .btnTiny:hover, .btnPrimary:hover{
+  border-color:rgba(255,255,255,0.16);
+}
 
 .btnRow{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+
 .divider{ width:1px; height:28px; background:var(--border); margin:0 2px; }
 
 .chip{
@@ -231,6 +243,7 @@ html,body{
   border-radius:14px;
   padding:10px;
 }
+
 .timelineTop{
   display:flex;
   justify-content:space-between;
@@ -238,6 +251,7 @@ html,body{
   flex-wrap:wrap;
   margin-bottom:8px;
 }
+
 .timelineTrack{
   position:relative;
   height:10px;
@@ -246,7 +260,9 @@ html,body{
   overflow:hidden;
   cursor:pointer;
 }
+
 .timelineProgress{ height:100%; background:rgba(99,179,237,0.65); width:0%; }
+
 .timelineMarker{
   position:absolute;
   top:-4px;
@@ -258,6 +274,7 @@ html,body{
   transform:translateX(-50%);
   cursor:pointer;
 }
+
 .timelineMarker.active{ background:rgba(99,179,237,0.55); border-color:rgba(99,179,237,0.9); }
 .timelineSlider{ width:100%; margin-top:10px; }
 
@@ -269,6 +286,7 @@ html,body{
   border-radius:14px;
   padding:12px;
 }
+
 .syncHeader{
   display:flex;
   justify-content:space-between;
@@ -276,19 +294,25 @@ html,body{
   flex-wrap:wrap;
   margin-bottom:10px;
 }
+
 .syncTitle{ font-weight:650; }
 .syncMeta{ font-size:12px; }
+
 .syncGrid{ display:grid; grid-template-columns:1.2fr 1fr; gap:10px; }
 @media (max-width:980px){ .syncGrid{ grid-template-columns:1fr; } }
+
 .syncBlock{
   border:1px solid rgba(255,255,255,0.06);
   border-radius:12px;
   padding:10px;
   background:rgba(255,255,255,0.02);
 }
+
 .syncRow{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:8px; }
 .syncInputs{ display:flex; gap:8px; flex-wrap:wrap; align-items:end; }
+
 .miniLabel{ display:grid; gap:6px; font-size:12px; color:var(--muted); }
+
 .miniInput{
   width:140px;
   padding:8px 10px;
@@ -298,8 +322,10 @@ html,body{
   color:var(--text);
   outline:none;
 }
+
 .syncMetaInline{ display:flex; align-items:end; gap:10px; padding:0 2px 2px; }
 .autoSaved{ align-self:end; font-size:12px; padding:8px 6px; }
+
 .deltaPill{
   font-variant-numeric:tabular-nums;
   font-size:12px;
@@ -308,6 +334,7 @@ html,body{
   padding:6px 10px;
   border-radius:999px;
 }
+
 .syncNudgeGroup{
   display:inline-flex;
   align-items:center;
@@ -317,7 +344,24 @@ html,body{
   padding:6px 8px;
   background:rgba(0,0,0,0.14);
 }
+
 .hiddenFile{ display:none; }
+
+/* Toast */
+.toast{
+  position:absolute;
+  right:12px;
+  bottom:12px;
+  border:1px solid rgba(255,255,255,0.14);
+  background:rgba(0,0,0,0.55);
+  backdrop-filter:blur(10px);
+  padding:10px 12px;
+  border-radius:14px;
+  font-size:13px;
+  color:var(--text);
+  max-width:min(520px, 90vw);
+  box-shadow:0 10px 30px rgba(0,0,0,0.35);
+}
 
 /* Table */
 .tableWrap{
@@ -328,12 +372,11 @@ html,body{
   overflow:auto;
 }
 
-/* keep wide but clean */
 .tableHeader, .row{ min-width:980px; }
 
 .tableHeader{
   display:grid;
-  grid-template-columns: var(--w-no) var(--w-ar) var(--w-de) var(--w-tr);
+  grid-template-columns:70px 1.1fr 1fr 1fr;
   padding:12px;
   border-bottom:1px solid var(--border);
   color:var(--muted);
@@ -345,77 +388,52 @@ html,body{
   z-index:2;
 }
 
-/* ✅ gradient column shading in ONE layer (fixes "kayık" / boxy look) */
 .row{
   display:grid;
-  grid-template-columns: var(--w-no) var(--w-ar) var(--w-de) var(--w-tr);
+  grid-template-columns:70px 1.1fr 1fr 1fr;
   border-bottom:1px solid rgba(255,255,255,0.06);
   padding:10px 12px;
   text-align:left;
   color:inherit;
   cursor:pointer;
-  align-items: stretch;
 
-  background:
-    linear-gradient(90deg,
-      rgba(0,0,0,0.00) 0%,
-      rgba(0,0,0,0.00) calc(var(--w-no)),
-      rgba(99,179,237,0.06) calc(var(--w-no)),
-      rgba(99,179,237,0.06) calc(var(--w-no) + 33.333%),
-      rgba(255,255,255,0.03) calc(var(--w-no) + 33.333%),
-      rgba(255,255,255,0.03) calc(var(--w-no) + 66.666%),
-      rgba(255,255,255,0.04) calc(var(--w-no) + 66.666%),
-      rgba(255,255,255,0.04) 100%
-    );
+  /* ✅ ensure scrollIntoView doesn't land under sticky player */
+  scroll-margin-top: var(--sticky-offset);
 }
 
-/* ✅ stronger zebra */
-.tableBody .row:nth-child(odd){ background-color: rgba(255,255,255,0.05); }
-.tableBody .row:nth-child(even){ background-color: rgba(0,0,0,0.18); }
+/* ✅ zebra striping */
+.tableBody .row:nth-child(odd){ background: rgba(255,255,255,0.02); }
+.tableBody .row:nth-child(even){ background: rgba(0,0,0,0.10); }
 
-.row:hover{ filter: brightness(1.08); }
+.row:hover{ background: rgba(255,255,255,0.04); }
 
-/* active stays */
+/* active stays same */
 .row.active{
-  background-color: rgba(99,179,237,0.14) !important;
+  background: rgba(99,179,237,0.12) !important;
   box-shadow: 0 0 0 1px rgba(99,179,237,0.35) inset;
 }
 
 .cell{
   padding-right:10px;
-  border-right:1px solid rgba(255,255,255,0.06);
-  display:flex;
-  align-items:flex-start;   /* ✅ consistent top alignment */
-  min-height: 100%;
+  border-right: 1px solid rgba(255,255,255,0.06);
 }
+
 .cell:last-child{ border-right:none; }
 
+/* ✅ column toning */
+.row .colAr, .tableHeader .colAr{ background: rgba(99,179,237,0.05); }
+.row .colDe, .tableHeader .colDe{ background: rgba(255,255,255,0.02); }
+.row .colTr, .tableHeader .colTr{ background: rgba(255,255,255,0.03); }
+
 .colNo{ color:var(--muted); font-variant-numeric:tabular-nums; }
-/* FIX: Arabic alignment (force RTL + avoid flex bidi glitches) */
-.colAr{
-  display: block !important;        /* override .cell flex behavior */
-  direction: rtl;
-  unicode-bidi: isolate-override;   /* force RTL run */
-  text-align: right;
-  font-size: 18px;
-  line-height: 1.55;
-  padding-left: 12px;
-  font-family: "Noto Naskh Arabic","Amiri","Scheherazade New","Noto Sans Arabic", serif;
-  white-space: normal;
-}
+.colAr{ font-size:18px; line-height:1.55; text-align:right; padding-left:12px; }
 .colDe, .colTr{ font-size:14px; line-height:1.5; }
 
 @media (max-width:700px){
-  :root{
-    --w-no: 60px;
-    --w-ar: 1.2fr;
-    --w-tr: 1fr;
-    --w-de: 0fr;
-  }
-
+  :root{ --sticky-offset: 190px; }
   .tableHeader, .row{
     min-width:680px;
-    grid-template-columns: var(--w-no) var(--w-ar) var(--w-tr);
+    grid-template-columns:60px 1.2fr 1fr;
   }
   .colDe{ display:none; }
 }
