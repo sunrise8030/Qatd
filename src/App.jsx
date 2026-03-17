@@ -1,5 +1,5 @@
 // src/App.jsx
-import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
 
 const SURAHES = [
@@ -26,11 +26,16 @@ function clamp(n, a, b) {
 }
 
 function formatTime(sec) {
-  if (!Number.isFinite(sec)) return "0:00";
-  const s = Math.max(0, Math.floor(sec));
+  if (!Number.isFinite(sec)) return "0:00.00";
+  const s = Math.max(0, sec);
   const mm = Math.floor(s / 60);
-  const ss = String(s % 60).padStart(2, "0");
-  return `${mm}:${ss}`;
+  const ss = Math.floor(s % 60);
+  const ms = Math.floor((s - Math.floor(s)) * 100);
+  return `${mm}:${String(ss).padStart(2, "0")}.${String(ms).padStart(2, "0")}`;
+}
+
+function isFiniteNumber(x) {
+  return Number.isFinite(Number(x));
 }
 
 // Overlap-safe: if multiple verses match, pick the one with the greatest start (most recent)
@@ -125,6 +130,7 @@ function Timeline({
   onSeek,
   onSeekVerse,
   showMarkers,
+  markerEvery,
 }) {
   const trackRef = useRef(null);
 
@@ -135,10 +141,17 @@ function Timeline({
         const start = Number(v?.start);
         if (!Number.isFinite(start)) return null;
         const leftPct = clamp((start / duration) * 100, 0, 100);
-        return { idx, leftPct, ayah: v.ayah };
+
+        const show =
+          idx === activeIndex ||
+          markerEvery === 1 ||
+          (Number(v?.ayah) > 0 && Number(v?.ayah) % markerEvery === 0);
+
+        return { idx, leftPct, ayah: v.ayah, show };
       })
-      .filter(Boolean);
-  }, [verses, duration, showMarkers]);
+      .filter(Boolean)
+      .filter((m) => m.show);
+  }, [verses, duration, showMarkers, activeIndex, markerEvery]);
 
   const onClickTrack = (e) => {
     if (!trackRef.current || !Number.isFinite(duration) || duration <= 0) return;
@@ -157,7 +170,7 @@ function Timeline({
           <span className="mono muted">{formatTime(duration)}</span>
         </div>
         <div className="timelineHint muted">
-          Drag slider • Click markers • Shift+←/→ = ±0.1s
+          Drag • Click markers • Shift+←/→ ±0.1s
         </div>
       </div>
 
@@ -207,11 +220,19 @@ function PlayerControls({
   onNext,
   onNudge,
   loopAyah,
-  onToggleLoop,
+  onToggleLoopAyah,
+  loopAB,
+  onToggleLoopAB,
   rate,
   onRate,
   markersOn,
   onToggleMarkers,
+  markerEvery,
+  onMarkerEvery,
+  aPoint,
+  bPoint,
+  onSetA,
+  onSetB,
 }) {
   return (
     <div className="playerControls">
@@ -243,14 +264,37 @@ function PlayerControls({
 
         <div className="divider" />
 
-        <label className="chip">
-          <input type="checkbox" checked={loopAyah} onChange={onToggleLoop} />
+        <label className="chip" title="Loop current ayah (L)">
+          <input type="checkbox" checked={loopAyah} onChange={onToggleLoopAyah} />
           Loop ayah (L)
         </label>
+
+        <label className="chip" title="Loop A..B (Shift+L)">
+          <input type="checkbox" checked={loopAB} onChange={onToggleLoopAB} />
+          Loop A..B (Shift+L)
+        </label>
+
+        <button className="btnSmall" type="button" onClick={onSetA} title="Set A (A)">
+          Set A {aPoint != null ? `(${formatTime(aPoint)})` : ""}
+        </button>
+        <button className="btnSmall" type="button" onClick={onSetB} title="Set B (B)">
+          Set B {bPoint != null ? `(${formatTime(bPoint)})` : ""}
+        </button>
+
+        <div className="divider" />
 
         <label className="chip">
           <input type="checkbox" checked={markersOn} onChange={onToggleMarkers} />
           Markers
+        </label>
+
+        <label className="rate">
+          Markers:
+          <select value={markerEvery} onChange={(e) => onMarkerEvery(Number(e.target.value))}>
+            <option value={1}>All</option>
+            <option value={2}>Every 2</option>
+            <option value={5}>Every 5</option>
+          </select>
         </label>
 
         <div className="divider" />
@@ -267,7 +311,272 @@ function PlayerControls({
       </div>
 
       <div className="kbdHelp muted">
-        Space play/pause • ↑/↓ prev/next ayah • ←/→ ±1s • Shift+←/→ ±0.1s • L loop
+        Space play/pause • ↑/↓ prev/next • ←/→ ±1s • Shift+←/→ ±0.1s • S start • E end •
+        N end+next • L loop ayah • Shift+L loop AB • A/B set points
+      </div>
+    </div>
+  );
+}
+
+function SyncPanel({
+  verses,
+  activeIndex,
+  currentTime,
+  duration,
+  onUpdateVerse,
+  onSeek,
+  onSeekVerse,
+  onExportJson,
+  onImportJson,
+  onSaveDraft,
+  onRestoreDraft,
+  onClearDraft,
+  onJumpFirstUntimed,
+}) {
+  const [startInput, setStartInput] = useState("");
+  const [endInput, setEndInput] = useState("");
+  const [jumpAyah, setJumpAyah] = useState("");
+  const [jumpTime, setJumpTime] = useState("");
+  const fileRef = useRef(null);
+
+  const active = activeIndex >= 0 ? verses[activeIndex] : null;
+
+  useEffect(() => {
+    if (!active) {
+      setStartInput("");
+      setEndInput("");
+      return;
+    }
+    const s = Number(active.start);
+    const e = Number(active.end);
+    setStartInput(Number.isFinite(s) ? String(s) : "");
+    setEndInput(Number.isFinite(e) ? String(e) : "");
+  }, [activeIndex, active]);
+
+  const setStartToT = () => {
+    if (!active) return;
+    onUpdateVerse(activeIndex, { start: currentTime });
+  };
+  const setEndToT = () => {
+    if (!active) return;
+    onUpdateVerse(activeIndex, { end: currentTime });
+  };
+  const setEndToTAndNext = () => {
+    if (!active) return;
+    onUpdateVerse(activeIndex, { end: currentTime });
+    const nextIdx = Math.min(verses.length - 1, activeIndex + 1);
+    onSeekVerse(nextIdx);
+  };
+
+  const applyManual = () => {
+    if (!active) return;
+
+    const s = Number(startInput);
+    const e = Number(endInput);
+    const patch = {};
+
+    if (Number.isFinite(s)) patch.start = clamp(s, 0, Math.max(0, duration || s));
+    if (Number.isFinite(e)) patch.end = clamp(e, 0, Math.max(0, duration || e));
+
+    if (Number.isFinite(patch.start) && Number.isFinite(patch.end) && patch.end <= patch.start) {
+      patch.end = patch.start + 0.01;
+    }
+
+    onUpdateVerse(activeIndex, patch);
+  };
+
+  const nudgeStart = (d) => {
+    if (!active) return;
+    const s = Number(active.start);
+    if (!Number.isFinite(s)) return;
+    onUpdateVerse(activeIndex, { start: Math.max(0, s + d) });
+  };
+
+  const nudgeEnd = (d) => {
+    if (!active) return;
+    const e = Number(active.end);
+    if (!Number.isFinite(e)) return;
+    onUpdateVerse(activeIndex, { end: Math.max(0, e + d) });
+  };
+
+  const jumpToAyah = () => {
+    const n = Number(jumpAyah);
+    if (!Number.isFinite(n)) return;
+    const idx = verses.findIndex((v) => Number(v?.ayah) === n);
+    if (idx >= 0) onSeekVerse(idx);
+  };
+
+  const jumpToTime = () => {
+    const t = Number(jumpTime);
+    if (!Number.isFinite(t)) return;
+    onSeek(t);
+  };
+
+  return (
+    <div className="syncPanel">
+      <div className="syncHeader">
+        <div className="syncTitle">Sync tools</div>
+        <div className="syncMeta muted">
+          Active: <span className="mono">{active ? active.ayah : "-"}</span> • t=
+          <span className="mono">{formatTime(currentTime)}</span>
+        </div>
+      </div>
+
+      <div className="syncGrid">
+        <div className="syncBlock">
+          <div className="syncRow">
+            <button className="btnSmall" type="button" onClick={setStartToT} disabled={!active}>
+              Set START = t (S)
+            </button>
+            <button className="btnSmall" type="button" onClick={setEndToT} disabled={!active}>
+              Set END = t (E)
+            </button>
+            <button
+              className="btnSmall"
+              type="button"
+              onClick={setEndToTAndNext}
+              disabled={!active}
+            >
+              END=t + Next (N)
+            </button>
+          </div>
+
+          <div className="syncRow">
+            <div className="syncInputs">
+              <label className="miniLabel">
+                start
+                <input
+                  className="miniInput"
+                  value={startInput}
+                  onChange={(e) => setStartInput(e.target.value)}
+                  placeholder="sec"
+                />
+              </label>
+              <label className="miniLabel">
+                end
+                <input
+                  className="miniInput"
+                  value={endInput}
+                  onChange={(e) => setEndInput(e.target.value)}
+                  placeholder="sec"
+                />
+              </label>
+              <button className="btnSmall" type="button" onClick={applyManual} disabled={!active}>
+                Apply
+              </button>
+            </div>
+          </div>
+
+          <div className="syncRow">
+            <div className="syncNudgeGroup">
+              <span className="muted">Start:</span>
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.1)} disabled={!active}>
+                -0.1
+              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.1)} disabled={!active}>
+                +0.1
+              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.5)} disabled={!active}>
+                -0.5
+              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.5)} disabled={!active}>
+                +0.5
+              </button>
+            </div>
+
+            <div className="syncNudgeGroup">
+              <span className="muted">End:</span>
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.1)} disabled={!active}>
+                -0.1
+              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.1)} disabled={!active}>
+                +0.1
+              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.5)} disabled={!active}>
+                -0.5
+              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.5)} disabled={!active}>
+                +0.5
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="syncBlock">
+          <div className="syncRow">
+            <label className="miniLabel">
+              Jump ayah
+              <input
+                className="miniInput"
+                value={jumpAyah}
+                onChange={(e) => setJumpAyah(e.target.value)}
+                placeholder="e.g. 3"
+              />
+            </label>
+            <button className="btnSmall" type="button" onClick={jumpToAyah}>
+              Go
+            </button>
+
+            <label className="miniLabel">
+              Jump time (s)
+              <input
+                className="miniInput"
+                value={jumpTime}
+                onChange={(e) => setJumpTime(e.target.value)}
+                placeholder="e.g. 194.5"
+              />
+            </label>
+            <button className="btnSmall" type="button" onClick={jumpToTime}>
+              Seek
+            </button>
+          </div>
+
+          <div className="syncRow">
+            <button className="btnSmall" type="button" onClick={onJumpFirstUntimed}>
+              First untimed
+            </button>
+            <div className="divider" />
+            <button className="btnSmall" type="button" onClick={onSaveDraft}>
+              Save draft
+            </button>
+            <button className="btnSmall" type="button" onClick={onRestoreDraft}>
+              Restore draft
+            </button>
+            <button className="btnSmall" type="button" onClick={onClearDraft}>
+              Clear draft
+            </button>
+          </div>
+
+          <div className="syncRow">
+            <button className="btnSmall" type="button" onClick={onExportJson}>
+              Export JSON
+            </button>
+            <button
+              className="btnSmall"
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              title="Import a previously exported JSON"
+            >
+              Import JSON
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/json"
+              className="hiddenFile"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) onImportJson(f);
+                e.target.value = "";
+              }}
+            />
+          </div>
+
+          <div className="syncRow muted">
+            Tip: use <span className="mono">S</span>/<span className="mono">E</span>/<span className="mono">N</span>{" "}
+            while listening. Loop helps on hard edges.
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -327,14 +636,26 @@ export default function App() {
   const [loopAyah, setLoopAyah] = useState(false);
   const [rate, setRate] = useState(1);
   const [markersOn, setMarkersOn] = useState(true);
+  const [markerEvery, setMarkerEvery] = useState(2);
 
-  // refs to avoid stale closures in key handler
+  // AB loop
+  const [loopAB, setLoopAB] = useState(false);
+  const [aPoint, setAPoint] = useState(null);
+  const [bPoint, setBPoint] = useState(null);
+
+  // Refs for keyboard + loop (avoid stale closures)
   const versesRef = useRef(verses);
   const activeIndexRef = useRef(activeIndex);
+  const currentTimeRef = useRef(currentTime);
+  const durationRef = useRef(duration);
   useEffect(() => {
     versesRef.current = verses;
     activeIndexRef.current = activeIndex;
-  }, [verses, activeIndex]);
+    currentTimeRef.current = currentTime;
+    durationRef.current = duration;
+  }, [verses, activeIndex, currentTime, duration]);
+
+  const draftKey = useMemo(() => `qatd:draft:${selectedSurah.slug}`, [selectedSurah.slug]);
 
   const filteredSurahs = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -358,7 +679,7 @@ export default function App() {
     [selectedSurah]
   );
 
-  // load verses on surah change
+  // Load verses on surah select (no refetch on rate change)
   useEffect(() => {
     let cancelled = false;
 
@@ -368,6 +689,11 @@ export default function App() {
     setCurrentTime(0);
     setDuration(0);
     setIsPlaying(false);
+
+    setLoopAyah(false);
+    setLoopAB(false);
+    setAPoint(null);
+    setBPoint(null);
 
     const a = audioRef.current;
     if (a) {
@@ -396,7 +722,7 @@ export default function App() {
     };
   }, [versesSrc]);
 
-  // audio listeners
+  // Audio listeners
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -425,7 +751,7 @@ export default function App() {
     };
   }, []);
 
-  // rate sync
+  // Playback rate sync
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -437,20 +763,20 @@ export default function App() {
       const a = audioRef.current;
       if (!a || !Number.isFinite(t)) return;
 
-      const d = Number.isFinite(a.duration) ? a.duration : duration;
-      const nextT =
-        Number.isFinite(d) && d > 0 ? clamp(t, 0, d - 0.01) : Math.max(0, t);
+      const d = Number.isFinite(a.duration) ? a.duration : durationRef.current;
+      const nextT = Number.isFinite(d) && d > 0 ? clamp(t, 0, d - 0.01) : Math.max(0, t);
 
       a.currentTime = nextT;
       setCurrentTime(nextT);
       if (autoPlay) a.play().catch(() => {});
     },
-    [duration]
+    []
   );
 
   const seekVerse = useCallback(
     (idx, autoPlay = true) => {
-      const v = versesRef.current[idx];
+      const vs = versesRef.current;
+      const v = vs[idx];
       if (!v) return;
       const start = Number(v.start);
       if (!Number.isFinite(start)) return;
@@ -478,7 +804,8 @@ export default function App() {
   const prevAyah = useCallback(() => {
     const vs = versesRef.current;
     if (!vs.length) return;
-    const idx = activeIndexRef.current > 0 ? activeIndexRef.current - 1 : 0;
+    const cur = activeIndexRef.current;
+    const idx = cur > 0 ? cur - 1 : 0;
     seekVerse(idx, true);
   }, [seekVerse]);
 
@@ -490,10 +817,132 @@ export default function App() {
     seekVerse(idx, true);
   }, [seekVerse]);
 
-  // active verse + autoscroll + loop
+  const updateVerse = useCallback((idx, patch) => {
+    setVerses((prev) => {
+      if (!prev[idx]) return prev;
+      const next = [...prev];
+      const v = { ...next[idx], ...patch };
+
+      const s = Number(v.start);
+      const e = Number(v.end);
+
+      if (Number.isFinite(s)) v.start = Math.max(0, s);
+      if (Number.isFinite(e)) v.end = Math.max(0, e);
+      if (Number.isFinite(v.start) && Number.isFinite(v.end) && v.end <= v.start) {
+        v.end = v.start + 0.01;
+      }
+
+      next[idx] = v;
+      return next;
+    });
+  }, []);
+
+  // Autosave draft (debounced)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem(draftKey, JSON.stringify(versesRef.current));
+      } catch (e) {
+        console.error("[draft] autosave failed:", e);
+      }
+    }, 500);
+    return () => clearTimeout(t);
+  }, [draftKey, verses]);
+
+  const exportJson = useCallback(() => {
+    const blob = new Blob([JSON.stringify(versesRef.current, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${selectedSurah.slug}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }, [selectedSurah.slug]);
+
+  const importJsonFile = useCallback((file) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result || ""));
+        if (!Array.isArray(parsed)) throw new Error("Imported JSON must be an array");
+        setVerses(parsed);
+        setError("");
+      } catch (e) {
+        console.error("[import] failed:", e);
+        setError(`Import failed: ${e.message}`);
+      }
+    };
+    reader.readAsText(file);
+  }, []);
+
+  const saveDraft = useCallback(() => {
+    try {
+      localStorage.setItem(draftKey, JSON.stringify(versesRef.current));
+    } catch (e) {
+      console.error("[draft] save failed:", e);
+    }
+  }, [draftKey]);
+
+  const restoreDraft = useCallback(() => {
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return;
+      setVerses(parsed);
+    } catch (e) {
+      console.error("[draft] restore failed:", e);
+    }
+  }, [draftKey]);
+
+  const clearDraft = useCallback(() => {
+    try {
+      localStorage.removeItem(draftKey);
+    } catch (e) {
+      console.error("[draft] clear failed:", e);
+    }
+  }, [draftKey]);
+
+  const jumpFirstUntimed = useCallback(() => {
+    const vs = versesRef.current;
+    const idx = vs.findIndex((v) => !isFiniteNumber(v?.start) || !isFiniteNumber(v?.end));
+    if (idx >= 0) seekVerse(idx, true);
+  }, [seekVerse]);
+
+  // Loop: ayah + AB
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a) return;
+
+    if (loopAB && aPoint != null && bPoint != null && Number.isFinite(aPoint) && Number.isFinite(bPoint)) {
+      const lo = Math.min(aPoint, bPoint);
+      const hi = Math.max(aPoint, bPoint);
+      if (currentTime >= hi) {
+        a.currentTime = lo;
+        a.play().catch(() => {});
+      }
+      return;
+    }
+
+    if (loopAyah && verses.length) {
+      const idx = findActiveVerseIndex(verses, currentTime);
+      if (idx >= 0) {
+        const v = verses[idx];
+        const s = Number(v?.start);
+        const e = Number(v?.end);
+        if (Number.isFinite(s) && Number.isFinite(e) && e > s && currentTime >= e) {
+          a.currentTime = s;
+          a.play().catch(() => {});
+        }
+      }
+    }
+  }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint]);
+
+  // Active verse update + autoscroll
   useEffect(() => {
     if (!verses.length) return;
-
     const idx = findActiveVerseIndex(verses, currentTime);
     if (idx !== activeIndex) {
       setActiveIndex(idx);
@@ -502,52 +951,83 @@ export default function App() {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     }
+  }, [currentTime, verses, activeIndex]);
 
-    if (loopAyah && idx >= 0) {
-      const v = verses[idx];
-      const s = Number(v?.start);
-      const e = Number(v?.end);
-      if (Number.isFinite(s) && Number.isFinite(e) && e > s && currentTime >= e) {
-        const a = audioRef.current;
-        if (a) {
-          a.currentTime = s;
-          a.play().catch(() => {});
-        }
-      }
-    }
-  }, [currentTime, verses, activeIndex, loopAyah]);
+  const setA = useCallback(() => setAPoint(currentTimeRef.current), []);
+  const setB = useCallback(() => setBPoint(currentTimeRef.current), []);
 
-  // keyboard shortcuts
+  // Keyboard shortcuts (sync-focused + AB)
   useEffect(() => {
     const onKey = (e) => {
       const tag = document.activeElement?.tagName?.toLowerCase();
-      const typing =
-        tag === "input" || tag === "textarea" || document.activeElement?.isContentEditable;
+      const typing = tag === "input" || tag === "textarea" || document.activeElement?.isContentEditable;
       if (typing) return;
 
       if (e.code === "Space") {
         e.preventDefault();
         onPlayPause();
-      } else if (e.key === "ArrowLeft") {
+        return;
+      }
+
+      if (e.key === "ArrowLeft") {
         e.preventDefault();
         nudge(e.shiftKey ? -0.1 : -1);
-      } else if (e.key === "ArrowRight") {
+        return;
+      }
+      if (e.key === "ArrowRight") {
         e.preventDefault();
         nudge(e.shiftKey ? 0.1 : 1);
-      } else if (e.key === "ArrowUp") {
+        return;
+      }
+      if (e.key === "ArrowUp") {
         e.preventDefault();
         prevAyah();
-      } else if (e.key === "ArrowDown") {
+        return;
+      }
+      if (e.key === "ArrowDown") {
         e.preventDefault();
         nextAyah();
-      } else if (e.key.toLowerCase() === "l") {
-        setLoopAyah((x) => !x);
+        return;
+      }
+
+      const k = e.key.toLowerCase();
+
+      if (k === "l") {
+        if (e.shiftKey) setLoopAB((x) => !x);
+        else setLoopAyah((x) => !x);
+        return;
+      }
+
+      if (k === "a") {
+        setA();
+        return;
+      }
+      if (k === "b") {
+        setB();
+        return;
+      }
+
+      // Sync hotkeys: S/E/N
+      const idx = activeIndexRef.current;
+      const vs = versesRef.current;
+      const t = currentTimeRef.current;
+
+      if (idx >= 0 && vs[idx]) {
+        if (k === "s") {
+          updateVerse(idx, { start: t });
+        } else if (k === "e") {
+          updateVerse(idx, { end: t });
+        } else if (k === "n") {
+          updateVerse(idx, { end: t });
+          const nextIdx = Math.min(vs.length - 1, idx + 1);
+          seekVerse(nextIdx, true);
+        }
       }
     };
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onPlayPause, nudge, prevAyah, nextAyah]);
+  }, [onPlayPause, nudge, prevAyah, nextAyah, updateVerse, seekVerse, setA, setB]);
 
   const header = selectedSurah ? (
     <div className="surahHeader">
@@ -592,11 +1072,19 @@ export default function App() {
             onNext={nextAyah}
             onNudge={nudge}
             loopAyah={loopAyah}
-            onToggleLoop={() => setLoopAyah((x) => !x)}
+            onToggleLoopAyah={() => setLoopAyah((x) => !x)}
+            loopAB={loopAB}
+            onToggleLoopAB={() => setLoopAB((x) => !x)}
             rate={rate}
             onRate={setRate}
             markersOn={markersOn}
             onToggleMarkers={() => setMarkersOn((x) => !x)}
+            markerEvery={markerEvery}
+            onMarkerEvery={setMarkerEvery}
+            aPoint={aPoint}
+            bPoint={bPoint}
+            onSetA={setA}
+            onSetB={setB}
           />
 
           <Timeline
@@ -607,6 +1095,23 @@ export default function App() {
             onSeek={(t) => seekTo(t, false)}
             onSeekVerse={(idx) => seekVerse(idx, true)}
             showMarkers={markersOn}
+            markerEvery={markerEvery}
+          />
+
+          <SyncPanel
+            verses={verses}
+            activeIndex={activeIndex}
+            currentTime={currentTime}
+            duration={duration}
+            onUpdateVerse={updateVerse}
+            onSeek={(t) => seekTo(t, false)}
+            onSeekVerse={(idx) => seekVerse(idx, true)}
+            onExportJson={exportJson}
+            onImportJson={importJsonFile}
+            onSaveDraft={saveDraft}
+            onRestoreDraft={restoreDraft}
+            onClearDraft={clearDraft}
+            onJumpFirstUntimed={jumpFirstUntimed}
           />
         </div>
 
