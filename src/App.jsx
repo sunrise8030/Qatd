@@ -1,7 +1,8 @@
 // src/App.jsx
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import "./styles.css";
 
-const SURAH_METADATA = [
+const SURAHES = [
   {
     id: 12,
     slug: "yusuf",
@@ -14,67 +15,73 @@ const SURAH_METADATA = [
   },
 ];
 
-function resolvePublicUrl(maybeAbsolutePath) {
+function resolvePublicUrl(path) {
   const base = import.meta.env.BASE_URL || "/";
-  const p = String(maybeAbsolutePath || "");
-  const clean = p.startsWith("/") ? p.slice(1) : p;
-  return `${base}${clean}`;
+  const p = String(path || "").replace(/^\//, "");
+  return `${base}${p}`;
 }
 
-function normalizeForSearch(value) {
-  return String(value ?? "")
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "");
+function clamp(n, a, b) {
+  return Math.max(a, Math.min(b, n));
 }
 
-function clamp(n, min, max) {
-  return Math.max(min, Math.min(max, n));
+function formatTime(sec) {
+  if (!Number.isFinite(sec)) return "0:00";
+  const s = Math.max(0, Math.floor(sec));
+  const mm = Math.floor(s / 60);
+  const ss = String(s % 60).padStart(2, "0");
+  return `${mm}:${ss}`;
 }
 
-function safeText(v) {
-  const s = String(v ?? "").trim();
-  return s ? s : "—";
-}
-
+// Overlap-safe: if multiple verses match, pick the one with the greatest start (most recent)
 function findActiveVerseIndex(verses, t) {
-  if (!Array.isArray(verses) || verses.length === 0) return -1;
+  if (!Array.isArray(verses) || verses.length === 0 || !Number.isFinite(t)) return -1;
+
+  let bestIdx = -1;
+  let bestStart = -Infinity;
 
   for (let i = 0; i < verses.length; i += 1) {
     const v = verses[i];
-    const start = Number(v.start);
-    const end = Number(v.end);
-    if (Number.isFinite(start) && Number.isFinite(end) && start <= t && t < end) return i;
+    const start = Number(v?.start);
+    const end = Number(v?.end);
+    if (!Number.isFinite(start) || !Number.isFinite(end)) continue;
+    if (start <= t && t < end) {
+      if (start > bestStart) {
+        bestStart = start;
+        bestIdx = i;
+      }
+    }
   }
+  if (bestIdx !== -1) return bestIdx;
 
-  let bestIdx = -1;
+  // fallback: closest start
+  let closest = -1;
   let bestDelta = Infinity;
   for (let i = 0; i < verses.length; i += 1) {
     const start = Number(verses[i]?.start);
     if (!Number.isFinite(start)) continue;
-    const delta = Math.abs(t - start);
-    if (delta < bestDelta) {
-      bestDelta = delta;
-      bestIdx = i;
+    const d = Math.abs(t - start);
+    if (d < bestDelta) {
+      bestDelta = d;
+      closest = i;
     }
   }
-  return bestIdx;
+  return closest;
 }
 
-function SurahList({ surahs, selectedSlug, query, onQueryChange, onSelect }) {
+function SurahList({ surahs, selectedId, query, onQuery, onSelect }) {
   return (
-    <aside className="sidebar" aria-label="Surah navigation">
+    <aside className="sidebar">
       <div className="sidebarHeader">
         <h1 className="appTitle">Quran Surahs</h1>
-        <label className="searchLabel" htmlFor="surahSearch">
+        <label className="fieldLabel" htmlFor="search">
           Search (name / id / slug)
         </label>
         <input
-          id="surahSearch"
+          id="search"
           className="searchInput"
-          type="search"
           value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
+          onChange={(e) => onQuery(e.target.value)}
           placeholder="e.g. yusuf, 12, يوسف"
           autoComplete="off"
         />
@@ -82,506 +89,956 @@ function SurahList({ surahs, selectedSlug, query, onQueryChange, onSelect }) {
 
       <div className="surahList" role="list">
         {surahs.map((s) => {
-          const active = s.slug === selectedSlug;
+          const active = s.id === selectedId;
           return (
             <button
-              key={s.slug}
-              type="button"
-              className={`surahItem ${active ? "active" : ""}`}
+              key={s.id}
+              className={`surahCard ${active ? "active" : ""}`}
               onClick={() => onSelect(s)}
-              role="listitem"
-              aria-current={active ? "true" : "false"}
+              type="button"
             >
-              <div className="surahItemTop">
-                <span className="surahId">#{s.id}</span>
-                <span className="surahSlug">{s.slug}</span>
+              <div className="surahCardTop">
+                <div className="surahId">#{s.id}</div>
+                <div className="surahSlug">{s.slug}</div>
               </div>
-              <div className="surahItemNames">
-                <span className="nameStrong">{s.nameTr}</span>
-                <span className="nameMuted">{s.nameDe}</span>
-                <span className="nameAr" dir="rtl" lang="ar">
+
+              <div className="surahNames">
+                <div className="surahNameStrong">{s.nameTr}</div>
+                <div className="surahNameMuted">{s.nameDe}</div>
+                <div className="surahNameAr" dir="rtl">
                   {s.nameAr}
-                </span>
+                </div>
               </div>
+
               <div className="surahMeta">{s.ayahCount} ayahs</div>
             </button>
           );
         })}
-        {surahs.length === 0 ? <div className="emptyState">No matching surahs.</div> : null}
       </div>
     </aside>
   );
 }
 
-function AudioControls({ audioRef, audioSrc, isPlaying, onTogglePlay, currentTime }) {
+function Timeline({
+  duration,
+  currentTime,
+  verses,
+  activeIndex,
+  onSeek,
+  onSeekVerse,
+  showMarkers,
+}) {
+  const trackRef = useRef(null);
+
+  const markers = useMemo(() => {
+    if (!showMarkers || !Number.isFinite(duration) || duration <= 0) return [];
+    return verses
+      .map((v, idx) => {
+        const start = Number(v?.start);
+        if (!Number.isFinite(start)) return null;
+        const leftPct = clamp((start / duration) * 100, 0, 100);
+        return { idx, leftPct, ayah: v.ayah };
+      })
+      .filter(Boolean);
+  }, [verses, duration, showMarkers]);
+
+  const onClickTrack = (e) => {
+    if (!trackRef.current || !Number.isFinite(duration) || duration <= 0) return;
+    const rect = trackRef.current.getBoundingClientRect();
+    const x = clamp(e.clientX - rect.left, 0, rect.width);
+    const t = (x / rect.width) * duration;
+    onSeek(t);
+  };
+
   return (
-    <section className="audioPanel" aria-label="Audio player">
-      <audio ref={audioRef} src={audioSrc} preload="metadata" />
-      <div className="audioControls">
-        <button type="button" className="primaryButton" onClick={onTogglePlay}>
-          {isPlaying ? "Pause" : "Play"}
-        </button>
-        <div className="audioHint">t={currentTime.toFixed(2)}s • click verse to seek & play</div>
+    <div className="timeline">
+      <div className="timelineTop">
+        <div className="timeReadout">
+          <span className="mono">{formatTime(currentTime)}</span>
+          <span className="muted"> / </span>
+          <span className="mono muted">{formatTime(duration)}</span>
+        </div>
+        <div className="timelineHint muted">
+          Drag slider • Click markers • Shift+←/→ = ±0.1s
+        </div>
       </div>
-    </section>
+
+      <div className="timelineTrack" ref={trackRef} onClick={onClickTrack} role="presentation">
+        <div
+          className="timelineProgress"
+          style={{
+            width:
+              Number.isFinite(duration) && duration > 0
+                ? `${clamp((currentTime / duration) * 100, 0, 100)}%`
+                : "0%",
+          }}
+        />
+        {markers.map((m) => (
+          <button
+            key={`${m.idx}-${m.ayah}`}
+            type="button"
+            className={`timelineMarker ${m.idx === activeIndex ? "active" : ""}`}
+            style={{ left: `${m.leftPct}%` }}
+            title={`Ayah ${m.ayah}`}
+            onClick={(ev) => {
+              ev.stopPropagation();
+              onSeekVerse(m.idx);
+            }}
+          />
+        ))}
+      </div>
+
+      <input
+        className="timelineSlider"
+        type="range"
+        min={0}
+        max={Number.isFinite(duration) && duration > 0 ? duration : 0}
+        step={0.01}
+        value={Number.isFinite(currentTime) ? currentTime : 0}
+        onChange={(e) => onSeek(Number(e.target.value))}
+        aria-label="Seek audio"
+      />
+    </div>
   );
 }
 
-function SyncPanel({
-  enabled,
-  onToggle,
-  autoNext,
-  onToggleAutoNext,
-  autoSeek,
-  onToggleAutoSeek,
-  currentTime,
-  activeVerse,
-  onSetStart,
-  onSetEnd,
-  onNudgeStart,
-  onNudgeEnd,
-  onDownloadJson,
+function PlayerControls({
+  isPlaying,
+  onPlayPause,
+  onPrev,
+  onNext,
+  onNudge,
+  loopAyah,
+  onToggleLoop,
+  rate,
+  onRate,
+  markersOn,
+  onToggleMarkers,
 }) {
   return (
-    <section className="syncPanel" aria-label="Sync tools">
-      <div className="syncHeader">
-        <label className="syncToggle">
-          <input type="checkbox" checked={enabled} onChange={(e) => onToggle(e.target.checked)} />
-          <span>Sync Mode</span>
+    <div className="playerControls">
+      <div className="btnRow">
+        <button className="btn" type="button" onClick={onPlayPause}>
+          {isPlaying ? "Pause" : "Play"}
+        </button>
+        <button className="btn" type="button" onClick={onPrev}>
+          ◀ Prev ayah
+        </button>
+        <button className="btn" type="button" onClick={onNext}>
+          Next ayah ▶
+        </button>
+
+        <div className="divider" />
+
+        <button className="btnSmall" type="button" onClick={() => onNudge(-1)}>
+          -1s
+        </button>
+        <button className="btnSmall" type="button" onClick={() => onNudge(-0.1)}>
+          -0.1
+        </button>
+        <button className="btnSmall" type="button" onClick={() => onNudge(+0.1)}>
+          +0.1
+        </button>
+        <button className="btnSmall" type="button" onClick={() => onNudge(+1)}>
+          +1s
+        </button>
+
+        <div className="divider" />
+
+        <label className="chip">
+          <input type="checkbox" checked={loopAyah} onChange={onToggleLoop} />
+          Loop ayah (L)
         </label>
 
-        <label className="syncToggle">
-          <input
-            type="checkbox"
-            checked={autoNext}
-            disabled={!enabled}
-            onChange={(e) => onToggleAutoNext(e.target.checked)}
-          />
-          <span>Auto-next</span>
+        <label className="chip">
+          <input type="checkbox" checked={markersOn} onChange={onToggleMarkers} />
+          Markers
         </label>
 
-        <label className="syncToggle">
-          <input
-            type="checkbox"
-            checked={autoSeek}
-            disabled={!enabled || !autoNext}
-            onChange={(e) => onToggleAutoSeek(e.target.checked)}
-          />
-          <span>Auto-seek</span>
-        </label>
+        <div className="divider" />
 
-        <div className="syncTime">Current: {currentTime.toFixed(2)}s</div>
+        <label className="rate">
+          Speed:
+          <select value={rate} onChange={(e) => onRate(Number(e.target.value))}>
+            <option value={0.75}>0.75×</option>
+            <option value={1}>1×</option>
+            <option value={1.25}>1.25×</option>
+            <option value={1.5}>1.5×</option>
+          </select>
+        </label>
       </div>
 
-      <div className="syncBody">
-        <div className="syncRow">
-          <div className="syncLabel">
-            Active ayah: <strong>{activeVerse?.ayah ?? "—"}</strong>
-          </div>
-          <div className="syncLabel">
-            start: <strong>{Number(activeVerse?.start ?? 0).toFixed(2)}</strong> • end:{" "}
-            <strong>{Number(activeVerse?.end ?? 0).toFixed(2)}</strong>
-          </div>
-        </div>
-
-        <div className="syncButtons">
-          <button type="button" className="ghostButton" disabled={!enabled || !activeVerse} onClick={onSetStart}>
-            Set START = t
-          </button>
-          <button type="button" className="ghostButton" disabled={!enabled || !activeVerse} onClick={onSetEnd}>
-            Set END = t (next)
-          </button>
-
-          <span className="syncSpacer" />
-
-          <button type="button" className="ghostButton" disabled={!enabled || !activeVerse} onClick={() => onNudgeStart(-0.1)}>
-            Start -0.1
-          </button>
-          <button type="button" className="ghostButton" disabled={!enabled || !activeVerse} onClick={() => onNudgeStart(0.1)}>
-            Start +0.1
-          </button>
-          <button type="button" className="ghostButton" disabled={!enabled || !activeVerse} onClick={() => onNudgeEnd(-0.1)}>
-            End -0.1
-          </button>
-          <button type="button" className="ghostButton" disabled={!enabled || !activeVerse} onClick={() => onNudgeEnd(0.1)}>
-            End +0.1
-          </button>
-
-          <span className="syncSpacer" />
-
-          <button type="button" className="primaryButton" disabled={!enabled} onClick={onDownloadJson}>
-            Export JSON
-          </button>
-        </div>
-
-        <div className="syncHelp">
-          Bu mp3 ile senkron: ayet başında <em>Set START</em>, bitince <em>Set END</em>. Auto-next açıkken END sonrası
-          otomatik sonraki ayete geçer (Auto-seek açıksa audio da oraya gider).
-        </div>
+      <div className="kbdHelp muted">
+        Space play/pause • ↑/↓ prev/next ayah • ←/→ ±1s • Shift+←/→ ±0.1s • L loop
       </div>
-    </section>
+    </div>
   );
 }
 
-function VerseTable({ verses, activeIndex, onVerseClick, rowRefs, syncEnabled, onPickActiveForSync }) {
+function VersesTable({ verses, activeIndex, onRowClick, rowRefs }) {
   return (
-    <section className="versesPanel" aria-label="Verses">
-      <div className="tableHeader" role="row">
-        <div className="cell cellNo" role="columnheader">No</div>
-        <div className="cell cellAr" role="columnheader">Arabic</div>
-        <div className="cell cellDe" role="columnheader">German</div>
-        <div className="cell cellTr" role="columnheader">Turkish</div>
+    <div className="tableWrap" role="region" aria-label="Verses">
+      <div className="tableHeader">
+        <div className="colNo">No</div>
+        <div className="colAr">Arabic</div>
+        <div className="colDe">German</div>
+        <div className="colTr">Turkish</div>
       </div>
 
-      <div className="tableBody" role="rowgroup">
+      <div className="tableBody" role="table">
         {verses.map((v, idx) => {
-          const isActive = idx === activeIndex;
+          const active = idx === activeIndex;
           return (
             <button
               key={`${v.ayah}-${idx}`}
               type="button"
-              className={`row ${isActive ? "rowActive" : ""}`}
-              onClick={() => {
-                if (syncEnabled) onPickActiveForSync(idx);
-                onVerseClick(v, idx);
-              }}
+              className={`row ${active ? "active" : ""}`}
+              onClick={() => onRowClick(idx)}
               ref={(el) => {
-                if (el) rowRefs.current.set(idx, el);
-                else rowRefs.current.delete(idx);
+                rowRefs.current[idx] = el;
               }}
-              aria-current={isActive ? "true" : "false"}
-              title={`Seek to ${Number(v.start).toFixed(2)}s`}
             >
-              <div className="cell cellNo">{v.ayah}</div>
-              <div className="cell cellAr" dir="rtl" lang="ar">{safeText(v.ar)}</div>
-              <div className="cell cellDe">{safeText(v.de)}</div>
-              <div className="cell cellTr">{safeText(v.tr)}</div>
+              <div className="cell colNo">{v.ayah}</div>
+              <div className="cell colAr" dir="rtl">
+                {v.ar}
+              </div>
+              <div className="cell colDe">{v.de}</div>
+              <div className="cell colTr">{v.tr}</div>
             </button>
           );
         })}
       </div>
-    </section>
+    </div>
   );
-}
-
-function downloadJson(filename, data) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
 }
 
 export default function App() {
   const [query, setQuery] = useState("");
-  const [selectedSurah, setSelectedSurah] = useState(SURAH_METADATA[0] || null);
-
+  const [selectedSurah, setSelectedSurah] = useState(SURAHES[0]);
   const [verses, setVerses] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
-
-  const [activeIndex, setActiveIndex] = useState(-1);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-
-  const [syncEnabled, setSyncEnabled] = useState(true);
-  const [syncIndex, setSyncIndex] = useState(-1);
-  const [autoNext, setAutoNext] = useState(true);
-  const [autoSeek, setAutoSeek] = useState(true);
+  const [error, setError] = useState("");
 
   const audioRef = useRef(null);
-  const rowRefs = useRef(new Map());
-  const lastScrolledIndexRef = useRef(-1);
+  const rowRefs = useRef([]);
+
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(-1);
+
+  const [loopAyah, setLoopAyah] = useState(false);
+  const [rate, setRate] = useState(1);
+  const [markersOn, setMarkersOn] = useState(true);
+
+  // refs to avoid stale closures in keyboard handler
+  const versesRef = useRef(verses);
+  const activeIndexRef = useRef(activeIndex);
+  useEffect(() => {
+    versesRef.current = verses;
+    activeIndexRef.current = activeIndex;
+  }, [verses, activeIndex]);
 
   const filteredSurahs = useMemo(() => {
-    const q = normalizeForSearch(query.trim());
-    if (!q) return SURAH_METADATA;
-    return SURAH_METADATA.filter((s) => {
-      const haystack = [s.slug, s.id, s.nameTr, s.nameDe, s.nameAr].map(normalizeForSearch).join(" | ");
-      return haystack.includes(q);
+    const q = query.trim().toLowerCase();
+    if (!q) return SURAHES;
+    return SURAHES.filter((s) => {
+      const idMatch = String(s.id) === q || String(s.id).includes(q);
+      const slugMatch = s.slug.toLowerCase().includes(q);
+      const tr = (s.nameTr || "").toLowerCase().includes(q);
+      const de = (s.nameDe || "").toLowerCase().includes(q);
+      const ar = (s.nameAr || "").includes(query.trim());
+      return idMatch || slugMatch || tr || de || ar;
     });
   }, [query]);
 
-  const stopAndResetAudio = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    try {
-      audio.pause();
-      audio.currentTime = 0;
-    } catch {}
-    setIsPlaying(false);
+  const audioSrc = useMemo(
+    () => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""),
+    [selectedSurah]
+  );
+
+  const versesSrc = useMemo(
+    () => (selectedSurah ? resolvePublicUrl(selectedSurah.versesUrl) : ""),
+    [selectedSurah]
+  );
+
+  // Load verses on surah select (DO NOT refetch on rate change)
+  useEffect(() => {
+    let cancelled = false;
+
+    setError("");
+    setVerses([]);
     setActiveIndex(-1);
     setCurrentTime(0);
-    setSyncIndex(-1);
-    lastScrolledIndexRef.current = -1;
+    setDuration(0);
+    setIsPlaying(false);
+
+    const a = audioRef.current;
+    if (a) {
+      a.pause();
+      a.currentTime = 0;
+    }
+
+    (async () => {
+      try {
+        const res = await fetch(versesSrc, { cache: "no-store" });
+        if (!res.ok) throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);
+        const data = await res.json();
+        if (!Array.isArray(data)) throw new Error("Invalid verses JSON (expected array)");
+        if (!cancelled) {
+          rowRefs.current = [];
+          setVerses(data);
+        }
+      } catch (e) {
+        console.error("[verses] load failed:", e);
+        if (!cancelled) setError(`Verses could not be loaded: ${e.message}`);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [versesSrc]);
+
+  // Audio listeners
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a) return;
+
+    const onTime = () => setCurrentTime(a.currentTime || 0);
+    const onMeta = () => setDuration(a.duration || 0);
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
+    const onErr = () => {
+      console.error("[audio] error", a.error);
+      setError("Audio could not be played. Check console for details.");
+    };
+
+    a.addEventListener("timeupdate", onTime);
+    a.addEventListener("loadedmetadata", onMeta);
+    a.addEventListener("play", onPlay);
+    a.addEventListener("pause", onPause);
+    a.addEventListener("error", onErr);
+
+    return () => {
+      a.removeEventListener("timeupdate", onTime);
+      a.removeEventListener("loadedmetadata", onMeta);
+      a.removeEventListener("play", onPlay);
+      a.removeEventListener("pause", onPause);
+      a.removeEventListener("error", onErr);
+    };
   }, []);
 
-  const audioSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""), [selectedSurah]);
-
+  // Playback rate sync
   useEffect(() => {
-    let aborted = false;
+    const a = audioRef.current;
+    if (!a) return;
+    a.playbackRate = rate;
+  }, [rate]);
 
-    async function loadVerses() {
-      if (!selectedSurah) return;
+  const seekTo = useCallback(
+    (t, autoPlay = false) => {
+      const a = audioRef.current;
+      if (!a || !Number.isFinite(t)) return;
 
-      setLoading(true);
-      setErrorMsg("");
-      setVerses([]);
-      setActiveIndex(-1);
-      setSyncIndex(-1);
-      lastScrolledIndexRef.current = -1;
+      const d = Number.isFinite(a.duration) ? a.duration : duration;
+      const nextT =
+        Number.isFinite(d) && d > 0 ? clamp(t, 0, d - 0.01) : Math.max(0, t);
 
-      stopAndResetAudio();
+      a.currentTime = nextT;
+      setCurrentTime(nextT);
+      if (autoPlay) a.play().catch(() => {});
+    },
+    [duration]
+  );
 
-      const url = resolvePublicUrl(selectedSurah.versesUrl);
+  const seekVerse = useCallback(
+    (idx, autoPlay = true) => {
+      const v = versesRef.current[idx];
+      if (!v) return;
+      const start = Number(v.start);
+      if (!Number.isFinite(start)) return;
+      seekTo(start, autoPlay);
+    },
+    [seekTo]
+  );
 
-      try {
-        const res = await fetch(url, { cache: "no-store" });
-        if (!res.ok) throw new Error(`Fetch failed (${res.status}) for ${url}`);
-        const json = await res.json();
-        if (!Array.isArray(json)) throw new Error("Invalid JSON: expected an array of verses");
-        if (!aborted) {
-          setVerses(json);
-          setSyncIndex(json.length ? 0 : -1);
-        }
-      } catch (err) {
-        console.error("[Surah load error]", err);
-        if (!aborted) setErrorMsg("Failed to load verses. Check console for details.");
-      } finally {
-        if (!aborted) setLoading(false);
+  const onPlayPause = useCallback(() => {
+    const a = audioRef.current;
+    if (!a) return;
+    if (a.paused) a.play().catch(() => {});
+    else a.pause();
+  }, []);
+
+  const nudge = useCallback(
+    (delta) => {
+      const a = audioRef.current;
+      if (!a) return;
+      seekTo((a.currentTime || 0) + delta, false);
+    },
+    [seekTo]
+  );
+
+  const prevAyah = useCallback(() => {
+    const vs = versesRef.current;
+    if (!vs.length) return;
+    const idx = activeIndexRef.current > 0 ? activeIndexRef.current - 1 : 0;
+    seekVerse(idx, true);
+  }, [seekVerse]);
+
+  const nextAyah = useCallback(() => {
+    const vs = versesRef.current;
+    if (!vs.length) return;
+    const cur = activeIndexRef.current;
+    const idx = cur >= 0 ? Math.min(vs.length - 1, cur + 1) : 0;
+    seekVerse(idx, true);
+  }, [seekVerse]);
+
+  // Active verse update + autoscroll + loop ayah
+  useEffect(() => {
+    if (!verses.length) return;
+
+    const idx = findActiveVerseIndex(verses, currentTime);
+    if (idx !== activeIndex) {
+      setActiveIndex(idx);
+      const el = rowRefs.current[idx];
+      if (el && typeof el.scrollIntoView === "function") {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     }
 
-    loadVerses();
-    return () => {
-      aborted = true;
-    };
-  }, [selectedSurah, stopAndResetAudio]);
+    if (loopAyah && idx >= 0) {
+      const v = verses[idx];
+      const s = Number(v?.start);
+      const e = Number(v?.end);
+      if (Number.isFinite(s) && Number.isFinite(e) && e > s) {
+        if (currentTime >= e) {
+          const a = audioRef.current;
+          if (a) {
+            a.currentTime = s;
+            a.play().catch(() => {});
+          }
+        }
+      }
+    }
+  }, [currentTime, verses, activeIndex, loopAyah]);
 
+  // Keyboard shortcuts (single stable listener)
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
+    const onKey = (e) => {
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      const typing =
+        tag === "input" || tag === "textarea" || document.activeElement?.isContentEditable;
+      if (typing) return;
 
-    const onTimeUpdate = () => {
-      const t = audio.currentTime || 0;
-      setCurrentTime(t);
-      const idx = findActiveVerseIndex(verses, t);
-      setActiveIndex((prev) => (prev === idx ? prev : idx));
+      if (e.code === "Space") {
+        e.preventDefault();
+        onPlayPause();
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        nudge(e.shiftKey ? -0.1 : -1);
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        nudge(e.shiftKey ? 0.1 : 1);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        prevAyah();
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        nextAyah();
+      } else if (e.key.toLowerCase() === "l") {
+        setLoopAyah((x) => !x);
+      }
     };
 
-    const onPlay = () => setIsPlaying(true);
-    const onPause = () => setIsPlaying(false);
-    const onEnded = () => setIsPlaying(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onPlayPause, nudge, prevAyah, nextAyah]);
 
-    audio.addEventListener("timeupdate", onTimeUpdate);
-    audio.addEventListener("play", onPlay);
-    audio.addEventListener("pause", onPause);
-    audio.addEventListener("ended", onEnded);
-
-    return () => {
-      audio.removeEventListener("timeupdate", onTimeUpdate);
-      audio.removeEventListener("play", onPlay);
-      audio.removeEventListener("pause", onPause);
-      audio.removeEventListener("ended", onEnded);
-    };
-  }, [verses]);
-
-  useEffect(() => {
-    if (activeIndex < 0) return;
-    if (lastScrolledIndexRef.current === activeIndex) return;
-
-    const el = rowRefs.current.get(activeIndex);
-    if (!el) return;
-
-    lastScrolledIndexRef.current = activeIndex;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [activeIndex]);
-
-  const togglePlay = async () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    try {
-      if (audio.paused) await audio.play();
-      else audio.pause();
-    } catch (err) {
-      console.error("[Audio play error]", err);
-      setErrorMsg("Audio could not be played. Check console for details.");
-    }
-  };
-
-  const handleVerseClick = async (v, idx) => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const target = Number(v?.start);
-    if (!Number.isFinite(target)) return;
-
-    try {
-      audio.currentTime = Math.max(0, target);
-      setActiveIndex(idx);
-      lastScrolledIndexRef.current = idx;
-      await audio.play();
-    } catch (err) {
-      console.error("[Audio seek/play error]", err);
-      setErrorMsg("Could not seek/play audio. Check console for details.");
-    }
-  };
-
-  const activeVerseForSync = useMemo(() => {
-    if (syncIndex < 0) return null;
-    return verses[syncIndex] ?? null;
-  }, [verses, syncIndex]);
-
-  const updateVerseTiming = (idx, patch) => {
-    setVerses((prev) => {
-      if (!prev[idx]) return prev;
-      const next = prev.slice();
-      next[idx] = { ...next[idx], ...patch };
-      return next;
-    });
-  };
-
-  const setStartToNow = () => {
-    if (syncIndex < 0) return;
-    const s = clamp(currentTime, 0, Number.POSITIVE_INFINITY);
-    const end = Number(verses[syncIndex]?.end);
-    const safeEnd = Number.isFinite(end) ? Math.max(end, s + 0.01) : s + 0.01;
-    updateVerseTiming(syncIndex, { start: s, end: safeEnd });
-  };
-
-  const setEndToNow = async () => {
-    if (syncIndex < 0) return;
-
-    const e = clamp(currentTime, 0, Number.POSITIVE_INFINITY);
-    const start = Number(verses[syncIndex]?.start);
-    const safeStart = Number.isFinite(start) ? Math.min(start, e - 0.01) : Math.max(0, e - 0.5);
-    const safeEnd = Math.max(e, safeStart + 0.01);
-
-    updateVerseTiming(syncIndex, { start: Math.max(0, safeStart), end: safeEnd });
-
-    if (!autoNext) return;
-
-    const nextIdx = syncIndex + 1;
-    if (!verses[nextIdx]) return;
-
-    setSyncIndex(nextIdx);
-
-    if (!autoSeek) return;
-
-    const audio = audioRef.current;
-    const nextStart = Number(verses[nextIdx]?.start);
-    if (!audio || !Number.isFinite(nextStart)) return;
-
-    try {
-      audio.currentTime = Math.max(0, nextStart);
-      await audio.play();
-    } catch (err) {
-      console.error("[Auto-seek/play error]", err);
-    }
-  };
-
-  const nudgeStart = (delta) => {
-    if (syncIndex < 0) return;
-    const start = Number(verses[syncIndex]?.start);
-    const end = Number(verses[syncIndex]?.end);
-    const s = Number.isFinite(start) ? start + delta : delta;
-    const e = Number.isFinite(end) ? Math.max(end, s + 0.01) : s + 0.5;
-    updateVerseTiming(syncIndex, { start: Math.max(0, s), end: e });
-  };
-
-  const nudgeEnd = (delta) => {
-    if (syncIndex < 0) return;
-    const start = Number(verses[syncIndex]?.start);
-    const end = Number(verses[syncIndex]?.end);
-    const e = Number.isFinite(end) ? end + delta : delta;
-    const s = Number.isFinite(start) ? Math.min(start, e - 0.01) : Math.max(0, e - 0.5);
-    updateVerseTiming(syncIndex, { start: Math.max(0, s), end: Math.max(e, s + 0.01) });
-  };
-
-  const downloadSyncedJson = () => {
-    if (!selectedSurah) return;
-    downloadJson(`${selectedSurah.slug}.json`, verses);
-  };
-
-  if (!selectedSurah) return <div style={{ padding: 16 }}>Select a surah.</div>;
+  const header = selectedSurah ? (
+    <div className="surahHeader">
+      <div className="surahHeaderLeft">
+        <h2 className="surahTitle">
+          #{selectedSurah.id} — {selectedSurah.nameTr}
+        </h2>
+        <div className="surahSub">{selectedSurah.nameDe}</div>
+      </div>
+      <div className="surahHeaderRight" dir="rtl">
+        {selectedSurah.nameAr}
+      </div>
+      <div className="surahBadges">
+        <span className="badge">Slug: {selectedSurah.slug}</span>
+        <span className="badge">Ayahs: {selectedSurah.ayahCount}</span>
+        <span className="badge">Loaded: {verses.length}</span>
+      </div>
+    </div>
+  ) : null;
 
   return (
     <div className="appShell">
       <SurahList
         surahs={filteredSurahs}
-        selectedSlug={selectedSurah.slug}
+        selectedId={selectedSurah?.id}
         query={query}
-        onQueryChange={setQuery}
-        onSelect={(s) => s?.slug !== selectedSurah.slug && setSelectedSurah(s)}
+        onQuery={setQuery}
+        onSelect={setSelectedSurah}
       />
 
-      <main className="content" aria-label="Surah content">
-        <header className="surahHeader">
-          <div className="surahTitleRow">
-            <div className="surahTitle">
-              <span className="surahTitleMain">
-                #{selectedSurah.id} — {selectedSurah.nameTr}
-              </span>
-              <span className="surahTitleSub">{selectedSurah.nameDe}</span>
-            </div>
-            <div className="surahTitleAr" dir="rtl" lang="ar">
-              {selectedSurah.nameAr}
-            </div>
-          </div>
-          <div className="surahInfo">
-            <span className="pill">Slug: {selectedSurah.slug}</span>
-            <span className="pill">Ayahs: {selectedSurah.ayahCount}</span>
-            <span className="pill">Loaded: {Array.isArray(verses) ? verses.length : 0}</span>
-          </div>
-        </header>
+      <main className="content">
+        {header}
+        {error ? <div className="errorBox">{error}</div> : null}
 
-        {errorMsg ? (
-          <div className="errorBanner" role="alert">
-            {errorMsg}
-          </div>
-        ) : null}
+        <div className="playerCard">
+          <audio ref={audioRef} src={audioSrc} preload="metadata" />
 
-        <AudioControls
-          audioRef={audioRef}
-          audioSrc={audioSrc}
-          isPlaying={isPlaying}
-          onTogglePlay={togglePlay}
-          currentTime={currentTime}
-        />
+          <PlayerControls
+            isPlaying={isPlaying}
+            onPlayPause={onPlayPause}
+            onPrev={prevAyah}
+            onNext={nextAyah}
+            onNudge={nudge}
+            loopAyah={loopAyah}
+            onToggleLoop={() => setLoopAyah((x) => !x)}
+            rate={rate}
+            onRate={setRate}
+            markersOn={markersOn}
+            onToggleMarkers={() => setMarkersOn((x) => !x)}
+          />
 
-        <SyncPanel
-          enabled={syncEnabled}
-          onToggle={setSyncEnabled}
-          autoNext={autoNext}
-          onToggleAutoNext={setAutoNext}
-          autoSeek={autoSeek}
-          onToggleAutoSeek={setAutoSeek}
-          currentTime={currentTime}
-          activeVerse={activeVerseForSync}
-          onSetStart={setStartToNow}
-          onSetEnd={setEndToNow}
-          onNudgeStart={nudgeStart}
-          onNudgeEnd={nudgeEnd}
-          onDownloadJson={downloadSyncedJson}
-        />
-
-        {loading ? (
-          <div className="loadingState">Loading verses…</div>
-        ) : (
-          <VerseTable
+          <Timeline
+            duration={duration}
+            currentTime={currentTime}
             verses={verses}
             activeIndex={activeIndex}
-            onVerseClick={handleVerseClick}
-            rowRefs={rowRefs}
-            syncEnabled={syncEnabled}
-            onPickActiveForSync={setSyncIndex}
+            onSeek={(t) => seekTo(t, false)}
+            onSeekVerse={(idx) => seekVerse(idx, true)}
+            showMarkers={markersOn}
           />
-        )}
+        </div>
+
+        <VersesTable
+          verses={verses}
+          activeIndex={activeIndex}
+          onRowClick={(idx) => seekVerse(idx, true)}
+          rowRefs={rowRefs}
+        />
       </main>
     </div>
   );
+}
+
+// src/styles.css
+:root {
+  --bg: #0b0f16;
+  --panel: #0f1520;
+  --panel2: #0c111a;
+  --border: rgba(255, 255, 255, 0.08);
+  --text: rgba(255, 255, 255, 0.92);
+  --muted: rgba(255, 255, 255, 0.62);
+  --accent: rgba(99, 179, 237, 1);
+  --accent2: rgba(99, 179, 237, 0.25);
+  --danger: rgba(255, 120, 120, 0.18);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background: radial-gradient(1200px 800px at 30% 15%, rgba(120, 120, 255, 0.12), transparent 55%),
+    radial-gradient(1200px 800px at 70% 35%, rgba(255, 120, 120, 0.10), transparent 55%),
+    var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans",
+    "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+.appShell {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  min-height: 100vh;
+}
+
+@media (max-width: 980px) {
+  .appShell {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+}
+
+.sidebar {
+  border-right: 1px solid var(--border);
+  background: rgba(15, 21, 32, 0.72);
+  backdrop-filter: blur(10px);
+  padding: 16px;
+}
+
+.sidebarHeader {
+  margin-bottom: 12px;
+}
+
+.appTitle {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+.fieldLabel {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin: 8px 0 6px;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text);
+  outline: none;
+}
+
+.surahList {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.surahCard {
+  text-align: left;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 14px;
+  padding: 12px;
+  cursor: pointer;
+  color: inherit;
+}
+
+.surahCard:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.surahCard.active {
+  border-color: rgba(99, 179, 237, 0.55);
+  box-shadow: 0 0 0 2px rgba(99, 179, 237, 0.15) inset;
+}
+
+.surahCardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.surahNames {
+  margin-top: 8px;
+}
+
+.surahNameStrong {
+  font-weight: 650;
+  font-size: 16px;
+}
+
+.surahNameMuted {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+.surahNameAr {
+  color: var(--text);
+  font-size: 16px;
+  margin-top: 6px;
+  text-align: right;
+}
+
+.surahMeta {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.content {
+  padding: 16px;
+}
+
+.surahHeader {
+  border: 1px solid var(--border);
+  background: rgba(15, 21, 32, 0.55);
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+.surahTitle {
+  margin: 0;
+  font-size: 20px;
+}
+
+.surahSub {
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.surahHeaderRight {
+  font-size: 18px;
+  align-self: start;
+}
+
+.surahBadges {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.badge {
+  font-size: 12px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.18);
+  padding: 6px 10px;
+  border-radius: 999px;
+}
+
+.errorBox {
+  margin-top: 12px;
+  border: 1px solid rgba(255, 120, 120, 0.35);
+  background: var(--danger);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.playerCard {
+  margin-top: 14px;
+  border: 1px solid var(--border);
+  background: rgba(15, 21, 32, 0.55);
+  border-radius: 16px;
+  padding: 12px;
+}
+
+.playerControls {
+  display: grid;
+  gap: 8px;
+}
+
+.btnRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn,
+.btnSmall {
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.btnSmall {
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+
+.btn:hover,
+.btnSmall:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.divider {
+  width: 1px;
+  height: 28px;
+  background: var(--border);
+  margin: 0 2px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.18);
+  padding: 8px 10px;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.rate {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.18);
+  padding: 8px 10px;
+  border-radius: 999px;
+}
+
+.rate select {
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px 8px;
+}
+
+.kbdHelp {
+  font-size: 12px;
+}
+
+.timeline {
+  margin-top: 10px;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 14px;
+  padding: 10px;
+}
+
+.timelineTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.timeReadout {
+  font-size: 13px;
+}
+
+.mono {
+  font-variant-numeric: tabular-nums;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.timelineTrack {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.timelineProgress {
+  height: 100%;
+  background: rgba(99, 179, 237, 0.65);
+  width: 0%;
+}
+
+.timelineMarker {
+  position: absolute;
+  top: -4px;
+  width: 8px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateX(-50%);
+  cursor: pointer;
+}
+
+.timelineMarker.active {
+  background: rgba(99, 179, 237, 0.55);
+  border-color: rgba(99, 179, 237, 0.9);
+}
+
+.timelineSlider {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.tableWrap {
+  margin-top: 14px;
+  border: 1px solid var(--border);
+  background: rgba(15, 21, 32, 0.55);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.tableHeader {
+  display: grid;
+  grid-template-columns: 70px 1.1fr 1fr 1fr;
+  gap: 0;
+  padding: 12px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.tableBody {
+  display: grid;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 70px 1.1fr 1fr 1fr;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 10px 12px;
+  text-align: left;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.row.active {
+  background: rgba(99, 179, 237, 0.12);
+  box-shadow: 0 0 0 1px rgba(99, 179, 237, 0.35) inset;
+}
+
+.cell {
+  padding-right: 10px;
+}
+
+.colNo {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.colAr {
+  font-size: 18px;
+  line-height: 1.55;
+  text-align: right;
+  padding-left: 12px;
+}
+
+.colDe,
+.colTr {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+@media (max-width: 980px) {
+  .tableHeader,
+  .row {
+    grid-template-columns: 60px 1fr;
+  }
+  .colDe,
+  .colTr {
+    display: none;
+  }
 }
