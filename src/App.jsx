@@ -18,7 +18,8 @@ const SURAHES = [
 function resolvePublicUrl(path) {
   const base = import.meta.env.BASE_URL || "/";
   const p = String(path || "").replace(/^\//, "");
-  return `${base}${p}`;
+  const b = String(base || "/");
+  return new URL(`${b}${p}`, window.location.origin).toString();
 }
 
 function clamp(n, a, b) {
@@ -38,6 +39,7 @@ function formatSec(sec) {
   return Number.isFinite(sec) ? `${sec.toFixed(2)}s` : "—";
 }
 
+// Overlap-safe
 function findActiveVerseIndex(verses, t) {
   if (!Array.isArray(verses) || verses.length === 0 || !Number.isFinite(t)) return -1;
 
@@ -56,6 +58,7 @@ function findActiveVerseIndex(verses, t) {
   }
   if (bestIdx !== -1) return bestIdx;
 
+  // fallback: closest start
   let closest = -1;
   let bestDelta = Infinity;
   for (let i = 0; i < verses.length; i += 1) {
@@ -70,11 +73,141 @@ function findActiveVerseIndex(verses, t) {
   return closest;
 }
 
+function getStickyPlayerBottomPx() {
+  const el = document.querySelector(".playerSticky");
+  if (!el) return 0;
+  const r = el.getBoundingClientRect();
+  return Math.max(0, r.bottom);
+}
+
+function ensureRowVisible(el, padding = 10) {
+  if (!el) return;
+  const r = el.getBoundingClientRect();
+  const stickyBottom = getStickyPlayerBottomPx();
+  const topSafe = stickyBottom + padding;
+  const bottomSafe = window.innerHeight - padding;
+
+  const hiddenUnderSticky = r.top < topSafe;
+  const belowViewport = r.bottom > bottomSafe;
+
+  if (hiddenUnderSticky || belowViewport) {
+    el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+}
+
+/**
+ * Tolerant JSON parsing:
+ * - strips BOM
+ * - rejects HTML
+ * - removes trailing commas before } or ]
+ * - if parse fails, includes position + context
+ */
+function parseJsonTolerant(text, urlForMsg = "") {
+  const raw = String(text ?? "");
+
+  let s = raw.replace(/^\uFEFF/, "").trim();
+
+  if (
+    s.startsWith("<!doctype") ||
+    s.startsWith("<html") ||
+    s.startsWith("<head") ||
+    s.startsWith("<")
+  ) {
+    throw new Error(`Expected JSON but got HTML | url=${urlForMsg} | head=${s.slice(0, 80)}`);
+  }
+
+  // Remove trailing commas
+  s = s.replace(/,\s*([}\]])/g, "$1");
+
+  try {
+    return JSON.parse(s);
+  } catch (e) {
+    const msg = String(e?.message || e);
+    const m = msg.match(/position\s+(\d+)/i);
+    if (m) {
+      const pos = Number(m[1]);
+      const from = Math.max(0, pos - 80);
+      const to = Math.min(s.length, pos + 80);
+      const ctx = s.slice(from, to).replaceAll("\n", "\\n");
+      throw new Error(`JSON parse failed | url=${urlForMsg} | pos=${pos} | ctx=...${ctx}...`);
+    }
+    throw new Error(`JSON parse failed | url=${urlForMsg} | msg=${msg}`);
+  }
+}
+
+function base64EncodeUtf8(text) {
+  return btoa(unescape(encodeURIComponent(text)));
+}
+
+async function ghFetch(url, options) {
+  try {
+    return await fetch(url, options);
+  } catch {
+    throw new Error(
+      "Network error (fetch failed). Check: internet/firewall, adblock, VPN, GitHub blocked."
+    );
+  }
+}
+
+async function githubGetFileSha({ owner, repo, path, token, branch }) {
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path).replaceAll(
+    "%2F",
+    "/"
+  )}?ref=${encodeURIComponent(branch)}`;
+
+  const res = await ghFetch(url, {
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${token}`,
+      "X-GitHub-Api-Version": "2022-11-28",
+    },
+  });
+
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`GitHub GET failed: ${res.status} ${res.statusText} :: ${t}`);
+  }
+  const data = await res.json();
+  return data?.sha || null;
+}
+
+async function githubPutFile({ owner, repo, path, token, branch, message, contentBase64, sha }) {
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path).replaceAll(
+    "%2F",
+    "/"
+  )}`;
+
+  const body = {
+    message,
+    content: contentBase64,
+    branch,
+    ...(sha ? { sha } : {}),
+  };
+
+  const res = await ghFetch(url, {
+    method: "PUT",
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${token}`,
+      "X-GitHub-Api-Version": "2022-11-28",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`GitHub PUT failed: ${res.status} ${res.statusText} :: ${t}`);
+  }
+  return res.json();
+}
+
 function SurahList({ surahs, selectedId, query, onQuery, onSelect }) {
   return (
     <aside className="sidebar">
       <div className="sidebarHeader">
-        <h1 className="appTitle">Quran Surahs</h1>
+        <h1 className="appTitle">Türkçe-Almanca Kur’an Player</h1>
         <label className="fieldLabel" htmlFor="search">
           Search (name / id / slug)
         </label>
@@ -118,7 +251,16 @@ function SurahList({ surahs, selectedId, query, onQuery, onSelect }) {
   );
 }
 
-function Timeline({ duration, currentTime, verses, activeIndex, onSeek, onSeekVerse, showMarkers, markerEvery }) {
+function Timeline({
+  duration,
+  currentTime,
+  verses,
+  activeIndex,
+  onSeek,
+  onSeekVerse,
+  showMarkers,
+  markerEvery,
+}) {
   const trackRef = useRef(null);
 
   const markers = useMemo(() => {
@@ -337,13 +479,57 @@ function SyncPanel({
   onRestoreDraft,
   onClearDraft,
   onJumpFirstUntimed,
-  onToast,
+  onCommitGithub,
 }) {
   const [startInput, setStartInput] = useState("");
   const [endInput, setEndInput] = useState("");
   const [jumpAyah, setJumpAyah] = useState("");
   const [jumpTime, setJumpTime] = useState("");
   const fileRef = useRef(null);
+
+  const [commitOpen, setCommitOpen] = useState(false);
+  const [ghRepo, setGhRepo] = useState("");
+  const [ghBranch, setGhBranch] = useState("main");
+  const [ghPath, setGhPath] = useState("public/data/yusuf.json");
+  const [ghToken, setGhToken] = useState("");
+  const [ghMsg, setGhMsg] = useState("");
+  const [ghRemember, setGhRemember] = useState(true);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("qatd:ghcfg");
+      if (!saved) return;
+      const cfg = JSON.parse(saved);
+      if (cfg?.repo) setGhRepo(cfg.repo);
+      if (cfg?.branch) setGhBranch(cfg.branch);
+      if (cfg?.path) setGhPath(cfg.path);
+      if (cfg?.token) setGhToken(cfg.token);
+      if (cfg?.remember === false) setGhRemember(false);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (!ghRemember) {
+        localStorage.removeItem("qatd:ghcfg");
+        return;
+      }
+      localStorage.setItem(
+        "qatd:ghcfg",
+        JSON.stringify({
+          repo: ghRepo,
+          branch: ghBranch,
+          path: ghPath,
+          token: ghToken,
+          remember: true,
+        })
+      );
+    } catch {
+      // ignore
+    }
+  }, [ghRepo, ghBranch, ghPath, ghToken, ghRemember]);
 
   const active = activeIndex >= 0 ? verses[activeIndex] : null;
 
@@ -359,14 +545,13 @@ function SyncPanel({
     setEndInput(Number.isFinite(e) ? String(e) : "");
   }, [activeIndex, active]);
 
-  // auto-apply (debounced)
+  // auto-apply debounced
   useEffect(() => {
     if (!active) return;
     const t = setTimeout(() => {
       const s = Number(startInput);
       const e = Number(endInput);
       const patch = {};
-
       if (Number.isFinite(s)) patch.start = clamp(s, 0, Math.max(0, duration || s));
       if (Number.isFinite(e)) patch.end = clamp(e, 0, Math.max(0, duration || e));
       if (Number.isFinite(patch.start) && Number.isFinite(patch.end) && patch.end <= patch.start) {
@@ -374,7 +559,6 @@ function SyncPanel({
       }
       if (Object.keys(patch).length) onUpdateVerse(activeIndex, patch);
     }, 250);
-
     return () => clearTimeout(t);
   }, [startInput, endInput, activeIndex, active, duration, onUpdateVerse]);
 
@@ -383,22 +567,11 @@ function SyncPanel({
   const deltaOk = Number.isFinite(startNum) && Number.isFinite(endNum) && endNum > startNum;
   const delta = deltaOk ? endNum - startNum : null;
 
-  const setStartToT = () => {
-    if (!active) return;
-    onUpdateVerse(activeIndex, { start: currentTime });
-    onToast?.(`Ayah ${active.ayah} START = ${currentTime.toFixed(2)}s`);
-  };
-
-  const setEndToT = () => {
-    if (!active) return;
-    onUpdateVerse(activeIndex, { end: currentTime });
-    onToast?.(`Ayah ${active.ayah} END = ${currentTime.toFixed(2)}s`);
-  };
-
+  const setStartToT = () => active && onUpdateVerse(activeIndex, { start: currentTime });
+  const setEndToT = () => active && onUpdateVerse(activeIndex, { end: currentTime });
   const setEndToTAndNext = () => {
     if (!active) return;
     onUpdateVerse(activeIndex, { end: currentTime });
-    onToast?.(`Ayah ${active.ayah} END = ${currentTime.toFixed(2)}s → next`);
     const nextIdx = Math.min(verses.length - 1, activeIndex + 1);
     onSeekVerse(nextIdx);
   };
@@ -430,12 +603,42 @@ function SyncPanel({
     onSeek(t);
   };
 
+  const doCommit = async () => {
+    const repoStr = ghRepo.trim();
+    const token = ghToken.trim();
+    const path = ghPath.trim();
+    const branch = ghBranch.trim() || "main";
+
+    if (!repoStr.includes("/")) {
+      alert("Repo format: owner/repo");
+      return;
+    }
+    if (!token) {
+      alert("Token required (fine-grained PAT: Contents RW on that repo).");
+      return;
+    }
+    if (!path) {
+      alert("File path required (e.g. public/data/yusuf.json)");
+      return;
+    }
+
+    const [owner, repo] = repoStr.split("/", 2);
+    const jsonText = JSON.stringify(verses, null, 2);
+    const content = base64EncodeUtf8(jsonText);
+    const message =
+      ghMsg.trim() || `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
+
+    await onCommitGithub({ owner, repo, path, branch, token, message, content });
+    setGhMsg("");
+  };
+
   return (
     <div className="syncPanel">
       <div className="syncHeader">
         <div className="syncTitle">Sync tools</div>
         <div className="syncMeta muted">
-          Active: <span className="mono">{active ? active.ayah : "-"}</span> • t=<span className="mono">{formatSec(currentTime)}</span>
+          Active: <span className="mono">{active ? active.ayah : "-"}</span> • t=
+          <span className="mono">{formatSec(currentTime)}</span>
           <span className="muted"> (</span>
           <span className="mono muted">{formatTime(currentTime)}</span>
           <span className="muted">)</span>
@@ -464,17 +667,16 @@ function SyncPanel({
                   className="miniInput"
                   value={startInput}
                   onChange={(e) => setStartInput(e.target.value)}
-                  placeholder="sec"
                   inputMode="decimal"
                 />
               </label>
+
               <label className="miniLabel">
                 end
                 <input
                   className="miniInput"
                   value={endInput}
                   onChange={(e) => setEndInput(e.target.value)}
-                  placeholder="sec"
                   inputMode="decimal"
                 />
               </label>
@@ -525,13 +727,7 @@ function SyncPanel({
           <div className="syncRow">
             <label className="miniLabel">
               Jump ayah
-              <input
-                className="miniInput"
-                value={jumpAyah}
-                onChange={(e) => setJumpAyah(e.target.value)}
-                placeholder="e.g. 3"
-                inputMode="numeric"
-              />
+              <input className="miniInput" value={jumpAyah} onChange={(e) => setJumpAyah(e.target.value)} inputMode="numeric" />
             </label>
             <button className="btnSmall" type="button" onClick={jumpToAyah}>
               Go
@@ -539,13 +735,7 @@ function SyncPanel({
 
             <label className="miniLabel">
               Jump time (s)
-              <input
-                className="miniInput"
-                value={jumpTime}
-                onChange={(e) => setJumpTime(e.target.value)}
-                placeholder="e.g. 194.5"
-                inputMode="decimal"
-              />
+              <input className="miniInput" value={jumpTime} onChange={(e) => setJumpTime(e.target.value)} inputMode="decimal" />
             </label>
             <button className="btnSmall" type="button" onClick={jumpToTime}>
               Seek
@@ -588,9 +778,80 @@ function SyncPanel({
             />
           </div>
 
-          <div className="syncRow muted">
-            Tip: use <span className="mono">S</span>/<span className="mono">E</span>/<span className="mono">N</span> while listening. Loop helps on hard edges.
+          <div className="syncRow">
+            <button className="btnSmall" type="button" onClick={() => setCommitOpen((x) => !x)}>
+              {commitOpen ? "Hide commit" : "Commit to GitHub"}
+            </button>
+
+            <button
+              className="btnSmall"
+              type="button"
+              onClick={async () => {
+                try {
+                  const r = await fetch("https://api.github.com/rate_limit");
+                  alert(`GitHub reachable ✅ (${r.status})`);
+                } catch {
+                  alert("GitHub not reachable ❌ (Failed to fetch). Check network/adblock/firewall.");
+                }
+              }}
+            >
+              Test GitHub
+            </button>
           </div>
+
+          {commitOpen ? (
+            <>
+              <div className="syncRow">
+                <label className="miniLabel">
+                  Repo (owner/repo)
+                  <input className="miniInput" value={ghRepo} onChange={(e) => setGhRepo(e.target.value)} placeholder="yourname/yourrepo" />
+                </label>
+
+                <label className="miniLabel">
+                  Branch
+                  <input className="miniInput" value={ghBranch} onChange={(e) => setGhBranch(e.target.value)} placeholder="main" />
+                </label>
+              </div>
+
+              <div className="syncRow">
+                <label className="miniLabel">
+                  File path in repo
+                  <input className="miniInput" value={ghPath} onChange={(e) => setGhPath(e.target.value)} placeholder="public/data/yusuf.json" />
+                </label>
+
+                <label className="miniLabel">
+                  Commit message
+                  <input className="miniInput" value={ghMsg} onChange={(e) => setGhMsg(e.target.value)} placeholder="optional" />
+                </label>
+              </div>
+
+              <div className="syncRow">
+                <label className="miniLabel" style={{ minWidth: 290 }}>
+                  GitHub token (PAT)
+                  <input
+                    className="miniInput"
+                    value={ghToken}
+                    onChange={(e) => setGhToken(e.target.value)}
+                    placeholder="ghp_... / github_pat_..."
+                    type="password"
+                  />
+                </label>
+
+                <label className="chip" title="Store token in localStorage on this browser">
+                  <input type="checkbox" checked={ghRemember} onChange={(e) => setGhRemember(e.target.checked)} />
+                  Remember token
+                </label>
+
+                <button className="btnSmall" type="button" onClick={doCommit}>
+                  Commit now
+                </button>
+              </div>
+
+              <div className="syncRow muted">
+                Note: Needs PAT with <span className="mono">Contents: Read/Write</span> on that repo.
+              </div>
+            </>
+          ) : null}
         </div>
       </div>
     </div>
@@ -622,7 +883,7 @@ function VersesTable({ verses, activeIndex, onRowClick, rowRefs }) {
             >
               <div className="cell colNo">{v.ayah}</div>
               <div className="cell colAr" dir="rtl">
-                {v.ar}
+                {(v.ar || "").trimStart()}
               </div>
               <div className="cell colDe">{v.de}</div>
               <div className="cell colTr">{v.tr}</div>
@@ -657,10 +918,11 @@ export default function App() {
   const [aPoint, setAPoint] = useState(null);
   const [bPoint, setBPoint] = useState(null);
 
-  const [toast, setToast] = useState(null);
-  const toastTimerRef = useRef(null);
-
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
+
+  useEffect(() => {
+    document.title = "Türkçe-Almanca Kur’an Player";
+  }, []);
 
   useEffect(() => {
     try {
@@ -678,19 +940,6 @@ export default function App() {
       // ignore
     }
   }, [toolsCollapsed]);
-
-  const showToast = useCallback((msg) => {
-    if (!msg) return;
-    setToast(String(msg));
-    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    toastTimerRef.current = setTimeout(() => setToast(null), 1100);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    };
-  }, []);
 
   const versesRef = useRef(verses);
   const activeIndexRef = useRef(activeIndex);
@@ -722,6 +971,7 @@ export default function App() {
   const audioSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""), [selectedSurah]);
   const versesSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.versesUrl) : ""), [selectedSurah]);
 
+  // ✅ FIXED: robust loading + tolerant parsing
   useEffect(() => {
     let cancelled = false;
 
@@ -732,11 +982,6 @@ export default function App() {
     setDuration(0);
     setIsPlaying(false);
 
-    setLoopAyah(false);
-    setLoopAB(false);
-    setAPoint(null);
-    setBPoint(null);
-
     const a = audioRef.current;
     if (a) {
       a.pause();
@@ -746,9 +991,20 @@ export default function App() {
     (async () => {
       try {
         const res = await fetch(versesSrc, { cache: "no-store" });
-        if (!res.ok) throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);
-        const data = await res.json();
-        if (!Array.isArray(data)) throw new Error("Invalid verses JSON (expected array)");
+        const text = await res.text();
+
+        if (!res.ok) {
+          throw new Error(
+            `Fetch failed: ${res.status} ${res.statusText} | url=${versesSrc} | body=${text.slice(0, 160)}`
+          );
+        }
+
+        const data = parseJsonTolerant(text, versesSrc);
+
+        if (!Array.isArray(data)) {
+          throw new Error(`Invalid verses JSON (expected array) | url=${versesSrc}`);
+        }
+
         if (!cancelled) {
           rowRefs.current = [];
           setVerses(data);
@@ -764,6 +1020,7 @@ export default function App() {
     };
   }, [versesSrc]);
 
+  // Audio listeners
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -789,6 +1046,7 @@ export default function App() {
     };
   }, []);
 
+  // Playback rate
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -972,17 +1230,16 @@ export default function App() {
     }
   }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint]);
 
-  // Active verse update + autoscroll (✅ block:start to avoid sticky overlap)
+  // active index update + ensure visible without page-top jumps
   useEffect(() => {
     if (!verses.length) return;
     const idx = findActiveVerseIndex(verses, currentTime);
-    if (idx !== activeIndex) {
-      setActiveIndex(idx);
-      const el = rowRefs.current[idx];
-      if (el && typeof el.scrollIntoView === "function") {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    }
+    if (idx === -1 || idx === activeIndex) return;
+
+    setActiveIndex(idx);
+
+    const el = rowRefs.current[idx];
+    if (el) ensureRowVisible(el, 10);
   }, [currentTime, verses, activeIndex]);
 
   const setA = useCallback(() => setAPoint(currentTimeRef.current), []);
@@ -1029,12 +1286,10 @@ export default function App() {
       }
       if (k === "a") {
         setA();
-        showToast(`Set A = ${currentTimeRef.current.toFixed(2)}s`);
         return;
       }
       if (k === "b") {
         setB();
-        showToast(`Set B = ${currentTimeRef.current.toFixed(2)}s`);
         return;
       }
 
@@ -1043,16 +1298,10 @@ export default function App() {
       const t = currentTimeRef.current;
 
       if (idx >= 0 && vs[idx]) {
-        const ay = vs[idx].ayah;
-        if (k === "s") {
-          updateVerse(idx, { start: t });
-          showToast(`Ayah ${ay} START = ${t.toFixed(2)}s`);
-        } else if (k === "e") {
+        if (k === "s") updateVerse(idx, { start: t });
+        else if (k === "e") updateVerse(idx, { end: t });
+        else if (k === "n") {
           updateVerse(idx, { end: t });
-          showToast(`Ayah ${ay} END = ${t.toFixed(2)}s`);
-        } else if (k === "n") {
-          updateVerse(idx, { end: t });
-          showToast(`Ayah ${ay} END = ${t.toFixed(2)}s → next`);
           const nextIdx = Math.min(vs.length - 1, idx + 1);
           seekVerse(nextIdx, true);
         }
@@ -1061,7 +1310,19 @@ export default function App() {
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onPlayPause, nudge, prevAyah, nextAyah, updateVerse, seekVerse, setA, setB, showToast]);
+  }, [onPlayPause, nudge, prevAyah, nextAyah, updateVerse, seekVerse, setA, setB]);
+
+  const commitGithub = useCallback(async ({ owner, repo, path, branch, token, message, content }) => {
+    try {
+      setError("");
+      const sha = await githubGetFileSha({ owner, repo, path, token, branch });
+      await githubPutFile({ owner, repo, path, token, branch, message, contentBase64: content, sha });
+      alert(`Committed ✅ ${owner}/${repo}:${branch}/${path}`);
+    } catch (e) {
+      console.error(e);
+      alert(String(e?.message || e));
+    }
+  }, []);
 
   const header = selectedSurah ? (
     <div className="surahHeader">
@@ -1152,20 +1413,13 @@ export default function App() {
                 onRestoreDraft={restoreDraft}
                 onClearDraft={clearDraft}
                 onJumpFirstUntimed={jumpFirstUntimed}
-                onToast={showToast}
+                onCommitGithub={commitGithub}
               />
             </>
           )}
-
-          {toast ? <div className="toast">{toast}</div> : null}
         </div>
 
-        <VersesTable
-          verses={verses}
-          activeIndex={activeIndex}
-          onRowClick={(idx) => seekVerse(idx, true)}
-          rowRefs={rowRefs}
-        />
+        <VersesTable verses={verses} activeIndex={activeIndex} onRowClick={(idx) => seekVerse(idx, true)} rowRefs={rowRefs} />
       </main>
     </div>
   );
