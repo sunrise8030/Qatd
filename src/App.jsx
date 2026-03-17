@@ -18,7 +18,8 @@ const SURAHES = [
 function resolvePublicUrl(path) {
   const base = import.meta.env.BASE_URL || "/";
   const p = String(path || "").replace(/^\//, "");
-  return `${base}${p}`;
+  const b = String(base || "/");
+  return new URL(`${b}${p}`, window.location.origin).toString();
 }
 
 function clamp(n, a, b) {
@@ -38,6 +39,7 @@ function formatSec(sec) {
   return Number.isFinite(sec) ? `${sec.toFixed(2)}s` : "—";
 }
 
+// Overlap-safe
 function findActiveVerseIndex(verses, t) {
   if (!Array.isArray(verses) || verses.length === 0 || !Number.isFinite(t)) return -1;
 
@@ -56,6 +58,7 @@ function findActiveVerseIndex(verses, t) {
   }
   if (bestIdx !== -1) return bestIdx;
 
+  // fallback: closest start
   let closest = -1;
   let bestDelta = Infinity;
   for (let i = 0; i < verses.length; i += 1) {
@@ -90,6 +93,74 @@ function ensureRowVisible(el, padding = 10) {
   if (hiddenUnderSticky || belowViewport) {
     el.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
+}
+
+function base64EncodeUtf8(text) {
+  return btoa(unescape(encodeURIComponent(text)));
+}
+
+async function ghFetch(url, options) {
+  try {
+    return await fetch(url, options);
+  } catch (e) {
+    throw new Error(
+      "Network error (fetch failed). Check: internet/firewall, adblock, VPN, GitHub blocked."
+    );
+  }
+}
+
+async function githubGetFileSha({ owner, repo, path, token, branch }) {
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path).replaceAll(
+    "%2F",
+    "/"
+  )}?ref=${encodeURIComponent(branch)}`;
+
+  const res = await ghFetch(url, {
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${token}`,
+      "X-GitHub-Api-Version": "2022-11-28",
+    },
+  });
+
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`GitHub GET failed: ${res.status} ${res.statusText} :: ${t}`);
+  }
+  const data = await res.json();
+  return data?.sha || null;
+}
+
+async function githubPutFile({ owner, repo, path, token, branch, message, contentBase64, sha }) {
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path).replaceAll(
+    "%2F",
+    "/"
+  )}`;
+
+  const body = {
+    message,
+    content: contentBase64,
+    branch,
+    ...(sha ? { sha } : {}),
+  };
+
+  const res = await ghFetch(url, {
+    method: "PUT",
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${token}`,
+      "X-GitHub-Api-Version": "2022-11-28",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`GitHub PUT failed: ${res.status} ${res.statusText} :: ${t}`);
+  }
+  return res.json();
 }
 
 function SurahList({ surahs, selectedId, query, onQuery, onSelect }) {
@@ -140,7 +211,16 @@ function SurahList({ surahs, selectedId, query, onQuery, onSelect }) {
   );
 }
 
-function Timeline({ duration, currentTime, verses, activeIndex, onSeek, onSeekVerse, showMarkers, markerEvery }) {
+function Timeline({
+  duration,
+  currentTime,
+  verses,
+  activeIndex,
+  onSeek,
+  onSeekVerse,
+  showMarkers,
+  markerEvery,
+}) {
   const trackRef = useRef(null);
 
   const markers = useMemo(() => {
@@ -251,8 +331,12 @@ function PlayerControls({
       <div className="liveTimeBar">
         <div className="liveTime">
           <span className="liveLabel">LIVE</span>
-          <span className="liveSec">{Number.isFinite(currentTime) ? currentTime.toFixed(2) : "0.00"}s</span>
-          <span className="liveDur muted">/ {Number.isFinite(duration) ? duration.toFixed(2) : "0.00"}s</span>
+          <span className="liveSec">
+            {Number.isFinite(currentTime) ? currentTime.toFixed(2) : "0.00"}s
+          </span>
+          <span className="liveDur muted">
+            / {Number.isFinite(duration) ? duration.toFixed(2) : "0.00"}s
+          </span>
         </div>
 
         <div className="liveActions">
@@ -345,56 +429,6 @@ function PlayerControls({
   );
 }
 
-function base64EncodeUtf8(text) {
-  return btoa(unescape(encodeURIComponent(text)));
-}
-
-async function githubGetFileSha({ owner, repo, path, token, branch }) {
-  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path).replaceAll(
-    "%2F",
-    "/"
-  )}?ref=${encodeURIComponent(branch)}`;
-  const res = await fetch(url, {
-    headers: {
-      Accept: "application/vnd.github+json",
-      Authorization: `Bearer ${token}`,
-      "X-GitHub-Api-Version": "2022-11-28",
-    },
-  });
-  if (res.status === 404) return null;
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`GitHub GET failed: ${res.status} ${res.statusText} :: ${t}`);
-  }
-  const data = await res.json();
-  return data?.sha || null;
-}
-
-async function githubPutFile({ owner, repo, path, token, branch, message, contentBase64, sha }) {
-  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path).replaceAll("%2F", "/")}`;
-  const body = {
-    message,
-    content: contentBase64,
-    branch,
-    ...(sha ? { sha } : {}),
-  };
-  const res = await fetch(url, {
-    method: "PUT",
-    headers: {
-      Accept: "application/vnd.github+json",
-      Authorization: `Bearer ${token}`,
-      "X-GitHub-Api-Version": "2022-11-28",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`GitHub PUT failed: ${res.status} ${res.statusText} :: ${t}`);
-  }
-  return res.json();
-}
-
 function SyncPanel({
   verses,
   activeIndex,
@@ -409,8 +443,6 @@ function SyncPanel({
   onRestoreDraft,
   onClearDraft,
   onJumpFirstUntimed,
-
-  // ✅ NEW: commit hook
   onCommitGithub,
 }) {
   const [startInput, setStartInput] = useState("");
@@ -419,7 +451,6 @@ function SyncPanel({
   const [jumpTime, setJumpTime] = useState("");
   const fileRef = useRef(null);
 
-  // ✅ commit UI
   const [commitOpen, setCommitOpen] = useState(false);
   const [ghRepo, setGhRepo] = useState("");
   const [ghBranch, setGhBranch] = useState("main");
@@ -451,7 +482,13 @@ function SyncPanel({
       }
       localStorage.setItem(
         "qatd:ghcfg",
-        JSON.stringify({ repo: ghRepo, branch: ghBranch, path: ghPath, token: ghToken, remember: true })
+        JSON.stringify({
+          repo: ghRepo,
+          branch: ghBranch,
+          path: ghPath,
+          token: ghToken,
+          remember: true,
+        })
       );
     } catch {
       // ignore
@@ -472,7 +509,6 @@ function SyncPanel({
     setEndInput(Number.isFinite(e) ? String(e) : "");
   }, [activeIndex, active]);
 
-  // auto-apply debounced
   useEffect(() => {
     if (!active) return;
     const t = setTimeout(() => {
@@ -509,6 +545,7 @@ function SyncPanel({
     if (!Number.isFinite(s)) return;
     onUpdateVerse(activeIndex, { start: Math.max(0, s + d) });
   };
+
   const nudgeEnd = (d) => {
     if (!active) return;
     const e = Number(active.end);
@@ -522,6 +559,7 @@ function SyncPanel({
     const idx = verses.findIndex((v) => Number(v?.ayah) === n);
     if (idx >= 0) onSeekVerse(idx);
   };
+
   const jumpToTime = () => {
     const t = Number(jumpTime);
     if (!Number.isFinite(t)) return;
@@ -550,10 +588,8 @@ function SyncPanel({
     const [owner, repo] = repoStr.split("/", 2);
     const jsonText = JSON.stringify(verses, null, 2);
     const content = base64EncodeUtf8(jsonText);
-
     const message =
-      ghMsg.trim() ||
-      `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
+      ghMsg.trim() || `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
 
     await onCommitGithub({ owner, repo, path, branch, token, message, content });
     setGhMsg("");
@@ -597,6 +633,7 @@ function SyncPanel({
                   inputMode="decimal"
                 />
               </label>
+
               <label className="miniLabel">
                 end
                 <input
@@ -653,7 +690,12 @@ function SyncPanel({
           <div className="syncRow">
             <label className="miniLabel">
               Jump ayah
-              <input className="miniInput" value={jumpAyah} onChange={(e) => setJumpAyah(e.target.value)} inputMode="numeric" />
+              <input
+                className="miniInput"
+                value={jumpAyah}
+                onChange={(e) => setJumpAyah(e.target.value)}
+                inputMode="numeric"
+              />
             </label>
             <button className="btnSmall" type="button" onClick={jumpToAyah}>
               Go
@@ -661,7 +703,12 @@ function SyncPanel({
 
             <label className="miniLabel">
               Jump time (s)
-              <input className="miniInput" value={jumpTime} onChange={(e) => setJumpTime(e.target.value)} inputMode="decimal" />
+              <input
+                className="miniInput"
+                value={jumpTime}
+                onChange={(e) => setJumpTime(e.target.value)}
+                inputMode="decimal"
+              />
             </label>
             <button className="btnSmall" type="button" onClick={jumpToTime}>
               Seek
@@ -708,6 +755,21 @@ function SyncPanel({
             <button className="btnSmall" type="button" onClick={() => setCommitOpen((x) => !x)}>
               {commitOpen ? "Hide commit" : "Commit to GitHub"}
             </button>
+
+            <button
+              className="btnSmall"
+              type="button"
+              onClick={async () => {
+                try {
+                  const r = await fetch("https://api.github.com/rate_limit");
+                  alert(`GitHub reachable ✅ (${r.status})`);
+                } catch {
+                  alert("GitHub not reachable ❌ (Failed to fetch). Check network/adblock/firewall.");
+                }
+              }}
+            >
+              Test GitHub
+            </button>
           </div>
 
           {commitOpen ? (
@@ -715,22 +777,44 @@ function SyncPanel({
               <div className="syncRow">
                 <label className="miniLabel">
                   Repo (owner/repo)
-                  <input className="miniInput" value={ghRepo} onChange={(e) => setGhRepo(e.target.value)} placeholder="yourname/yourrepo" />
+                  <input
+                    className="miniInput"
+                    value={ghRepo}
+                    onChange={(e) => setGhRepo(e.target.value)}
+                    placeholder="yourname/yourrepo"
+                  />
                 </label>
+
                 <label className="miniLabel">
                   Branch
-                  <input className="miniInput" value={ghBranch} onChange={(e) => setGhBranch(e.target.value)} placeholder="main" />
+                  <input
+                    className="miniInput"
+                    value={ghBranch}
+                    onChange={(e) => setGhBranch(e.target.value)}
+                    placeholder="main"
+                  />
                 </label>
               </div>
 
               <div className="syncRow">
                 <label className="miniLabel">
                   File path in repo
-                  <input className="miniInput" value={ghPath} onChange={(e) => setGhPath(e.target.value)} placeholder="public/data/yusuf.json" />
+                  <input
+                    className="miniInput"
+                    value={ghPath}
+                    onChange={(e) => setGhPath(e.target.value)}
+                    placeholder="public/data/yusuf.json"
+                  />
                 </label>
+
                 <label className="miniLabel">
                   Commit message
-                  <input className="miniInput" value={ghMsg} onChange={(e) => setGhMsg(e.target.value)} placeholder="optional" />
+                  <input
+                    className="miniInput"
+                    value={ghMsg}
+                    onChange={(e) => setGhMsg(e.target.value)}
+                    placeholder="optional"
+                  />
                 </label>
               </div>
 
@@ -747,7 +831,11 @@ function SyncPanel({
                 </label>
 
                 <label className="chip" title="Store token in localStorage on this browser">
-                  <input type="checkbox" checked={ghRemember} onChange={(e) => setGhRemember(e.target.checked)} />
+                  <input
+                    type="checkbox"
+                    checked={ghRemember}
+                    onChange={(e) => setGhRemember(e.target.checked)}
+                  />
                   Remember token
                 </label>
 
@@ -792,7 +880,7 @@ function VersesTable({ verses, activeIndex, onRowClick, rowRefs }) {
             >
               <div className="cell colNo">{v.ayah}</div>
               <div className="cell colAr" dir="rtl">
-                {v.ar}
+                {(v.ar || "").trimStart()}
               </div>
               <div className="cell colDe">{v.de}</div>
               <div className="cell colTr">{v.tr}</div>
@@ -880,6 +968,7 @@ export default function App() {
   const audioSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""), [selectedSurah]);
   const versesSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.versesUrl) : ""), [selectedSurah]);
 
+  // Load verses on surah select (robust URL + debug friendly)
   useEffect(() => {
     let cancelled = false;
 
@@ -890,11 +979,6 @@ export default function App() {
     setDuration(0);
     setIsPlaying(false);
 
-    setLoopAyah(false);
-    setLoopAB(false);
-    setAPoint(null);
-    setBPoint(null);
-
     const a = audioRef.current;
     if (a) {
       a.pause();
@@ -904,9 +988,23 @@ export default function App() {
     (async () => {
       try {
         const res = await fetch(versesSrc, { cache: "no-store" });
-        if (!res.ok) throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);
-        const data = await res.json();
-        if (!Array.isArray(data)) throw new Error("Invalid verses JSON (expected array)");
+        const text = await res.text();
+
+        if (!res.ok) {
+          throw new Error(
+            `Fetch failed: ${res.status} ${res.statusText} | url=${versesSrc} | body=${text.slice(0, 120)}`
+          );
+        }
+
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          throw new Error(`JSON parse failed | url=${versesSrc} | body=${text.slice(0, 120)}`);
+        }
+
+        if (!Array.isArray(data)) throw new Error(`Invalid verses JSON (expected array) | url=${versesSrc}`);
+
         if (!cancelled) {
           rowRefs.current = [];
           setVerses(data);
@@ -922,6 +1020,7 @@ export default function App() {
     };
   }, [versesSrc]);
 
+  // Audio listeners
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -947,6 +1046,7 @@ export default function App() {
     };
   }, []);
 
+  // Playback rate
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1130,7 +1230,7 @@ export default function App() {
     }
   }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint]);
 
-  // ✅ active index update + "nearest" ensure visible (no page-top jump)
+  // active index update + ensure visible without page-top jumps
   useEffect(() => {
     if (!verses.length) return;
     const idx = findActiveVerseIndex(verses, currentTime);
@@ -1212,7 +1312,6 @@ export default function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, [onPlayPause, nudge, prevAyah, nextAyah, updateVerse, seekVerse, setA, setB]);
 
-  // ✅ GitHub commit action (called by SyncPanel)
   const commitGithub = useCallback(async ({ owner, repo, path, branch, token, message, content }) => {
     try {
       setError("");
