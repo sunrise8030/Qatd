@@ -45,11 +45,9 @@ function findActiveVerseIndex(verses, t) {
     const start = Number(v?.start);
     const end = Number(v?.end);
     if (!Number.isFinite(start) || !Number.isFinite(end)) continue;
-    if (start <= t && t < end) {
-      if (start > bestStart) {
-        bestStart = start;
-        bestIdx = i;
-      }
+    if (start <= t && t < end && start > bestStart) {
+      bestStart = start;
+      bestIdx = i;
     }
   }
   if (bestIdx !== -1) return bestIdx;
@@ -330,7 +328,7 @@ export default function App() {
   const [rate, setRate] = useState(1);
   const [markersOn, setMarkersOn] = useState(true);
 
-  // refs to avoid stale closures in keyboard handler
+  // refs to avoid stale closures in key handler
   const versesRef = useRef(verses);
   const activeIndexRef = useRef(activeIndex);
   useEffect(() => {
@@ -355,13 +353,12 @@ export default function App() {
     () => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""),
     [selectedSurah]
   );
-
   const versesSrc = useMemo(
     () => (selectedSurah ? resolvePublicUrl(selectedSurah.versesUrl) : ""),
     [selectedSurah]
   );
 
-  // Load verses on surah select (DO NOT refetch on rate change)
+  // load verses on surah change
   useEffect(() => {
     let cancelled = false;
 
@@ -399,7 +396,7 @@ export default function App() {
     };
   }, [versesSrc]);
 
-  // Audio listeners
+  // audio listeners
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -428,7 +425,7 @@ export default function App() {
     };
   }, []);
 
-  // Playback rate sync
+  // rate sync
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -493,7 +490,7 @@ export default function App() {
     seekVerse(idx, true);
   }, [seekVerse]);
 
-  // Active verse update + autoscroll + loop ayah
+  // active verse + autoscroll + loop
   useEffect(() => {
     if (!verses.length) return;
 
@@ -510,19 +507,17 @@ export default function App() {
       const v = verses[idx];
       const s = Number(v?.start);
       const e = Number(v?.end);
-      if (Number.isFinite(s) && Number.isFinite(e) && e > s) {
-        if (currentTime >= e) {
-          const a = audioRef.current;
-          if (a) {
-            a.currentTime = s;
-            a.play().catch(() => {});
-          }
+      if (Number.isFinite(s) && Number.isFinite(e) && e > s && currentTime >= e) {
+        const a = audioRef.current;
+        if (a) {
+          a.currentTime = s;
+          a.play().catch(() => {});
         }
       }
     }
   }, [currentTime, verses, activeIndex, loopAyah]);
 
-  // Keyboard shortcuts (single stable listener)
+  // keyboard shortcuts
   useEffect(() => {
     const onKey = (e) => {
       const tag = document.activeElement?.tagName?.toLowerCase();
@@ -624,421 +619,4 @@ export default function App() {
       </main>
     </div>
   );
-}
-
-// src/styles.css
-:root {
-  --bg: #0b0f16;
-  --panel: #0f1520;
-  --panel2: #0c111a;
-  --border: rgba(255, 255, 255, 0.08);
-  --text: rgba(255, 255, 255, 0.92);
-  --muted: rgba(255, 255, 255, 0.62);
-  --accent: rgba(99, 179, 237, 1);
-  --accent2: rgba(99, 179, 237, 0.25);
-  --danger: rgba(255, 120, 120, 0.18);
-}
-
-* {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  height: 100%;
-  margin: 0;
-  background: radial-gradient(1200px 800px at 30% 15%, rgba(120, 120, 255, 0.12), transparent 55%),
-    radial-gradient(1200px 800px at 70% 35%, rgba(255, 120, 120, 0.10), transparent 55%),
-    var(--bg);
-  color: var(--text);
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans",
-    "Apple Color Emoji", "Segoe UI Emoji";
-}
-
-.appShell {
-  display: grid;
-  grid-template-columns: 360px 1fr;
-  min-height: 100vh;
-}
-
-@media (max-width: 980px) {
-  .appShell {
-    grid-template-columns: 1fr;
-  }
-  .sidebar {
-    position: sticky;
-    top: 0;
-    z-index: 5;
-  }
-}
-
-.sidebar {
-  border-right: 1px solid var(--border);
-  background: rgba(15, 21, 32, 0.72);
-  backdrop-filter: blur(10px);
-  padding: 16px;
-}
-
-.sidebarHeader {
-  margin-bottom: 12px;
-}
-
-.appTitle {
-  margin: 0 0 10px;
-  font-size: 18px;
-}
-
-.fieldLabel {
-  display: block;
-  color: var(--muted);
-  font-size: 12px;
-  margin: 8px 0 6px;
-}
-
-.searchInput {
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: rgba(0, 0, 0, 0.25);
-  color: var(--text);
-  outline: none;
-}
-
-.surahList {
-  display: grid;
-  gap: 10px;
-  margin-top: 12px;
-}
-
-.surahCard {
-  text-align: left;
-  border: 1px solid var(--border);
-  background: rgba(0, 0, 0, 0.18);
-  border-radius: 14px;
-  padding: 12px;
-  cursor: pointer;
-  color: inherit;
-}
-
-.surahCard:hover {
-  border-color: rgba(255, 255, 255, 0.16);
-}
-
-.surahCard.active {
-  border-color: rgba(99, 179, 237, 0.55);
-  box-shadow: 0 0 0 2px rgba(99, 179, 237, 0.15) inset;
-}
-
-.surahCardTop {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.surahNames {
-  margin-top: 8px;
-}
-
-.surahNameStrong {
-  font-weight: 650;
-  font-size: 16px;
-}
-
-.surahNameMuted {
-  color: var(--muted);
-  font-size: 13px;
-  margin-top: 2px;
-}
-
-.surahNameAr {
-  color: var(--text);
-  font-size: 16px;
-  margin-top: 6px;
-  text-align: right;
-}
-
-.surahMeta {
-  margin-top: 10px;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.content {
-  padding: 16px;
-}
-
-.surahHeader {
-  border: 1px solid var(--border);
-  background: rgba(15, 21, 32, 0.55);
-  border-radius: 16px;
-  padding: 14px 16px;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 10px;
-}
-
-.surahTitle {
-  margin: 0;
-  font-size: 20px;
-}
-
-.surahSub {
-  color: var(--muted);
-  margin-top: 3px;
-}
-
-.surahHeaderRight {
-  font-size: 18px;
-  align-self: start;
-}
-
-.surahBadges {
-  grid-column: 1 / -1;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 6px;
-}
-
-.badge {
-  font-size: 12px;
-  color: var(--muted);
-  border: 1px solid var(--border);
-  background: rgba(0, 0, 0, 0.18);
-  padding: 6px 10px;
-  border-radius: 999px;
-}
-
-.errorBox {
-  margin-top: 12px;
-  border: 1px solid rgba(255, 120, 120, 0.35);
-  background: var(--danger);
-  border-radius: 12px;
-  padding: 10px 12px;
-}
-
-.playerCard {
-  margin-top: 14px;
-  border: 1px solid var(--border);
-  background: rgba(15, 21, 32, 0.55);
-  border-radius: 16px;
-  padding: 12px;
-}
-
-.playerControls {
-  display: grid;
-  gap: 8px;
-}
-
-.btnRow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.btn,
-.btnSmall {
-  border: 1px solid var(--border);
-  background: rgba(0, 0, 0, 0.22);
-  color: var(--text);
-  border-radius: 12px;
-  padding: 10px 12px;
-  cursor: pointer;
-}
-
-.btnSmall {
-  padding: 8px 10px;
-  border-radius: 10px;
-}
-
-.btn:hover,
-.btnSmall:hover {
-  border-color: rgba(255, 255, 255, 0.16);
-}
-
-.divider {
-  width: 1px;
-  height: 28px;
-  background: var(--border);
-  margin: 0 2px;
-}
-
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid var(--border);
-  background: rgba(0, 0, 0, 0.18);
-  padding: 8px 10px;
-  border-radius: 999px;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.rate {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--muted);
-  font-size: 12px;
-  border: 1px solid var(--border);
-  background: rgba(0, 0, 0, 0.18);
-  padding: 8px 10px;
-  border-radius: 999px;
-}
-
-.rate select {
-  background: rgba(0, 0, 0, 0.25);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 4px 8px;
-}
-
-.kbdHelp {
-  font-size: 12px;
-}
-
-.timeline {
-  margin-top: 10px;
-  border: 1px solid var(--border);
-  background: rgba(0, 0, 0, 0.18);
-  border-radius: 14px;
-  padding: 10px;
-}
-
-.timelineTop {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 8px;
-}
-
-.timeReadout {
-  font-size: 13px;
-}
-
-.mono {
-  font-variant-numeric: tabular-nums;
-}
-
-.muted {
-  color: var(--muted);
-}
-
-.timelineTrack {
-  position: relative;
-  height: 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  overflow: hidden;
-  cursor: pointer;
-}
-
-.timelineProgress {
-  height: 100%;
-  background: rgba(99, 179, 237, 0.65);
-  width: 0%;
-}
-
-.timelineMarker {
-  position: absolute;
-  top: -4px;
-  width: 8px;
-  height: 18px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.08);
-  transform: translateX(-50%);
-  cursor: pointer;
-}
-
-.timelineMarker.active {
-  background: rgba(99, 179, 237, 0.55);
-  border-color: rgba(99, 179, 237, 0.9);
-}
-
-.timelineSlider {
-  width: 100%;
-  margin-top: 10px;
-}
-
-.tableWrap {
-  margin-top: 14px;
-  border: 1px solid var(--border);
-  background: rgba(15, 21, 32, 0.55);
-  border-radius: 16px;
-  overflow: hidden;
-}
-
-.tableHeader {
-  display: grid;
-  grid-template-columns: 70px 1.1fr 1fr 1fr;
-  gap: 0;
-  padding: 12px 12px;
-  border-bottom: 1px solid var(--border);
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.tableBody {
-  display: grid;
-}
-
-.row {
-  display: grid;
-  grid-template-columns: 70px 1.1fr 1fr 1fr;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 10px 12px;
-  text-align: left;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-}
-
-.row:hover {
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.row.active {
-  background: rgba(99, 179, 237, 0.12);
-  box-shadow: 0 0 0 1px rgba(99, 179, 237, 0.35) inset;
-}
-
-.cell {
-  padding-right: 10px;
-}
-
-.colNo {
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-
-.colAr {
-  font-size: 18px;
-  line-height: 1.55;
-  text-align: right;
-  padding-left: 12px;
-}
-
-.colDe,
-.colTr {
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-@media (max-width: 980px) {
-  .tableHeader,
-  .row {
-    grid-template-columns: 60px 1fr;
-  }
-  .colDe,
-  .colTr {
-    display: none;
-  }
 }
