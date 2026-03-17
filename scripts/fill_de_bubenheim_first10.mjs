@@ -1,9 +1,8 @@
+// scripts/fill_de_bubenheim.mjs
 import fs from "node:fs";
 
 const SURAH_NUMBER = 12;
-const FIRST_AYA = 1;
-const LAST_AYA = 10;
-const TRANSLATION_KEY = "german_bubenheim";
+const TRANSLATION_KEY = "german_bubenheim"; // QuranEnc: German - Bubenheim
 
 function readJson(path) {
   return JSON.parse(fs.readFileSync(path, "utf8"));
@@ -13,25 +12,41 @@ function writeJson(path, data) {
   fs.writeFileSync(path, JSON.stringify(data, null, 2), "utf8");
 }
 
-async function fetchSuraTranslation() {
-  const url = `https://quranenc.com/api/v1/translation/sura/${TRANSLATION_KEY}/${SURAH_NUMBER}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`QuranEnc API failed: ${res.status} ${res.statusText}`);
-  return res.json();
-}
-
 function normalizeGerman(s) {
   return String(s ?? "").replace(/\s+/g, " ").trim();
 }
 
+async function fetchWithRetry(url, retries = 3) {
+  let lastErr;
+  for (let i = 0; i < retries; i += 1) {
+    try {
+      const res = await fetch(url, {
+        headers: { "User-Agent": "Qatd/1.0 (non-commercial)" },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+      return res.json();
+    } catch (e) {
+      lastErr = e;
+      await new Promise((r) => setTimeout(r, 500 * (i + 1)));
+    }
+  }
+  throw lastErr;
+}
+
 async function main() {
   const targetPath = process.argv[2] || "public/data/yusuf.json";
+
   const local = readJson(targetPath);
   if (!Array.isArray(local)) throw new Error(`${targetPath} must be an array`);
 
-  const api = await fetchSuraTranslation();
+  const url = `https://quranenc.com/api/v1/translation/sura/${TRANSLATION_KEY}/${SURAH_NUMBER}`;
+  const api = await fetchWithRetry(url, 4);
+
   const rows = api?.result;
-  if (!Array.isArray(rows)) throw new Error("Unexpected QuranEnc response shape (missing result array)");
+  if (!Array.isArray(rows)) {
+    console.error("API raw response:", api);
+    throw new Error("Unexpected QuranEnc response: missing result[]");
+  }
 
   const byAya = new Map();
   for (const r of rows) {
@@ -41,24 +56,35 @@ async function main() {
     if (t) byAya.set(aya, t);
   }
 
+  const ayahsInFile = new Set(
+    local
+      .map((v) => Number(v?.ayah))
+      .filter((n) => Number.isFinite(n) && n > 0)
+  );
+
   let filled = 0;
   const out = local.map((v) => {
     const ayah = Number(v?.ayah);
-    if (ayah >= FIRST_AYA && ayah <= LAST_AYA) {
-      const de = byAya.get(ayah);
-      if (de) {
-        filled += 1;
-        return { ...v, de };
-      }
-    }
-    return v;
+    if (!Number.isFinite(ayah) || ayah <= 0) return v;
+
+    const de = byAya.get(ayah);
+    if (!de) return v;
+
+    const prev = String(v?.de ?? "").trim();
+    const isEmpty = !prev || prev === "—" || prev.toLowerCase().startsWith("todo");
+    if (!isEmpty) return v;
+
+    filled += 1;
+    return { ...v, de };
   });
 
   writeJson(targetPath, out);
-  console.log(`OK: filled ${filled} German verses (ayah ${FIRST_AYA}-${LAST_AYA}) into ${targetPath}`);
+
+  console.log(`OK: filled=${filled}, ayahs_in_file=${ayahsInFile.size}`);
+  console.log("Sample:", out.filter((x) => x.ayah === 1 || x.ayah === 2).map((x) => ({ ayah: x.ayah, de: x.de?.slice(0, 60) })));
 }
 
 main().catch((err) => {
-  console.error(err);
+  console.error("[fill_de_bubenheim] FAILED:", err?.message || err);
   process.exit(1);
 });
