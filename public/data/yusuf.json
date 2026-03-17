@@ -212,7 +212,7 @@
     "ar": "قَالَ هِىَ رَٰوَدَتْنِى عَن نَّفْسِى ۚ وَشَهِدَ شَاهِدٌۭ مِّنْ أَهْلِهَآ إِن كَانَ قَمِيصُهُۥ قُدَّ مِن قُبُلٍۢ فَصَدَقَتْ وَهُوَ مِنَ ٱلْكَٰذِبِينَ",
     "tr": "Yusuf, “Asıl o benim nefsimden murat almak istedi!” diyerek, kendisini savundu. Hanımın ailesinden o anda orada bulunan bir kişi görüş beyan etti: “Eğer Yusuf’un gömleği önden yırtılmışsa, hanım doğru söylüyordur; Yusuf yalancıdır.",
     "de": "Er sagte: Sie war es, die versucht hat, mich zu verführen. Und ein Zeuge aus ihrer Familie bezeugte: Wenn sein Hemd vorn zerrissen ist, dann hat sie die Wahrheit gesprochen, und er gehört zu den Lügnern.",
-    "start": 568.86,
+    "start": 566.36,
     "end": 586.27
   },
   {
@@ -228,7 +228,7 @@
     "ar": "فَلَمَّا رَءَا قَمِيصَهُۥ قُدَّ مِن دُبُرٍۢ قَالَ إِنَّهُۥ مِن كَيْدِكُنَّ ۖ إِنَّ كَيْدَكُنَّ عَظِيمٌۭ",
     "tr": "Hanımın beyi, gömleğin arkadan yırtıldığını görünce eşine, “Belli ki,” dedi: “bu, sizin bir fendinizdi. Siz kadınların fendi doğrusu pek müthiştir!”",
     "de": "Als er nun sah, daß sein Hemd hinten zerrissen war, sagte er: Das gehört zu euren Listen. Eure List ist gewaltig.",
-    "start": 597.41,
+    "start": 601.91,
     "end": 619.87
   },
   {
@@ -244,7 +244,7 @@
     "ar": "۞ وَقَالَ نِسْوَةٌۭ فِى ٱلْمَدِينَةِ ٱمْرَأَتُ ٱلْعَزِيزِ تُرَٰوِدُ فَتَىٰهَا عَن نَّفْسِهِۦ ۖ قَدْ شَغَفَهَا حُبًّا ۖ إِنَّا لَنَرَىٰهَا فِى ضَلَٰلٍۢ مُّبِينٍۢ",
     "tr": "Şehirde birtakım kadınlar, “Duydunuz mu?” diyerek dedikoduya başladılar: “Vezirin hanımı, uşağına gönlünü kaptırmış. Sevda ateşi bağrını yakmış; kadın çıldırmış besbelli. Doğrusu bunu ona yakıştıramıyoruz!”",
     "de": "(Einige) Frauen in der Stadt sagten: Die Frau des hohen Herrn versucht, ihren Burschen zu verführen. Er hat sie in leidenschaftliche Liebe versetzt. Wir sehen wahrlich, sie befindet sich in deutlichem Irrtum.",
-    "start": 632.22,
+    "start": 636.32,
     "end": 652.51
   },
   {
@@ -252,7 +252,7 @@
     "ar": "فَلَمَّا سَمِعَتْ بِمَكْرِهِنَّ أَرْسَلَتْ إِلَيْهِنَّ وَأَعْتَدَتْ لَهُنَّ مُتَّكَـًۭٔا وَءَاتَتْ كُلَّ وَٰحِدَةٍۢ مِّنْهُنَّ سِكِّينًۭا وَقَالَتِ ٱخْرُجْ عَلَيْهِنَّ ۖ فَلَمَّا رَأَيْنَهُۥٓ أَكْبَرْنَهُۥ وَقَطَّعْنَ أَيْدِيَهُنَّ وَقُلْنَ حَٰشَ لِلَّهِ مَا هَٰذَا بَشَرًا إِنْ هَٰذَآ إِلَّا مَلَكٌۭ كَرِيمٌۭ",
     "tr": "Aleyhinde dolaşan dedikodular kulağına erişince hanım o kadınları konağına çağırttı. Onlar için mükellef bir sofra hazırladı ve sofraya her biri için bir bıçak koydu. Kadınların, ellerinde bıçak meyve ile meşgul oldukları bir anda Yusuf’a, “Çık karşılarına!” dedi. Kadınlar Yusuf’u görüverince hayranlıktan dona kaldılar ve güzelliğine dalıp, farkında olmadan ellerini kestiler: “Haşa, Allah için, bu bir insan olamaz; bu, olsa olsa pek yüce, pek kıymetli bir melek olabilir!” dediler.",
     "de": "Als sie nun von ihren Ränken hörte, sandte sie zu ihnen und bereitete ihnen ein Gastmahl. Sie gab einer jeden von ihnen ein Messer und sagte (zu Yusuf): Komm zu ihnen heraus. Als sie ihn sahen, fanden sie ihn groß(artig), und sie zerschnitten sich ihre Hände und sagten: Allah behüte! Das ist kein Mensch, das ist nur ein ehrenvoller Engel.",
-    "start": 656.69,
+    "start": 657.39,
     "end": 700.45
   },
   {
@@ -260,7 +260,7 @@
     "ar": "قَالَتْ فَذَٰلِكُنَّ ٱلَّذِى لُمْتُنَّنِى فِيهِ ۖ وَلَقَدْ رَٰوَدتُّهُۥ عَن نَّفْسِهِۦ فَٱسْتَعْصَمَ ۖ وَلَئِن لَّمْ يَفْعَلْ مَآ ءَامُرُهُۥ لَيُسْجَنَنَّ وَلَيَكُونًۭا مِّنَ ٱلصَّٰغِرِينَ",
     "tr": "Evin hanımı, “İşte,” dedi: “kendisine gönlümü kaptırdım diye beni kınadığınız genç! O’nun nefsinden murat almak istediğim doğrudur; fakat O, sımsıkı ismetine sarıldı (günaha tek adım olsun meyletmedi). Ama andolsun, eğer kendisine emrettiğim şeyi yapmazsa, başka yolu yok, kesinlikle zindana atılacak ve kesinlikle aşağılanacak, perişan olacaktır.”",
     "de": "Sie sagte: Seht, das ist der, dessentwegen ihr mich getadelt habt. Ich habe allerdings versucht, ihn zu verführen, doch er widerstand. Und wenn er nicht tut, was ich ihm befehle, wird er ganz gewiß ins Gefängnis gesteckt werden, und er wird gewiß zu den Geringgeachteten gehören.",
-    "start": 700.51,
+    "start": 702.51,
     "end": 728.66
   },
   {
@@ -268,7 +268,7 @@
     "ar": "قَالَ رَبِّ ٱلسِّجْنُ أَحَبُّ إِلَىَّ مِمَّا يَدْعُونَنِىٓ إِلَيْهِ ۖ وَإِلَّا تَصْرِفْ عَنِّى كَيْدَهُنَّ أَصْبُ إِلَيْهِنَّ وَأَكُن مِّنَ ٱلْجَٰهِلِينَ",
     "tr": "Yusuf, (kadınların arzuları ve planları karşısında) Allah’a yönelip yalvardı: “Rabbim! Bunların beni yapmaya çağırdıkları şeyi işlemektense zindanı tercih ederim. Eğer fendlerini bozup beni onlardan kurtarmazsan, kayıp onlara meyleder ve cahillerden (doğru nedir, yanlış nedir bilmeyen, bilseler bile yapmamaları gerekeni bile bile yapanlardan) olurum.”",
     "de": "Er sagte: Mein Herr, das Gefängnis ist mir lieber als das, wozu sie mich auffordern. Und wenn Du ihre List von mir nicht abwendest, werde ich mich zu ihnen hingezogen fühlen und zu den Toren gehören.",
-    "start": 730.48,
+    "start": 731.98,
     "end": 752.74
   },
   {
@@ -276,7 +276,7 @@
     "ar": "فَٱسْتَجَابَ لَهُۥ رَبُّهُۥ فَصَرَفَ عَنْهُ كَيْدَهُنَّ ۚ إِنَّهُۥ هُوَ ٱلسَّمِيعُ ٱلْعَلِيمُ",
     "tr": "Rabbisi duasını kabul buyurup kadınların fendini O’nun üzerinden çekti. Hiç şüphesiz O’dur Semî‘ (her şeyi, her duayı hakkıyla işiten); Alîm (her şeyi, herkesin durumunu hakkıyla bilen).",
     "de": "Da erhörte ihn sein Herr und wendete ihre List von ihm ab. Er ist ja der Allhörende und Allwissende.",
-    "start": 757.52,
+    "start": 755.92,
     "end": 765.76
   },
   {
@@ -284,7 +284,7 @@
     "ar": "ثُمَّ بَدَا لَهُم مِّنۢ بَعْدِ مَا رَأَوُا۟ ٱلْءَايَٰتِ لَيَسْجُنُنَّهُۥ حَتَّىٰ حِينٍۢ",
     "tr": "Saray idaresi, gerçeği bilmelerine ve suçun kimde olduğunun delillerini gözleriyle görmelerine rağmen, bir müddet için Yusuf’u hapse atmayı uygun buldular.",
     "de": "Hierauf schien es ihnen angebracht, nachdem sie die Zeichen (seiner Unschuld) gesehen hatten, ihn für eine gewisse Zeit ins Gefängnis zu stecken.",
-    "start": 772.52,
+    "start": 770.22,
     "end": 782.22
   },
   {
@@ -308,7 +308,7 @@
     "ar": "وَٱتَّبَعْتُ مِلَّةَ ءَابَآءِىٓ إِبْرَٰهِيمَ وَإِسْحَٰقَ وَيَعْقُوبَ ۚ مَا كَانَ لَنَآ أَن نُّشْرِكَ بِٱللَّهِ مِن شَىْءٍۢ ۚ ذَٰلِكَ مِن فَضْلِ ٱللَّهِ عَلَيْنَا وَعَلَى ٱلنَّاسِ وَلَٰكِنَّ أَكْثَرَ ٱلنَّاسِ لَا يَشْكُرُونَ",
     "tr": "“Ben, daima atalarım İbrahim, İshak ve Yakub’un dinine ve yoluna uydum. Bizde asla Allah’a şirk koşmak yoktur. (Bu Tevhid inancı ve insanları bu inanca çağırması,) Allah’ın bize ve aslında bütün insanlara çok büyük bir lütf u ihsanıdır; ama gel gör ki insanların çoğu, (böyle bir lütf u ihsandan dolayı Allah’a) şükretmemekte (ve bu çağrıya müsbet cevap vermemektedir).",
     "de": "und ich bin dem Glaubensbekenntnis meiner Väter Ibrahim, Ishaq und Ya’qub gefolgt. Es steht uns nicht zu, Allah etwas beizugesellen. Das ist etwas von Allahs Huld gegen uns und gegen die Menschen. Aber die meisten Menschen sind nicht dankbar.",
-    "start": 866.7,
+    "start": 864.9000000000001,
     "end": 902.6
   },
   {
@@ -316,7 +316,7 @@
     "ar": "يَٰصَىٰحِبَىِ ٱلسِّجْنِ ءَأَرْبَابٌۭ مُّتَفَرِّقُونَ خَيْرٌ أَمِ ٱللَّهُ ٱلْوَٰحِدُ ٱلْقَهَّارُ",
     "tr": "“Ey benim hapishane arkadaşlarım! (Kâinatın varlık ve idaresini) farklı farklı rablere vermek ve bunlara ibadet etmek mi makûl ve hayırlı olan yoldur, yoksa Tek ve (bütün varlık üzerinde) mutlak hakim olan Allah’a mı?",
     "de": "O meine beiden Gefängnisgefährten! Sind verschiedene Herren besser oder Allah, der Eine, der Allbezwinger?",
-    "start": 906.74,
+    "start": 904.3399999999999,
     "end": 917.15
   },
   {
@@ -324,7 +324,7 @@
     "ar": "مَا تَعْبُدُونَ مِن دُونِهِۦٓ إِلَّآ أَسْمَآءًۭ سَمَّيْتُمُوهَآ أَنتُمْ وَءَابَآؤُكُم مَّآ أَنزَلَ ٱللَّهُ بِهَا مِن سُلْطَٰنٍ ۚ إِنِ ٱلْحُكْمُ إِلَّا لِلَّهِ ۚ أَمَرَ أَلَّا تَعْبُدُوٓا۟ إِلَّآ إِيَّاهُ ۚ ذَٰلِكَ ٱلدِّينُ ٱلْقَيِّمُ وَلَٰكِنَّ أَكْثَرَ ٱلنَّاسِ لَا يَعْلَمُونَ",
     "tr": "“O’nu bırakıp da kendilerine taptığınız şeyler, sizin ve atalarınızın uydurduğu birtakım isimlerden ibarettir. Allah, onların ilâh ve ma’bud olabileceklerine dair hiç bir delil indirmemiştir. Şurası bir gerçek ki, mutlak manâda hükmetme yetkisi sadece Allah’a aittir. O, Kendisinden başka hiç bir varlığa ibadet etmemenizi emretmiştir. Budur doğru ve her bakımdan sağlam din. Ne var ki, insanların çoğu bilmemekte ve bilgisizce hareket etmektedir.",
     "de": "Ihr dient außer Ihm nur Namen, die ihr genannt habt, ihr und eure Väter, für die Allah (jedoch) keine Ermächtigung herabgesandt hat. Das Urteil ist allein Allahs. Er hat befohlen, daß ihr nur Ihm dienen sollt. Das ist die richtige Religion. Aber die meisten Menschen wissen nicht.",
-    "start": 919.17,
+    "start": 918.7699999999999,
     "end": 979.77
   },
   {
@@ -332,7 +332,7 @@
     "ar": "يَٰصَىٰحِبَىِ ٱلسِّجْنِ أَمَّآ أَحَدُكُمَا فَيَسْقِى رَبَّهُۥ خَمْرًۭا ۖ وَأَمَّا ٱلْءَاخَرُ فَيُصْلَبُ فَتَأْكُلُ ٱلطَّيْرُ مِن رَّأْسِهِۦ ۚ قُضِىَ ٱلْأَمْرُ ٱلَّذِى فِيهِ تَسْتَفْتِيَانِ",
     "tr": "“Ey benim zindan arkadaşlarım! Rüyalarınıza gelince: İlk soran arkadaş, efendisine eskiden olduğu gibi yine şarap sunacak; diğeri ise asılacak ve kuşlar başını gagalayacak. Yorumunu istediğiniz konuda artık hüküm verilmiş bulunmaktadır.”",
     "de": "O meine beiden Gefangnisgefährten! Was den einen von euch angeht, so wird er seinem Herrn Wein zu trinken geben. Was aber den anderen angeht, so wird er gekreuzigt, und die Vögel werden von seinem Kopf fressen. Entschieden ist die Angelegenheit, über die ihr um Auskunft fragt.",
-    "start": 983.04,
+    "start": 981.2400000000001,
     "end": 1004.98
   },
   {
@@ -340,7 +340,7 @@
     "ar": "وَقَالَ لِلَّذِى ظَنَّ أَنَّهُۥ نَاجٍۢ مِّنْهُمَا ٱذْكُرْنِى عِندَ رَبِّكَ فَأَنسَىٰهُ ٱلشَّيْطَٰنُ ذِكْرَ رَبِّهِۦ فَلَبِثَ فِى ٱلسِّجْنِ بِضْعَ سِنِينَ",
     "tr": "Yusuf, o iki arkadaştan kurtulacağına inandığı kişiye, “Beni, (suçsuzluğumu) efendinin yanında anıver!” dedi. Fakat şeytan, o kişinin bunu efendisine söylemeyi unutmasına sebep oldu da, Yusuf bir kaç yıl dana zindanda kaldı.",
     "de": "Und er sagte zu dem von beiden, von dem er glaubte, daß er entkommen werde: Erwähne mich bei deinem Herrn. Aber der Satan ließ ihn vergessen, ihn bei seinem Herrn zu erwähnen, (und) so blieb er noch einige Jahre im Gefängnis.",
-    "start": 1004.98,
+    "start": 1005.98,
     "end": 1026.98
   },
   {
@@ -348,7 +348,7 @@
     "ar": "وَقَالَ ٱلْمَلِكُ إِنِّىٓ أَرَىٰ سَبْعَ بَقَرَٰتٍۢ سِمَانٍۢ يَأْكُلُهُنَّ سَبْعٌ عِجَافٌۭ وَسَبْعَ سُنۢبُلَٰتٍ خُضْرٍۢ وَأُخَرَ يَابِسَٰتٍۢ ۖ يَٰٓأَيُّهَا ٱلْمَلَأُ أَفْتُونِى فِى رُءْيَٰىَ إِن كُنتُمْ لِلرُّءْيَا تَعْبُرُونَ",
     "tr": "Derken, bir gün ülkenin hükümdarı, “Ben bir rüya gördüm!” dedi: “Rüyamda yedi semiz ineği yedi zayıf inek yiyordu; bir de yedi yeşil başakla birlikte yedi kuru başak vardı. Ey danışmanlarım, bu rüyam ne manâya geliyor beni aydınlatın, tabiî rüya tabir etmeyi biliyorsanız.”",
     "de": "Und der König sagte: Ich sah sieben fette Kühe, die von sieben mageren gefressen wurden, und sieben grüne Ähren und (sieben) andere dürre. O ihr führende Schar, gebt mir Auskunft über mein (Traum)gesicht, wenn ihr ein (Traum)gesicht auslegen könnt.",
-    "start": 1033.42,
+    "start": 1028.92,
     "end": 1062.38
   },
   {
@@ -364,7 +364,7 @@
     "ar": "وَقَالَ ٱلَّذِى نَجَا مِنْهُمَا وَٱدَّكَرَ بَعْدَ أُمَّةٍ أَنَا۠ أُنَبِّئُكُم بِتَأْوِيلِهِۦ فَأَرْسِلُونِ",
     "tr": "(Zindanda Yusuf’a rüya soran) iki kişiden kurtulmuş olanı, onca zaman sonra Yusuf’u hatırladı ve “Bu rüyanın manâsını ben size bildiririm; hele şimdi bana bir müsaade edin!” dedi ve ayrıldı.",
     "de": "Derjenige von beiden, der entkommen war und sich nach einiger Zeit erinnerte, sagte: Ich werde euch seine Deutung kundtun. Darum entsendet mich.",
-    "start": 1080.32,
+    "start": 1077.32,
     "end": 1092.08
   },
   {
@@ -372,7 +372,7 @@
     "ar": "يُوسُفُ أَيُّهَا ٱلصِّدِّيقُ أَفْتِنَا فِى سَبْعِ بَقَرَٰتٍۢ سِمَانٍۢ يَأْكُلُهُنَّ سَبْعٌ عِجَافٌۭ وَسَبْعِ سُنۢبُلَٰتٍ خُضْرٍۢ وَأُخَرَ يَابِسَٰتٍۢ لَّعَلِّىٓ أَرْجِعُ إِلَى ٱلنَّاسِ لَعَلَّهُمْ يَعْلَمُونَ",
     "tr": "(Doğru zindana varıp,) “Yusuf, ey özüsözü doğru mübarek insan!” (diye söze girdi ve şöyle devam etti:) “Yedi semiz ineği yedi zayıf inek yiyordu; bir de yedi yeşil başakla birlikte yedi kuru başak vardı. Bu rüya hakkında bizi aydınlatır mısın! Ümit ederim ki, bunun tabirini senden alır ve manâsını merakla bekleyen insanların yanlarına dönerim de, onlar hem onun manâsını öğrenmiş olur, hem de senin kadr ü kıymetini bilirler.”",
     "de": "Yusuf, du Wahrhaftiger, gib uns Auskunft über sieben fette Kühe, die von sieben mageren gefressen werden, und über sieben grüne Ähren und (sieben) andere dürre, auf daß ich zu den Leuten zurückkehre, auf daß sie wissen mögen.",
-    "start": 1095.95,
+    "start": 1092.45,
     "end": 1121.59
   },
   {
@@ -380,7 +380,7 @@
     "ar": "قَالَ تَزْرَعُونَ سَبْعَ سِنِينَ دَأَبًۭا فَمَا حَصَدتُّمْ فَذَرُوهُ فِى سُنۢبُلِهِۦٓ إِلَّا قَلِيلًۭا مِّمَّا تَأْكُلُونَ",
     "tr": "Yusuf, şöyle cevap verdi: “Yedi yıl, şimdiye kadar olduğu gibi ekinlerinizi ekersiniz. Fakat onu hasat ettiğinizde, yiyeceğiniz az bir miktarın dışında kalan kısmını başağında bırakır, depolarsınız.",
     "de": "Er sagte: Ihr werdet unablässig sieben Jahre wie gewohnt säen. Was ihr erntet, das laßt in seinen Ähren, bis auf ein weniges, wovon ihr eßt.",
-    "start": 1122.43,
+    "start": 1123.43,
     "end": 1146.4
   },
   {
@@ -388,7 +388,7 @@
     "ar": "ثُمَّ يَأْتِى مِنۢ بَعْدِ ذَٰلِكَ سَبْعٌۭ شِدَادٌۭ يَأْكُلْنَ مَا قَدَّمْتُمْ لَهُنَّ إِلَّا قَلِيلًۭا مِّمَّا تُحْصِنُونَ",
     "tr": "“Sonra bunun peşinden yedi kurak ve çetin yıl gelecek. Bu yedi yıl, tohum olarak kullanmak üzere saklayacağınız az bir miktarın dışında, daha önce depoladığınız ürünün tamamını yiyip bitirecektir.",
     "de": "Hierauf werden nach alledem sieben harte (Jahre) kommen, die das aufzehren werden, was ihr für sie vorbereitet habt, bis auf ein weniges von dem, was ihr aufbewahrt.",
-    "start": 1149.47,
+    "start": 1148.47,
     "end": 1168.55
   },
   {
@@ -396,7 +396,7 @@
     "ar": "ثُمَّ يَأْتِى مِنۢ بَعْدِ ذَٰلِكَ عَامٌۭ فِيهِ يُغَاثُ ٱلنَّاسُ وَفِيهِ يَعْصِرُونَ",
     "tr": "“Sonra onun ardından bir yıl gelecek ki, halk bol yağmura kavuşacak, sıkıntılardan kurtulacak ve bol bol meyve sıkıp, hayvanları sağacaklar.”",
     "de": "Hierauf wird nach alledem ein Jahr kommen, in dem die Menschen Regen haben und in dem sie (Früchte) auspressen werden.",
-    "start": 1172.2,
+    "start": 1170.7,
     "end": 1181.88
   },
   {
@@ -412,7 +412,7 @@
     "ar": "قَالَ مَا خَطْبُكُنَّ إِذْ رَٰوَدتُّنَّ يُوسُفَ عَن نَّفْسِهِۦ ۚ قُلْنَ حَٰشَ لِلَّهِ مَا عَلِمْنَا عَلَيْهِ مِن سُوٓءٍۢ ۚ قَالَتِ ٱمْرَأَتُ ٱلْعَزِيزِ ٱلْـَٰٔنَ حَصْحَصَ ٱلْحَقُّ أَنَا۠ رَٰوَدتُّهُۥ عَن نَّفْسِهِۦ وَإِنَّهُۥ لَمِنَ ٱلصَّٰدِقِينَ",
     "tr": "Hükümdar, (kadınları toplayıp,) “Ne idi Yusuf’la aranızda geçen? O’nun nefsinden murat almak istediğinizde Yusuf size nasıl davranmıştı?” diye sordu. “Allah için, haşa, biz O’nun aleyhinde hiç bir kötülük bilmiyoruz!” dediler. Vezirin hanımı da, “İşte şimdi gerçek ortaya çıktı. Ben, O’nun nefsinden murat almak istemiştim. Hiç kuşku yok ki O, dürüst ve sadık insanlardandır.” itirafında bulundu.",
     "de": "Er sagte: Was war da mit euch, als ihr versuchtet, Yusuf zu verführen? Sie sagten: Allah behüte! Wir wissen nichts Böses gegen ihn (anzugeben). Die Frau des hohen Herrn sagte: Jetzt ist die Wahrheil ans Licht gekommen. Ich habe versucht, ihn zu verführen. Und er gehört fürwahr zu den Wahrhaftigen.",
-    "start": 1212,
+    "start": 1212.6999999999998,
     "end": 1246.93
   },
   {
@@ -436,7 +436,7 @@
     "ar": "وَقَالَ ٱلْمَلِكُ ٱئْتُونِى بِهِۦٓ أَسْتَخْلِصْهُ لِنَفْسِى ۖ فَلَمَّا كَلَّمَهُۥ قَالَ إِنَّكَ ٱلْيَوْمَ لَدَيْنَا مَكِينٌ أَمِينٌۭ",
     "tr": "Hükümdar, “O’nu bana getirin; kendim için seçip özel danışmanım yapayım!” diye emretti. Yusuf’la konuştuktan sonra da, “Bundan böyle nezdimizde yüksek bir makam sahibi, tam itimat edilen bir müsteşarsın.” dedi.",
     "de": "Und der König sagte: Bringt ihn zu mir. Ich will ihn mir selbst vorbehalten. Als er mit ihm sprach, sagte er: Du bist (von) heute (an) bei uns in fester Stellung und vertrauenswürdig.",
-    "start": 1290.44,
+    "start": 1287.44,
     "end": 1303.42
   },
   {
@@ -444,7 +444,7 @@
     "ar": "قَالَ ٱجْعَلْنِى عَلَىٰ خَزَآئِنِ ٱلْأَرْضِ ۖ إِنِّى حَفِيظٌ عَلِيمٌۭ",
     "tr": "Yusuf, “Beni bu ülkede hazinelerin başına getir. Çünkü ben, her bakımdan güvenilir, onları çok iyi koruyacak ve bu işi de çok iyi bilen biriyim.” teklifinde bulundu.",
     "de": "Er sagte: Setze mich über die Vorratskammern des Landes ein; ich bin ein kenntnisreicher Hüter.",
-    "start": 1307.35,
+    "start": 1305.35,
     "end": 1313.3
   },
   {
@@ -452,7 +452,7 @@
     "ar": "وَكَذَٰلِكَ مَكَّنَّا لِيُوسُفَ فِى ٱلْأَرْضِ يَتَبَوَّأُ مِنْهَا حَيْثُ يَشَآءُ ۚ نُصِيبُ بِرَحْمَتِنَا مَن نَّشَآءُ ۖ وَلَا نُضِيعُ أَجْرَ ٱلْمُحْسِنِينَ",
     "tr": "Böylece Yusuf’u Mısır’da yerleştirdik ve kendisine imkân ve iktidar verdik. Nerede isterse orada makam tutar (emirleri bütün ülkede uygulanır, dilediği tasarrufta bulunurdu). Kimi dilersek ona bu şekilde hususî rahmetimizle muamele eder ve bütünüyle iyiliğe adanmış olarak, Allah’ı görür gibi, en azından O’nun kendilerini gördüğünün şuuru içinde davrananların mükâfatını asla zayi etmeyiz.",
     "de": "So verliehen Wir Yusuf eine feste Stellung im Land, so daß er sich darin aufhalten konnte, wo immer er wollte. Wir treffen mit Unserer Barmherzigkeit, wen Wir wollen, und Wir lassen den Lohn der Gutes Tuenden nicht verlorengehen.",
-    "start": 1315.14,
+    "start": 1316.14,
     "end": 1337.78
   },
   {
@@ -460,7 +460,7 @@
     "ar": "وَلَأَجْرُ ٱلْءَاخِرَةِ خَيْرٌۭ لِّلَّذِينَ ءَامَنُوا۟ وَكَانُوا۟ يَتَّقُونَ",
     "tr": "Bununla birlikte, iman edip, kalbleri Allah’a karşı saygıyla dopdolu olan ve bütün hükümlerinde O’na karşı gelmekten sakınanlar için Âhiret’teki mükâfat hiç şüphesiz daha hayırlıdır.",
     "de": "Aber der Lohn des Jenseits ist wahrlich besser für diejenigen, die glauben und gottesfürchtig sind.",
-    "start": 1341,
+    "start": 1338.6,
     "end": 1345.22
   },
   {
@@ -476,7 +476,7 @@
     "ar": "وَلَمَّا جَهَّزَهُم بِجَهَازِهِمْ قَالَ ٱئْتُونِى بِأَخٍۢ لَّكُم مِّنْ أَبِيكُمْ ۚ أَلَا تَرَوْنَ أَنِّىٓ أُوفِى ٱلْكَيْلَ وَأَنَا۠ خَيْرُ ٱلْمُنزِلِينَ",
     "tr": "Yusuf, yüklerini hazırlatıp hayvanlarına yükletti; kendilerine de, “Bir dahaki sefere arkada bıraktığınız baba bir kardeşinizi de getirin. Görmez misiniz ki ben tam ölçüyor, verirken bol veriyor ve konuklarımı mümkün olan en iyi şekilde ağırlıyorum!” dedi.",
     "de": "Als er sie nun mit ihrem Bedarf ausgestattet hatte, sagte er: Bringt mir einen (Halb)bruder von euch väterlicherseits. Seht ihr denn nicht, daß ich volles Maß gebe und daß ich der beste Obdachgeber bin?",
-    "start": 1360.36,
+    "start": 1360.86,
     "end": 1380.28
   },
   {
@@ -484,7 +484,7 @@
     "ar": "فَإِن لَّمْ تَأْتُونِى بِهِۦ فَلَا كَيْلَ لَكُمْ عِندِى وَلَا تَقْرَبُونِ",
     "tr": "“Ama onu getirmezseniz bilin ki, benden size bir kilelik bile zahire yoktur; o zaman (ülkeme ayak basıp da) hiç yanıma yaklaşmayın!” diye de ilâve etti.",
     "de": "Wenn ihr ihn mir nicht bringt, so bekommt ihr bei mir kein Maß mehr, und ihr sollt nicht in meine Nähe kommen.",
-    "start": 1382.97,
+    "start": 1383.47,
     "end": 1388.45
   },
   {
