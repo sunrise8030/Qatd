@@ -1,6 +1,4 @@
-/* =========================
-   src/App.jsx
-   ========================= */
+// src/App.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
 
@@ -41,6 +39,7 @@ function formatSec(sec) {
   return Number.isFinite(sec) ? `${sec.toFixed(2)}s` : "—";
 }
 
+// Overlap-safe
 function findActiveVerseIndex(verses, t) {
   if (!Array.isArray(verses) || verses.length === 0 || !Number.isFinite(t)) return -1;
 
@@ -59,6 +58,7 @@ function findActiveVerseIndex(verses, t) {
   }
   if (bestIdx !== -1) return bestIdx;
 
+  // fallback: closest start
   let closest = -1;
   let bestDelta = Infinity;
   for (let i = 0; i < verses.length; i += 1) {
@@ -90,7 +90,8 @@ function ensureRowVisible(el, padding = 10) {
 
   const viewportTop = padding;
   const viewportBottom = window.innerHeight - padding;
-  const effectiveBottom = overlayTop != null ? Math.min(viewportBottom, overlayTop - padding) : viewportBottom;
+  const effectiveBottom =
+    overlayTop != null ? Math.min(viewportBottom, overlayTop - padding) : viewportBottom;
 
   const above = r.top < viewportTop;
   const below = r.bottom > effectiveBottom;
@@ -100,6 +101,13 @@ function ensureRowVisible(el, padding = 10) {
   }
 }
 
+/**
+ * Tolerant JSON parsing:
+ * - strips BOM
+ * - rejects HTML
+ * - removes trailing commas before } or ]
+ * - if parse fails, includes position + context
+ */
 function parseJsonTolerant(text, urlForMsg = "") {
   const raw = String(text ?? "");
   let s = raw.replace(/^\uFEFF/, "").trim();
@@ -113,6 +121,7 @@ function parseJsonTolerant(text, urlForMsg = "") {
     throw new Error(`Expected JSON but got HTML | url=${urlForMsg} | head=${s.slice(0, 80)}`);
   }
 
+  // Remove trailing commas
   s = s.replace(/,\s*([}\]])/g, "$1");
 
   try {
@@ -343,10 +352,19 @@ function Timeline({
   );
 }
 
-/* ---------- Popup (new window) helpers ---------- */
+/* ---------- Popup window implementation ---------- */
+
+function escapeHtml(s) {
+  return String(s ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
 
 function buildPopupHtml(title) {
-  const safeTitle = String(title || "Aktif Ayet");
+  const safeTitle = escapeHtml(title || "Aktif Ayet");
   return `<!doctype html>
 <html lang="tr">
 <head>
@@ -357,10 +375,9 @@ function buildPopupHtml(title) {
   :root{
     --bg:#0b0f16;
     --panel:rgba(15,21,32,0.82);
-    --border:rgba(255,255,255,0.10);
+    --border:rgba(255,255,255,0.12);
     --text:rgba(255,255,255,0.92);
     --muted:rgba(255,255,255,0.68);
-    --accent:rgba(99,179,237,1);
   }
   *{ box-sizing:border-box; }
   html,body{
@@ -386,6 +403,7 @@ function buildPopupHtml(title) {
     backdrop-filter: blur(10px);
     border-radius:18px;
     padding:18px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.45);
   }
   .top{
     display:flex;
@@ -421,17 +439,20 @@ function buildPopupHtml(title) {
     font-size: clamp(26px, 4.5vw, 46px);
     line-height: 1.65;
     margin-top:10px;
+    white-space: pre-wrap;
   }
   .tr{
     font-size: clamp(16px, 2.7vw, 24px);
     line-height: 1.55;
     margin-top:14px;
+    white-space: pre-wrap;
   }
   .de{
     font-size: clamp(14px, 2.4vw, 20px);
     line-height: 1.5;
     margin-top:10px;
     color: var(--muted);
+    white-space: pre-wrap;
   }
   .hint{
     margin-top:14px;
@@ -450,7 +471,7 @@ function buildPopupHtml(title) {
       <div class="ar" id="ar">—</div>
       <div class="tr" id="tr">—</div>
       <div class="de" id="de">—</div>
-      <div class="hint">Not: Bu pencere ana sayfadan canlı güncellenir.</div>
+      <div class="hint">Bu pencere ana sayfadan canlı güncellenir.</div>
     </div>
   </div>
 <script>
@@ -477,7 +498,6 @@ function buildPopupHtml(title) {
     if (d.type === 'verse') applyVerse(d.payload || {});
   });
 
-  // tell opener we're ready
   try { window.opener && window.opener.postMessage({ type:'popup-ready' }, '*'); } catch {}
 </script>
 </body>
@@ -492,13 +512,24 @@ function openVersePopupWindow({ title }) {
   );
   if (!w) return null;
 
-  w.document.open();
-  w.document.write(buildPopupHtml(title));
-  w.document.close();
+  try {
+    w.document.open();
+    w.document.write(buildPopupHtml(title));
+    w.document.close();
+  } catch {
+    // If writing fails, close and fallback.
+    try {
+      w.close();
+    } catch {
+      // ignore
+    }
+    return null;
+  }
+
   return w;
 }
 
-/* ---------- Modal (fallback) ---------- */
+/* ---------- Modal fallback (popup blocked) ---------- */
 
 function VerseModal({ open, verse, ayahLabel, onClose }) {
   useEffect(() => {
@@ -555,7 +586,6 @@ function PlayerControls({
   bPoint,
   onSetA,
   onSetB,
-
   popupOpen,
   onOpenPopup,
   onClosePopup,
@@ -670,12 +700,439 @@ function PlayerControls({
   );
 }
 
-/* --- SyncPanel + VersesTable same as your current file --- */
-/* (kısaltmıyorum: sende zaten var; burada aynen kalabilir) */
+function SyncPanel({
+  verses,
+  activeIndex,
+  currentTime,
+  duration,
+  onUpdateVerse,
+  onSeek,
+  onSeekVerse,
+  onExportJson,
+  onImportJson,
+  onSaveDraft,
+  onRestoreDraft,
+  onClearDraft,
+  onJumpFirstUntimed,
+  onCommitGithub,
+}) {
+  const [startInput, setStartInput] = useState("");
+  const [endInput, setEndInput] = useState("");
+  const [jumpAyah, setJumpAyah] = useState("");
+  const [jumpTime, setJumpTime] = useState("");
+  const fileRef = useRef(null);
 
-function SyncPanel(props) {
-  // keep your existing SyncPanel exactly as is
-  return props.children ?? null;
+  const [commitOpen, setCommitOpen] = useState(false);
+  const [ghRepo, setGhRepo] = useState("");
+  const [ghBranch, setGhBranch] = useState("main");
+  const [ghPath, setGhPath] = useState("public/data/yusuf.json");
+  const [ghToken, setGhToken] = useState("");
+  const [ghMsg, setGhMsg] = useState("");
+  const [ghRemember, setGhRemember] = useState(true);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("qatd:ghcfg");
+      if (!saved) return;
+      const cfg = JSON.parse(saved);
+      if (cfg?.repo) setGhRepo(cfg.repo);
+      if (cfg?.branch) setGhBranch(cfg.branch);
+      if (cfg?.path) setGhPath(cfg.path);
+      if (cfg?.token) setGhToken(cfg.token);
+      if (cfg?.remember === false) setGhRemember(false);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (!ghRemember) {
+        localStorage.removeItem("qatd:ghcfg");
+        return;
+      }
+      localStorage.setItem(
+        "qatd:ghcfg",
+        JSON.stringify({
+          repo: ghRepo,
+          branch: ghBranch,
+          path: ghPath,
+          token: ghToken,
+          remember: true,
+        })
+      );
+    } catch {
+      // ignore
+    }
+  }, [ghRepo, ghBranch, ghPath, ghToken, ghRemember]);
+
+  const active = activeIndex >= 0 ? verses[activeIndex] : null;
+
+  useEffect(() => {
+    if (!active) {
+      setStartInput("");
+      setEndInput("");
+      return;
+    }
+    const s = Number(active.start);
+    const e = Number(active.end);
+    setStartInput(Number.isFinite(s) ? String(s) : "");
+    setEndInput(Number.isFinite(e) ? String(e) : "");
+  }, [activeIndex, active]);
+
+  // auto-apply debounced
+  useEffect(() => {
+    if (!active) return;
+    const t = setTimeout(() => {
+      const s = Number(startInput);
+      const e = Number(endInput);
+      const patch = {};
+      if (Number.isFinite(s)) patch.start = clamp(s, 0, Math.max(0, duration || s));
+      if (Number.isFinite(e)) patch.end = clamp(e, 0, Math.max(0, duration || e));
+      if (Number.isFinite(patch.start) && Number.isFinite(patch.end) && patch.end <= patch.start) {
+        patch.end = patch.start + 0.01;
+      }
+      if (Object.keys(patch).length) onUpdateVerse(activeIndex, patch);
+    }, 250);
+    return () => clearTimeout(t);
+  }, [startInput, endInput, activeIndex, active, duration, onUpdateVerse]);
+
+  const startNum = Number(startInput);
+  const endNum = Number(endInput);
+  const deltaOk = Number.isFinite(startNum) && Number.isFinite(endNum) && endNum > startNum;
+  const delta = deltaOk ? endNum - startNum : null;
+
+  const setStartToT = () => active && onUpdateVerse(activeIndex, { start: currentTime });
+  const setEndToT = () => active && onUpdateVerse(activeIndex, { end: currentTime });
+  const setEndToTAndNext = () => {
+    if (!active) return;
+    onUpdateVerse(activeIndex, { end: currentTime });
+    const nextIdx = Math.min(verses.length - 1, activeIndex + 1);
+    onSeekVerse(nextIdx);
+  };
+
+  const nudgeStart = (d) => {
+    if (!active) return;
+    const s = Number(active.start);
+    if (!Number.isFinite(s)) return;
+    onUpdateVerse(activeIndex, { start: Math.max(0, s + d) });
+  };
+
+  const nudgeEnd = (d) => {
+    if (!active) return;
+    const e = Number(active.end);
+    if (!Number.isFinite(e)) return;
+    onUpdateVerse(activeIndex, { end: Math.max(0, e + d) });
+  };
+
+  const jumpToAyah = () => {
+    const n = Number(jumpAyah);
+    if (!Number.isFinite(n)) return;
+    const idx = verses.findIndex((v) => Number(v?.ayah) === n);
+    if (idx >= 0) onSeekVerse(idx);
+  };
+
+  const jumpToTime = () => {
+    const t = Number(jumpTime);
+    if (!Number.isFinite(t)) return;
+    onSeek(t);
+  };
+
+  const doCommit = async () => {
+    const repoStr = ghRepo.trim();
+    const token = ghToken.trim();
+    const path = ghPath.trim();
+    const branch = ghBranch.trim() || "main";
+
+    if (!repoStr.includes("/")) {
+      alert("Repo format: owner/repo");
+      return;
+    }
+    if (!token) {
+      alert("Token required (fine-grained PAT: Contents RW on that repo).");
+      return;
+    }
+    if (!path) {
+      alert("File path required (e.g. public/data/yusuf.json)");
+      return;
+    }
+
+    const [owner, repo] = repoStr.split("/", 2);
+    const jsonText = JSON.stringify(verses, null, 2);
+    const content = base64EncodeUtf8(jsonText);
+    const message =
+      ghMsg.trim() ||
+      `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
+
+    await onCommitGithub({ owner, repo, path, branch, token, message, content });
+    setGhMsg("");
+  };
+
+  return (
+    <div className="syncPanel">
+      <div className="syncHeader">
+        <div className="syncTitle">Sync tools</div>
+        <div className="syncMeta muted">
+          Active: <span className="mono">{active ? active.ayah : "-"}</span> • t=
+          <span className="mono">{formatSec(currentTime)}</span>
+          <span className="muted"> (</span>
+          <span className="mono muted">{formatTime(currentTime)}</span>
+          <span className="muted">)</span>
+        </div>
+      </div>
+
+      <div className="syncGrid">
+        <div className="syncBlock">
+          <div className="syncRow">
+            <button className="btnSmall" type="button" onClick={setStartToT} disabled={!active}>
+              Set START = t (S)
+            </button>
+            <button className="btnSmall" type="button" onClick={setEndToT} disabled={!active}>
+              Set END = t (E)
+            </button>
+            <button
+              className="btnSmall"
+              type="button"
+              onClick={setEndToTAndNext}
+              disabled={!active}
+            >
+              END=t + Next (N)
+            </button>
+          </div>
+
+          <div className="syncRow">
+            <div className="syncInputs">
+              <label className="miniLabel">
+                start
+                <input
+                  className="miniInput"
+                  value={startInput}
+                  onChange={(e) => setStartInput(e.target.value)}
+                  inputMode="decimal"
+                />
+              </label>
+
+              <label className="miniLabel">
+                end
+                <input
+                  className="miniInput"
+                  value={endInput}
+                  onChange={(e) => setEndInput(e.target.value)}
+                  inputMode="decimal"
+                />
+              </label>
+
+              <div className="syncMetaInline">
+                <div className="autoSaved muted">Auto-save</div>
+                <div className={`deltaPill ${deltaOk ? "" : "muted"}`}>
+                  Δ {deltaOk ? `${delta.toFixed(2)}s` : "—"}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="syncRow">
+            <div className="syncNudgeGroup">
+              <span className="muted">Start:</span>
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.1)} disabled={!active}>
+                -0.1
+              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.1)} disabled={!active}>
+                +0.1
+              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.5)} disabled={!active}>
+                -0.5
+              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.5)} disabled={!active}>
+                +0.5
+              </button>
+            </div>
+
+            <div className="syncNudgeGroup">
+              <span className="muted">End:</span>
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.1)} disabled={!active}>
+                -0.1
+              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.1)} disabled={!active}>
+                +0.1
+              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.5)} disabled={!active}>
+                -0.5
+              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.5)} disabled={!active}>
+                +0.5
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="syncBlock">
+          <div className="syncRow">
+            <label className="miniLabel">
+              Jump ayah
+              <input
+                className="miniInput"
+                value={jumpAyah}
+                onChange={(e) => setJumpAyah(e.target.value)}
+                inputMode="numeric"
+              />
+            </label>
+            <button className="btnSmall" type="button" onClick={jumpToAyah}>
+              Go
+            </button>
+
+            <label className="miniLabel">
+              Jump time (s)
+              <input
+                className="miniInput"
+                value={jumpTime}
+                onChange={(e) => setJumpTime(e.target.value)}
+                inputMode="decimal"
+              />
+            </label>
+            <button className="btnSmall" type="button" onClick={jumpToTime}>
+              Seek
+            </button>
+          </div>
+
+          <div className="syncRow">
+            <button className="btnSmall" type="button" onClick={onJumpFirstUntimed}>
+              First untimed
+            </button>
+            <div className="divider" />
+            <button className="btnSmall" type="button" onClick={onSaveDraft}>
+              Save draft
+            </button>
+            <button className="btnSmall" type="button" onClick={onRestoreDraft}>
+              Restore draft
+            </button>
+            <button className="btnSmall" type="button" onClick={onClearDraft}>
+              Clear draft
+            </button>
+          </div>
+
+          <div className="syncRow">
+            <button className="btnSmall" type="button" onClick={onExportJson}>
+              Export JSON
+            </button>
+            <button className="btnSmall" type="button" onClick={() => fileRef.current?.click()}>
+              Import JSON
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/json"
+              className="hiddenFile"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) onImportJson(f);
+                e.target.value = "";
+              }}
+            />
+          </div>
+
+          <div className="syncRow">
+            <button className="btnSmall" type="button" onClick={() => setCommitOpen((x) => !x)}>
+              {commitOpen ? "Hide commit" : "Commit to GitHub"}
+            </button>
+
+            <button
+              className="btnSmall"
+              type="button"
+              onClick={async () => {
+                try {
+                  const r = await fetch("https://api.github.com/rate_limit");
+                  alert(`GitHub reachable ✅ (${r.status})`);
+                } catch {
+                  alert("GitHub not reachable ❌ (Failed to fetch). Check network/adblock/firewall.");
+                }
+              }}
+            >
+              Test GitHub
+            </button>
+          </div>
+
+          {commitOpen ? (
+            <>
+              <div className="syncRow">
+                <label className="miniLabel">
+                  Repo (owner/repo)
+                  <input
+                    className="miniInput"
+                    value={ghRepo}
+                    onChange={(e) => setGhRepo(e.target.value)}
+                    placeholder="yourname/yourrepo"
+                  />
+                </label>
+
+                <label className="miniLabel">
+                  Branch
+                  <input
+                    className="miniInput"
+                    value={ghBranch}
+                    onChange={(e) => setGhBranch(e.target.value)}
+                    placeholder="main"
+                  />
+                </label>
+              </div>
+
+              <div className="syncRow">
+                <label className="miniLabel">
+                  File path in repo
+                  <input
+                    className="miniInput"
+                    value={ghPath}
+                    onChange={(e) => setGhPath(e.target.value)}
+                    placeholder="public/data/yusuf.json"
+                  />
+                </label>
+
+                <label className="miniLabel">
+                  Commit message
+                  <input
+                    className="miniInput"
+                    value={ghMsg}
+                    onChange={(e) => setGhMsg(e.target.value)}
+                    placeholder="optional"
+                  />
+                </label>
+              </div>
+
+              <div className="syncRow">
+                <label className="miniLabel" style={{ minWidth: 290 }}>
+                  GitHub token (PAT)
+                  <input
+                    className="miniInput"
+                    value={ghToken}
+                    onChange={(e) => setGhToken(e.target.value)}
+                    placeholder="ghp_... / github_pat_..."
+                    type="password"
+                  />
+                </label>
+
+                <label className="chip" title="Store token in localStorage on this browser">
+                  <input
+                    type="checkbox"
+                    checked={ghRemember}
+                    onChange={(e) => setGhRemember(e.target.checked)}
+                  />
+                  Remember token
+                </label>
+
+                <button className="btnSmall" type="button" onClick={doCommit}>
+                  Commit now
+                </button>
+              </div>
+
+              <div className="syncRow muted">
+                Note: Needs PAT with <span className="mono">Contents: Read/Write</span> on that repo.
+              </div>
+            </>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function VersesTable({ verses, activeIndex, onRowClick, rowRefs }) {
@@ -740,13 +1197,31 @@ export default function App() {
 
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
 
+  // Popup state
   const popupWinRef = useRef(null);
-  const [popupModalOpen, setPopupModalOpen] = useState(false);
   const [popupIsOpen, setPopupIsOpen] = useState(false);
+  const [popupModalOpen, setPopupModalOpen] = useState(false);
 
   useEffect(() => {
     document.title = "Türkçe-Almanca Kur’an Player";
   }, []);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("qatd:toolsCollapsed");
+      if (raw === "0") setToolsCollapsed(false);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("qatd:toolsCollapsed", toolsCollapsed ? "1" : "0");
+    } catch {
+      // ignore
+    }
+  }, [toolsCollapsed]);
 
   const versesRef = useRef(verses);
   const activeIndexRef = useRef(activeIndex);
@@ -759,6 +1234,8 @@ export default function App() {
     currentTimeRef.current = currentTime;
     durationRef.current = duration;
   }, [verses, activeIndex, currentTime, duration]);
+
+  const draftKey = useMemo(() => `qatd:draft:${selectedSurah.slug}`, [selectedSurah.slug]);
 
   const filteredSurahs = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -773,8 +1250,14 @@ export default function App() {
     });
   }, [query]);
 
-  const audioSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""), [selectedSurah]);
-  const versesSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.versesUrl) : ""), [selectedSurah]);
+  const audioSrc = useMemo(
+    () => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""),
+    [selectedSurah]
+  );
+  const versesSrc = useMemo(
+    () => (selectedSurah ? resolvePublicUrl(selectedSurah.versesUrl) : ""),
+    [selectedSurah]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -804,7 +1287,10 @@ export default function App() {
         }
 
         const data = parseJsonTolerant(text, versesSrc);
-        if (!Array.isArray(data)) throw new Error(`Invalid verses JSON (expected array) | url=${versesSrc}`);
+
+        if (!Array.isArray(data)) {
+          throw new Error(`Invalid verses JSON (expected array) | url=${versesSrc}`);
+        }
 
         if (!cancelled) {
           rowRefs.current = [];
@@ -821,6 +1307,7 @@ export default function App() {
     };
   }, [versesSrc]);
 
+  // Audio listeners
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -846,6 +1333,7 @@ export default function App() {
     };
   }, []);
 
+  // Playback rate
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -907,6 +1395,133 @@ export default function App() {
     seekVerse(idx, true);
   }, [seekVerse]);
 
+  const updateVerse = useCallback((idx, patch) => {
+    setVerses((prev) => {
+      if (!prev[idx]) return prev;
+      const next = [...prev];
+      const v = { ...next[idx], ...patch };
+
+      const s = Number(v.start);
+      const e = Number(v.end);
+
+      if (Number.isFinite(s)) v.start = Math.max(0, s);
+      if (Number.isFinite(e)) v.end = Math.max(0, e);
+      if (Number.isFinite(v.start) && Number.isFinite(v.end) && v.end <= v.start) {
+        v.end = v.start + 0.01;
+      }
+
+      next[idx] = v;
+      return next;
+    });
+  }, []);
+
+  // autosave draft (debounced)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem(draftKey, JSON.stringify(versesRef.current));
+      } catch {
+        // ignore
+      }
+    }, 500);
+    return () => clearTimeout(t);
+  }, [draftKey, verses]);
+
+  const exportJson = useCallback(() => {
+    const blob = new Blob([JSON.stringify(versesRef.current, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${selectedSurah.slug}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }, [selectedSurah.slug]);
+
+  const importJsonFile = useCallback((file) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result || ""));
+        if (!Array.isArray(parsed)) throw new Error("Imported JSON must be an array");
+        setVerses(parsed);
+        setError("");
+      } catch (e) {
+        setError(`Import failed: ${e.message}`);
+      }
+    };
+    reader.readAsText(file);
+  }, []);
+
+  const saveDraft = useCallback(() => {
+    try {
+      localStorage.setItem(draftKey, JSON.stringify(versesRef.current));
+    } catch {
+      // ignore
+    }
+  }, [draftKey]);
+
+  const restoreDraft = useCallback(() => {
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return;
+      setVerses(parsed);
+    } catch {
+      // ignore
+    }
+  }, [draftKey]);
+
+  const clearDraft = useCallback(() => {
+    try {
+      localStorage.removeItem(draftKey);
+    } catch {
+      // ignore
+    }
+  }, [draftKey]);
+
+  const jumpFirstUntimed = useCallback(() => {
+    const vs = versesRef.current;
+    const idx = vs.findIndex(
+      (v) => !Number.isFinite(Number(v?.start)) || !Number.isFinite(Number(v?.end))
+    );
+    if (idx >= 0) seekVerse(idx, true);
+  }, [seekVerse]);
+
+  // loop behavior
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a) return;
+
+    if (loopAB && aPoint != null && bPoint != null) {
+      const lo = Math.min(aPoint, bPoint);
+      const hi = Math.max(aPoint, bPoint);
+      if (currentTime >= hi) {
+        a.currentTime = lo;
+        a.play().catch(() => {});
+      }
+      return;
+    }
+
+    if (loopAyah && verses.length) {
+      const idx = findActiveVerseIndex(verses, currentTime);
+      if (idx >= 0) {
+        const v = verses[idx];
+        const s = Number(v?.start);
+        const e = Number(v?.end);
+        if (Number.isFinite(s) && Number.isFinite(e) && e > s && currentTime >= e) {
+          a.currentTime = s;
+          a.play().catch(() => {});
+        }
+      }
+    }
+  }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint]);
+
+  // active index update + ensure visible
   useEffect(() => {
     if (!verses.length) return;
     const idx = findActiveVerseIndex(verses, currentTime);
@@ -921,6 +1536,87 @@ export default function App() {
   const setA = useCallback(() => setAPoint(currentTimeRef.current), []);
   const setB = useCallback(() => setBPoint(currentTimeRef.current), []);
 
+  // keyboard shortcuts
+  useEffect(() => {
+    const onKey = (e) => {
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      const typing =
+        tag === "input" || tag === "textarea" || document.activeElement?.isContentEditable;
+      if (typing) return;
+
+      if (e.code === "Space") {
+        e.preventDefault();
+        onPlayPause();
+        return;
+      }
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        nudge(e.shiftKey ? -0.1 : -1);
+        return;
+      }
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        nudge(e.shiftKey ? 0.1 : 1);
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        prevAyah();
+        return;
+      }
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        nextAyah();
+        return;
+      }
+
+      const k = e.key.toLowerCase();
+      if (k === "l") {
+        if (e.shiftKey) setLoopAB((x) => !x);
+        else setLoopAyah((x) => !x);
+        return;
+      }
+      if (k === "a") {
+        setA();
+        return;
+      }
+      if (k === "b") {
+        setB();
+        return;
+      }
+
+      const idx = activeIndexRef.current;
+      const vs = versesRef.current;
+      const t = currentTimeRef.current;
+
+      if (idx >= 0 && vs[idx]) {
+        if (k === "s") updateVerse(idx, { start: t });
+        else if (k === "e") updateVerse(idx, { end: t });
+        else if (k === "n") {
+          updateVerse(idx, { end: t });
+          const nextIdx = Math.min(vs.length - 1, idx + 1);
+          seekVerse(nextIdx, true);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onPlayPause, nudge, prevAyah, nextAyah, updateVerse, seekVerse, setA, setB]);
+
+  const commitGithub = useCallback(async ({ owner, repo, path, branch, token, message, content }) => {
+    try {
+      setError("");
+      const sha = await githubGetFileSha({ owner, repo, path, token, branch });
+      await githubPutFile({ owner, repo, path, token, branch, message, contentBase64: content, sha });
+      alert(`Committed ✅ ${owner}/${repo}:${branch}/${path}`);
+    } catch (e) {
+      console.error(e);
+      alert(String(e?.message || e));
+    }
+  }, []);
+
+  // Active verse -> payload for popup updates
   const activeVerse = useMemo(() => (activeIndex >= 0 ? verses[activeIndex] : null), [activeIndex, verses]);
   const activeVersePayload = useMemo(() => {
     if (!activeVerse) return { ayah: null, ar: "", tr: "", de: "" };
@@ -944,7 +1640,7 @@ export default function App() {
     const title = selectedSurah ? `${selectedSurah.nameTr} — Aktif Ayet` : "Aktif Ayet";
     const w = openVersePopupWindow({ title });
     if (!w) {
-      // popup blocked -> modal fallback
+      // blocked -> modal fallback
       setPopupModalOpen(true);
       setPopupIsOpen(true);
       return;
@@ -954,7 +1650,7 @@ export default function App() {
     setPopupIsOpen(true);
   }, [selectedSurah]);
 
-  // keep popup state in sync (if user closes window manually)
+  // If user closes window manually
   useEffect(() => {
     if (!popupIsOpen) return;
     const t = window.setInterval(() => {
@@ -967,10 +1663,9 @@ export default function App() {
     return () => window.clearInterval(t);
   }, [popupIsOpen]);
 
-  // send updates to popup window (or modal just renders from state)
+  // Send updates while open
   useEffect(() => {
     if (!popupIsOpen) return;
-
     const w = popupWinRef.current;
     if (w && !w.closed) {
       try {
@@ -978,12 +1673,10 @@ export default function App() {
       } catch {
         // ignore
       }
-      return;
     }
-    // if no window (blocked) but popupIsOpen, modal is in use
   }, [popupIsOpen, activeVersePayload]);
 
-  // if popup window signals ready, push current verse immediately
+  // Popup ready handshake -> push immediately
   useEffect(() => {
     const onMsg = (ev) => {
       if (!ev?.data || typeof ev.data !== "object") return;
@@ -1087,8 +1780,22 @@ export default function App() {
                 markerEvery={markerEvery}
               />
 
-              {/* NOTE: SyncPanel burada sende full; yukarıdaki stub'ı kendi SyncPanel'in ile değiştir */}
-              <SyncPanel />
+              <SyncPanel
+                verses={verses}
+                activeIndex={activeIndex}
+                currentTime={currentTime}
+                duration={duration}
+                onUpdateVerse={updateVerse}
+                onSeek={(t) => seekTo(t, false)}
+                onSeekVerse={(idx) => seekVerse(idx, true)}
+                onExportJson={exportJson}
+                onImportJson={importJsonFile}
+                onSaveDraft={saveDraft}
+                onRestoreDraft={restoreDraft}
+                onClearDraft={clearDraft}
+                onJumpFirstUntimed={jumpFirstUntimed}
+                onCommitGithub={commitGithub}
+              />
             </>
           )}
         </div>
