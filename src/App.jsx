@@ -1,4 +1,6 @@
-// src/App.jsx
+/* =========================
+   src/App.jsx
+   ========================= */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
 
@@ -73,24 +75,33 @@ function findActiveVerseIndex(verses, t) {
   return closest;
 }
 
-function getStickyPlayerBottomPx() {
+/**
+ * Sticky player overlay:
+ * If the player is sticky at the bottom, the area that can hide content starts at rect.top.
+ */
+function getStickyOverlayTopPx() {
   const el = document.querySelector(".playerSticky");
-  if (!el) return 0;
+  if (!el) return null;
   const r = el.getBoundingClientRect();
-  return Math.max(0, r.bottom);
+  if (r.height <= 0) return null;
+  if (r.bottom <= 0 || r.top >= window.innerHeight) return null;
+  return r.top;
 }
 
 function ensureRowVisible(el, padding = 10) {
   if (!el) return;
+
   const r = el.getBoundingClientRect();
-  const stickyBottom = getStickyPlayerBottomPx();
-  const topSafe = stickyBottom + padding;
-  const bottomSafe = window.innerHeight - padding;
+  const overlayTop = getStickyOverlayTopPx();
 
-  const hiddenUnderSticky = r.top < topSafe;
-  const belowViewport = r.bottom > bottomSafe;
+  const viewportTop = padding;
+  const viewportBottom = window.innerHeight - padding;
+  const effectiveBottom = overlayTop != null ? Math.min(viewportBottom, overlayTop - padding) : viewportBottom;
 
-  if (hiddenUnderSticky || belowViewport) {
+  const above = r.top < viewportTop;
+  const below = r.bottom > effectiveBottom;
+
+  if (above || below) {
     el.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 }
@@ -136,7 +147,13 @@ function parseJsonTolerant(text, urlForMsg = "") {
 }
 
 function base64EncodeUtf8(text) {
-  return btoa(unescape(encodeURIComponent(text)));
+  const bytes = new TextEncoder().encode(String(text ?? ""));
+  let bin = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(bin);
 }
 
 async function ghFetch(url, options) {
@@ -341,6 +358,43 @@ function Timeline({
   );
 }
 
+function ActiveVersePanel({ verse, isPlaying, onToggle, visible }) {
+  if (!visible) {
+    return (
+      <div className="activeVerseRow">
+        <button className="btnSmall btnToggle" type="button" onClick={onToggle}>
+          Aktif ayet panelini aç
+        </button>
+      </div>
+    );
+  }
+
+  const ayahNo = verse?.ayah != null ? String(verse.ayah) : "—";
+  const ar = (verse?.ar || "").trim();
+  const tr = (verse?.tr || "").trim();
+  const de = (verse?.de || "").trim();
+
+  return (
+    <div className="activeVersePanel" aria-live="polite">
+      <div className="activeVerseTop">
+        <div className="activeVerseMeta">
+          <span className="badge">Aktif ayet: {ayahNo}</span>
+          <span className={`badge ${isPlaying ? "" : "muted"}`}>{isPlaying ? "Çalıyor" : "Duraklatıldı"}</span>
+        </div>
+        <button className="btnSmall btnToggle" type="button" onClick={onToggle} title="Paneli kapat">
+          Kapat
+        </button>
+      </div>
+
+      <div className="activeVerseAr" dir="rtl">
+        {ar || "—"}
+      </div>
+      <div className="activeVerseTr">{tr || "—"}</div>
+      <div className="activeVerseDe muted">{de || "—"}</div>
+    </div>
+  );
+}
+
 function PlayerControls({
   isPlaying,
   currentTime,
@@ -365,6 +419,9 @@ function PlayerControls({
   bPoint,
   onSetA,
   onSetB,
+
+  showActiveVersePanel,
+  onToggleActiveVersePanel,
 }) {
   return (
     <div className="playerControls">
@@ -385,6 +442,16 @@ function PlayerControls({
           <button className="btnSmall" type="button" onClick={onNext} title="Next ayah">
             ▶
           </button>
+
+          <button
+            className="btnSmall btnToggle"
+            type="button"
+            onClick={onToggleActiveVersePanel}
+            title="Aktif ayet paneli"
+          >
+            {showActiveVersePanel ? "Ayet paneli: Açık" : "Ayet paneli: Kapalı"}
+          </button>
+
           <button className="btnSmall btnToggle" type="button" onClick={onToggleCollapsed} title="Toggle tools">
             {collapsed ? "Open tools" : "Close tools"}
           </button>
@@ -465,6 +532,7 @@ function PlayerControls({
   );
 }
 
+/* --- SyncPanel + VersesTable (unchanged) --- */
 function SyncPanel({
   verses,
   activeIndex,
@@ -920,6 +988,8 @@ export default function App() {
 
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
 
+  const [showActiveVersePanel, setShowActiveVersePanel] = useState(true);
+
   useEffect(() => {
     document.title = "Türkçe-Almanca Kur’an Player";
   }, []);
@@ -940,6 +1010,23 @@ export default function App() {
       // ignore
     }
   }, [toolsCollapsed]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("qatd:showActiveVersePanel");
+      if (raw === "0") setShowActiveVersePanel(false);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("qatd:showActiveVersePanel", showActiveVersePanel ? "1" : "0");
+    } catch {
+      // ignore
+    }
+  }, [showActiveVersePanel]);
 
   const versesRef = useRef(verses);
   const activeIndexRef = useRef(activeIndex);
@@ -971,7 +1058,6 @@ export default function App() {
   const audioSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""), [selectedSurah]);
   const versesSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.versesUrl) : ""), [selectedSurah]);
 
-  // ✅ FIXED: robust loading + tolerant parsing
   useEffect(() => {
     let cancelled = false;
 
@@ -1020,7 +1106,6 @@ export default function App() {
     };
   }, [versesSrc]);
 
-  // Audio listeners
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1046,7 +1131,6 @@ export default function App() {
     };
   }, []);
 
-  // Playback rate
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1128,7 +1212,6 @@ export default function App() {
     });
   }, []);
 
-  // autosave draft (debounced)
   useEffect(() => {
     const t = setTimeout(() => {
       try {
@@ -1201,7 +1284,6 @@ export default function App() {
     if (idx >= 0) seekVerse(idx, true);
   }, [seekVerse]);
 
-  // loop behavior
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1230,7 +1312,6 @@ export default function App() {
     }
   }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint]);
 
-  // active index update + ensure visible without page-top jumps
   useEffect(() => {
     if (!verses.length) return;
     const idx = findActiveVerseIndex(verses, currentTime);
@@ -1245,7 +1326,6 @@ export default function App() {
   const setA = useCallback(() => setAPoint(currentTimeRef.current), []);
   const setB = useCallback(() => setBPoint(currentTimeRef.current), []);
 
-  // keyboard shortcuts
   useEffect(() => {
     const onKey = (e) => {
       const tag = document.activeElement?.tagName?.toLowerCase();
@@ -1343,6 +1423,8 @@ export default function App() {
     </div>
   ) : null;
 
+  const activeVerse = activeIndex >= 0 ? verses[activeIndex] : null;
+
   return (
     <div className="appShell">
       <SurahList
@@ -1359,6 +1441,13 @@ export default function App() {
 
         <div className={`playerCard playerSticky ${toolsCollapsed ? "collapsed" : ""}`}>
           <audio ref={audioRef} src={audioSrc} preload="metadata" />
+
+          <ActiveVersePanel
+            verse={activeVerse}
+            isPlaying={isPlaying}
+            visible={showActiveVersePanel}
+            onToggle={() => setShowActiveVersePanel((x) => !x)}
+          />
 
           <PlayerControls
             isPlaying={isPlaying}
@@ -1384,6 +1473,8 @@ export default function App() {
             bPoint={bPoint}
             onSetA={setA}
             onSetB={setB}
+            showActiveVersePanel={showActiveVersePanel}
+            onToggleActiveVersePanel={() => setShowActiveVersePanel((x) => !x)}
           />
 
           {toolsCollapsed ? null : (
@@ -1419,7 +1510,12 @@ export default function App() {
           )}
         </div>
 
-        <VersesTable verses={verses} activeIndex={activeIndex} onRowClick={(idx) => seekVerse(idx, true)} rowRefs={rowRefs} />
+        <VersesTable
+          verses={verses}
+          activeIndex={activeIndex}
+          onRowClick={(idx) => seekVerse(idx, true)}
+          rowRefs={rowRefs}
+        />
       </main>
     </div>
   );
