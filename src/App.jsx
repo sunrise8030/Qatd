@@ -346,11 +346,6 @@ function Timeline({
   );
 }
 
-/**
- * DİKEY 3D RULMAN
- * - Yukarı kaydırınca ARTAR
- * - STEP_PX=22
- */
 function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const ref = useRef(null);
 
@@ -532,12 +527,6 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   );
 }
 
-/**
- * Single Player:
- * - Arapça + Almanca üstte
- * - Dock: fixed sağ (tek satır; wrap yok; overflowX auto)
- * - Türkçe: dock altında ayrı panel
- */
 function SinglePlayerPanel({
   open,
   verse,
@@ -578,56 +567,7 @@ function SinglePlayerPanel({
 
   const DOCK_TOP = "60%";
   const RIGHT = 14;
-  const DOCK_W = "min(560px, calc(100% - 28px))";
-
-  const dock = {
-    position: "fixed",
-    right: RIGHT,
-    top: DOCK_TOP,
-    transform: "translateY(-50%)",
-    zIndex: 10001,
-    width: DOCK_W,
-    minHeight: 92,
-    padding: 10,
-    borderRadius: 18,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(0,0,0,0.16)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    overflowX: "auto", // ✅ tek satır garantisi
-    overflowY: "hidden",
-    WebkitOverflowScrolling: "touch",
-    pointerEvents: "auto",
-  };
-
-  const dockRow = {
-    display: "flex",
-    gap: 10,
-    alignItems: "center",
-    flexWrap: "nowrap", // ✅ wrap kapalı
-    whiteSpace: "nowrap",
-    justifyContent: "flex-end",
-  };
-
-  // Türkçe panel: dock'un hemen altına hizalı
-  const trPanel = {
-    position: "fixed",
-    right: RIGHT,
-    top: `calc(${DOCK_TOP} + 92px)`,
-    transform: "translateY(-50%)",
-    zIndex: 10001,
-    width: DOCK_W,
-    maxHeight: "32vh",
-    overflow: "auto",
-    padding: 12,
-    borderRadius: 16,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(0,0,0,0.14)",
-    color: "rgba(255,255,255,0.92)",
-    lineHeight: 1.55,
-    pointerEvents: "auto",
-  };
+  const DOCK_W = "min(680px, calc(100% - 28px))";
 
   return (
     <div className="singlePlayerBackdrop" role="dialog" aria-modal="true" aria-label="Single Player">
@@ -641,8 +581,37 @@ function SinglePlayerPanel({
         </div>
       </div>
 
-      <div className="singlePlayerControls" style={dock}>
-        <div className="singlePlayerBtns" style={dockRow}>
+      <div
+        className="singlePlayerControls singlePlayerDockRight"
+        style={{
+          position: "fixed",
+          right: RIGHT,
+          top: DOCK_TOP,
+          transform: "translateY(-50%)",
+          zIndex: 10001,
+          width: DOCK_W,
+          minHeight: 92,
+          padding: 10,
+          borderRadius: 18,
+          border: "1px solid rgba(255,255,255,0.10)",
+          background: "rgba(0,0,0,0.16)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-end",
+          pointerEvents: "auto",
+        }}
+      >
+        <div
+          className="singlePlayerBtns"
+          style={{
+            display: "flex",
+            gap: 10,
+            alignItems: "center",
+            flexWrap: "nowrap",
+            whiteSpace: "nowrap",
+            justifyContent: "flex-end",
+          }}
+        >
           <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
             ◀
           </button>
@@ -655,20 +624,11 @@ function SinglePlayerPanel({
             ▶
           </button>
 
-          {/* çark biraz kompakt: tek satır için */}
           <div style={{ transform: "scale(0.90)", transformOrigin: "center right" }}>
             <IOSPickerWheelVertical3D disabled={dialDisabled} value={ay} onStep={onDialStep} />
           </div>
 
-          <button
-            className={`spRBtn ${repeatMode ? "on" : "off"}`}
-            type="button"
-            onClick={() => {
-              tactilePulse(10);
-              onToggleRepeat();
-            }}
-            aria-label="Repeat"
-          >
+          <button className={`spRBtn ${repeatMode ? "on" : "off"}`} type="button" onClick={onToggleRepeat} aria-label="Repeat">
             {repeatMode === 2 ? "rr" : "r"}
           </button>
 
@@ -678,7 +638,28 @@ function SinglePlayerPanel({
         </div>
       </div>
 
-      <div style={trPanel} aria-label="Turkish">
+      <div
+        className="singlePlayerTrPanel"
+        style={{
+          position: "fixed",
+          right: RIGHT,
+          top: `calc(${DOCK_TOP} + 92px)`,
+          transform: "translateY(-50%)",
+          zIndex: 10001,
+          width: DOCK_W,
+          maxHeight: "42vh",
+          overflow: "auto",
+          padding: 12,
+          borderRadius: 16,
+          border: "1px solid rgba(255,255,255,0.10)",
+          background: "rgba(0,0,0,0.14)",
+          color: "rgba(255,255,255,0.92)",
+          lineHeight: 1.65,
+          fontSize: 18,
+          pointerEvents: "auto",
+        }}
+        aria-label="Turkish"
+      >
         {(verse?.tr || "—").trim()}
       </div>
     </div>
@@ -1219,7 +1200,6 @@ export default function App() {
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
   const [singleOn, setSingleOn] = useState(false);
 
-  // repeat: 0 off, 1 => 1 tekrar, 2 => 2 tekrar
   const [repeatMode, setRepeatMode] = useState(0);
   const repeatStateRef = useRef({ idx: -1, done: 0, armed: true, lastFire: 0 });
 
@@ -1431,7 +1411,6 @@ export default function App() {
     });
   }, []);
 
-  // Draft auto-save
   useEffect(() => {
     const t = setTimeout(() => {
       try {
@@ -1496,7 +1475,6 @@ export default function App() {
     if (idx >= 0) seekVerse(idx, true);
   }, [seekVerse]);
 
-  // repeat toggle: off -> 1 -> 2 -> off
   const toggleRepeat = useCallback(() => {
     setRepeatMode((m) => {
       const next = m === 0 ? 1 : m === 1 ? 2 : 0;
@@ -1524,7 +1502,6 @@ export default function App() {
     });
   }, [seekTo]);
 
-  // ✅ Repeat engine (çalışan)
   useEffect(() => {
     const a = audioRef.current;
     const vs = versesRef.current;
@@ -1547,7 +1524,6 @@ export default function App() {
       return;
     }
 
-    // re-arm
     if (currentTime < e - 0.12) {
       repeatStateRef.current.armed = true;
       return;
@@ -1556,7 +1532,6 @@ export default function App() {
     const nearEnd = currentTime >= e - 0.02;
     if (!nearEnd || !repeatStateRef.current.armed) return;
 
-    // spam koruma
     const now = performance.now();
     if (now - (repeatStateRef.current.lastFire || 0) < 350) return;
     repeatStateRef.current.lastFire = now;
@@ -1577,7 +1552,6 @@ export default function App() {
     setCurrentTime(s);
   }, [currentTime, repeatMode]);
 
-  // existing loops (kalsın)
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1606,7 +1580,6 @@ export default function App() {
     }
   }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint]);
 
-  // active row sync
   useEffect(() => {
     if (!verses.length) return;
     const idx = findActiveVerseIndex(verses, currentTime);
@@ -1621,7 +1594,6 @@ export default function App() {
   const setA = useCallback(() => setAPoint(currentTimeRef.current), []);
   const setB = useCallback(() => setBPoint(currentTimeRef.current), []);
 
-  // keyboard
   useEffect(() => {
     const onKey = (e) => {
       const tag = document.activeElement?.tagName?.toLowerCase();
@@ -1838,8 +1810,3 @@ export default function App() {
     </div>
   );
 }
-
-// =========================
-// FILE: src/styles.css
-// (Senin son gönderdiğin CSS’i kullan. Ekstra bir şeye gerek yok.)
-// =========================
