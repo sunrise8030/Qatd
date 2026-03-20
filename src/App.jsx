@@ -338,26 +338,25 @@ function Timeline({
 }
 
 /**
- * GearDial (single player üzerinde)
- * - gerçek dişli görünüm
- * - sürükle (dönerek) + wheel + ok tuşları
- * - acceleration (hızlı input -> 1..5 step)
- * - inertia (momentum)
+ * GearDial:
+ * - 12 diş (arkada gömülü 9, önde parlak 3)
+ * - ayah no çarkın üstünde
+ * - gerçek dişli step: akümülasyon (STEP_DEG) ile tık tık
+ * - momentum + hızlanma
  */
-function GearDial({ disabled, onStep }) {
-  const gearRef = useRef(null);
+function GearDial({ disabled, label, onStep }) {
+  const btnRef = useRef(null);
 
-  // visual rotation
-  const rotRef = useRef(0);
-  const rafTickRef = useRef(0);
+  const rotDegRef = useRef(0);
+  const accumRef = useRef(0);
 
   // pointer
   const draggingRef = useRef(false);
   const lastAngleRef = useRef(null);
   const lastMoveTsRef = useRef(0);
 
-  // tick anim
-  const tickTimerRef = useRef(null);
+  // tick visual + haptic
+  const tickTimerRef = useRef(0);
 
   // acceleration
   const lastStepTsRef = useRef(0);
@@ -366,26 +365,26 @@ function GearDial({ disabled, onStep }) {
   // inertia
   const inertiaRafRef = useRef(0);
   const inertiaVelRef = useRef(0); // deg/ms
-  const inertiaAccumRef = useRef(0);
   const inertiaLastTsRef = useRef(0);
+
+  const STEP_DEG = 24; // daha "dişli" hissi
 
   useEffect(() => {
     return () => {
       if (tickTimerRef.current) window.clearTimeout(tickTimerRef.current);
       if (inertiaRafRef.current) cancelAnimationFrame(inertiaRafRef.current);
-      if (rafTickRef.current) cancelAnimationFrame(rafTickRef.current);
     };
   }, []);
 
-  const applyRotation = (degDelta) => {
-    rotRef.current += degDelta;
-    const el = gearRef.current;
+  const applyRotation = (ddeg) => {
+    rotDegRef.current += ddeg;
+    const el = btnRef.current;
     if (!el) return;
-    el.style.setProperty("--rot", `${rotRef.current}deg`);
+    el.style.setProperty("--rot", `${rotDegRef.current}deg`);
   };
 
   const doTick = () => {
-    const el = gearRef.current;
+    const el = btnRef.current;
     if (!el) return;
 
     el.classList.remove("tick");
@@ -430,23 +429,30 @@ function GearDial({ disabled, onStep }) {
     step(dir, mul);
   };
 
+  const processAccum = () => {
+    while (Math.abs(accumRef.current) >= STEP_DEG) {
+      const dir = accumRef.current > 0 ? +1 : -1;
+      const extra = Math.abs(inertiaVelRef.current) > 0.55 ? 2 : Math.abs(inertiaVelRef.current) > 0.35 ? 1 : 0;
+      acceleratedStep(dir, extra);
+      accumRef.current -= dir * STEP_DEG;
+    }
+  };
+
   const stopInertia = () => {
     if (inertiaRafRef.current) cancelAnimationFrame(inertiaRafRef.current);
     inertiaRafRef.current = 0;
     inertiaVelRef.current = 0;
-    inertiaAccumRef.current = 0;
     inertiaLastTsRef.current = 0;
   };
 
   const startInertia = () => {
-    const vel = inertiaVelRef.current;
-    if (!Number.isFinite(vel) || Math.abs(vel) < 0.045) {
+    const vel0 = inertiaVelRef.current;
+    if (!Number.isFinite(vel0) || Math.abs(vel0) < 0.05) {
       stopInertia();
       return;
     }
 
     inertiaLastTsRef.current = performance.now();
-    const TH_DEG = 18;
     const DECAY_PER_MS = 0.0068;
     const MAX_MS = 1200;
     const startTs = performance.now();
@@ -456,24 +462,18 @@ function GearDial({ disabled, onStep }) {
       const dt = now - (inertiaLastTsRef.current || now);
       inertiaLastTsRef.current = now;
 
-      const sign = Math.sign(inertiaVelRef.current || vel);
-      const speed = Math.abs(inertiaVelRef.current || vel);
+      const sign = Math.sign(inertiaVelRef.current || vel0);
+      const speed = Math.abs(inertiaVelRef.current || vel0);
       const nextSpeed = Math.max(0, speed * (1 - DECAY_PER_MS * dt));
       inertiaVelRef.current = sign * nextSpeed;
 
       const ddeg = inertiaVelRef.current * dt;
-      inertiaAccumRef.current += ddeg;
       applyRotation(ddeg);
-
-      while (Math.abs(inertiaAccumRef.current) >= TH_DEG) {
-        const dir = inertiaAccumRef.current > 0 ? +1 : -1;
-        const extra = nextSpeed > 0.55 ? 2 : nextSpeed > 0.35 ? 1 : 0;
-        acceleratedStep(dir, extra);
-        inertiaAccumRef.current -= dir * TH_DEG;
-      }
+      accumRef.current += ddeg;
+      processAccum();
 
       const elapsed = now - startTs;
-      if (nextSpeed < 0.045 || elapsed > MAX_MS) {
+      if (nextSpeed < 0.05 || elapsed > MAX_MS) {
         stopInertia();
         return;
       }
@@ -484,7 +484,7 @@ function GearDial({ disabled, onStep }) {
   };
 
   const getAngle = (clientX, clientY) => {
-    const el = gearRef.current;
+    const el = btnRef.current;
     if (!el) return 0;
     const r = el.getBoundingClientRect();
     const cx = r.left + r.width / 2;
@@ -507,7 +507,7 @@ function GearDial({ disabled, onStep }) {
     draggingRef.current = true;
     lastAngleRef.current = getAngle(e.clientX, e.clientY);
     lastMoveTsRef.current = performance.now();
-    gearRef.current?.setPointerCapture?.(e.pointerId);
+    btnRef.current?.setPointerCapture?.(e.pointerId);
   };
 
   const onPointerMove = (e) => {
@@ -528,19 +528,11 @@ function GearDial({ disabled, onStep }) {
     lastMoveTsRef.current = now;
     lastAngleRef.current = cur;
 
-    // seed inertia
     inertiaVelRef.current = d / dt;
 
-    // visual rotate
     applyRotation(d);
-
-    // step threshold
-    const TH = 18;
-    const abs = Math.abs(d);
-    if (abs >= TH) {
-      const extra = abs >= 70 ? 3 : abs >= 50 ? 2 : abs >= 35 ? 1 : 0;
-      acceleratedStep(d > 0 ? +1 : -1, extra);
-    }
+    accumRef.current += d;
+    processAccum();
   };
 
   const onPointerUp = () => {
@@ -555,21 +547,23 @@ function GearDial({ disabled, onStep }) {
     e.preventDefault();
     stopInertia();
 
-    // wheel: rotate gear + step
     const dir = e.deltaY > 0 ? +1 : -1;
     const abs = Math.abs(e.deltaY);
-    const extra = abs >= 220 ? 3 : abs >= 140 ? 2 : abs >= 80 ? 1 : 0;
 
-    const ddeg = clamp((abs / 6) * dir, -80, 80);
+    // wheel -> rotate + seed inertia
+    const ddeg = clamp((abs / 6) * dir, -90, 90);
     applyRotation(ddeg);
+    accumRef.current += ddeg;
 
     inertiaVelRef.current = clamp((dir * abs) / 1200, -0.9, 0.9);
-    acceleratedStep(dir, extra);
+
+    processAccum();
     startInertia();
   };
 
   return (
     <button
+      ref={btnRef}
       type="button"
       className={`spGear ${disabled ? "disabled" : ""}`}
       aria-label="Çark"
@@ -584,23 +578,26 @@ function GearDial({ disabled, onStep }) {
         stopInertia();
         if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
           e.preventDefault();
-          applyRotation(-22);
-          acceleratedStep(-1, e.repeat ? 1 : 0);
+          const d = -STEP_DEG;
+          applyRotation(d);
+          accumRef.current += d;
+          processAccum();
         }
         if (e.key === "ArrowDown" || e.key === "ArrowRight") {
           e.preventDefault();
-          applyRotation(+22);
-          acceleratedStep(+1, e.repeat ? 1 : 0);
+          const d = +STEP_DEG;
+          applyRotation(d);
+          accumRef.current += d;
+          processAccum();
         }
       }}
-      ref={gearRef}
     >
       <svg className="spGearSvg" viewBox="0 0 100 100" aria-hidden="true">
-        {/* Teeth ring */}
-        <g className="spGearTeeth">
+        {/* BACK (gömülü) teeth: all 12 but faint */}
+        <g className="spGearTeeth spGearTeethBack">
           {Array.from({ length: 12 }).map((_, i) => (
             <rect
-              key={i}
+              key={`b-${i}`}
               x="47"
               y="2"
               width="6"
@@ -612,16 +609,32 @@ function GearDial({ disabled, onStep }) {
           ))}
         </g>
 
-        {/* Body */}
+        {/* BODY covers back teeth => looks embedded */}
         <circle className="spGearBody" cx="50" cy="50" r="36" />
         <circle className="spGearInner" cx="50" cy="50" r="22" />
         <circle className="spGearCore" cx="50" cy="50" r="8" />
+
+        {/* FRONT teeth: only 3 visible */}
+        <g className="spGearTeeth spGearTeethFront">
+          {[-30, 0, 30].map((deg) => (
+            <rect
+              key={`f-${deg}`}
+              x="47"
+              y="2"
+              width="6"
+              height="14"
+              rx="2"
+              ry="2"
+              transform={`rotate(${deg} 50 50)`}
+            />
+          ))}
+        </g>
 
         {/* Spokes */}
         <g className="spGearSpokes">
           {Array.from({ length: 6 }).map((_, i) => (
             <rect
-              key={i}
+              key={`s-${i}`}
               x="48.5"
               y="20"
               width="3"
@@ -631,14 +644,20 @@ function GearDial({ disabled, onStep }) {
             />
           ))}
         </g>
+
+        {/* label NOT rotating */}
+        <text className="spGearText" x="50" y="56" textAnchor="middle">
+          {label}
+        </text>
       </svg>
     </button>
   );
 }
 
 /**
- * Single Player (centered overlay)
- * - Çark + r/rr + Auto-reset + Close => hepsi player bloğunun ÜSTÜNDE
+ * Single Player
+ * - Çark üstünde ayah no
+ * - r/rr buton
  */
 function SinglePlayerPanel({
   open,
@@ -690,7 +709,6 @@ function SinglePlayerPanel({
 
           <div className="singlePlayerLine singlePlayerLineDe">{(verse?.de || "—").trim()}</div>
 
-          {/* ✅ player bloğu üst kontrol barı */}
           <div className="singlePlayerControls singlePlayerTopBar">
             <div className="singlePlayerAyahNo">#{ay}</div>
 
@@ -710,10 +728,8 @@ function SinglePlayerPanel({
                 ▶
               </button>
 
-              {/* ✅ gerçek dişli çark */}
-              <GearDial disabled={dialDisabled} onStep={onDialStep} />
+              <GearDial disabled={dialDisabled} label={ay} onStep={onDialStep} />
 
-              {/* ✅ r/rr tek buton (etiket yok) */}
               <button
                 className={`spRBtn ${repeatMode ? "on" : "off"}`}
                 type="button"
@@ -724,7 +740,6 @@ function SinglePlayerPanel({
                 {repeatMode === 2 ? "rr" : "r"}
               </button>
 
-              {/* ✅ auto reset küçük toggle */}
               <label className="spAutoReset chip" title="Auto-reset">
                 <input type="checkbox" checked={repeatAutoReset} onChange={onToggleRepeatAutoReset} />
                 Auto-reset
