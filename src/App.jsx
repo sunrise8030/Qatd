@@ -1,4 +1,4 @@
-﻿﻿// src/App.jsx
+// src/App.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
 
@@ -58,7 +58,6 @@ function findActiveVerseIndex(verses, t) {
   }
   if (bestIdx !== -1) return bestIdx;
 
-  // fallback: closest start
   let closest = -1;
   let bestDelta = Infinity;
   for (let i = 0; i < verses.length; i += 1) {
@@ -351,10 +350,11 @@ function Timeline({
 }
 
 /**
- * Popup: AR -> DE -> (PLAYER BLOCK) -> TR
+ * Single Player panel:
+ * AR -> DE -> (PLAYER BLOCK) -> TR
  * Close => pause
  */
-function VersePopupModal({ open, verse, isPlaying, onPlayPause, onPrev, onNext, onClose }) {
+function SinglePlayerPanel({ open, verse, isPlaying, onPlayPause, onPrev, onNext, onClose }) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => {
@@ -381,44 +381,34 @@ function VersePopupModal({ open, verse, isPlaying, onPlayPause, onPrev, onNext, 
   const ay = verse?.ayah != null ? String(verse.ayah) : "—";
 
   return (
-    <div className="versePopupBackdrop" role="dialog" aria-modal="true" aria-label="Aktif ayet">
-      <div className="versePopupCard">
-        <div className="versePopupLines">
-          <div className="versePopupLine versePopupLineAr" dir="rtl">
+    <div className="singlePlayerWrap" aria-label="Single Player">
+      <div className="singlePlayerCard">
+        <div className="singlePlayerLines">
+          <div className="singlePlayerLine singlePlayerLineAr" dir="rtl">
             {(verse?.ar || "—").trim()}
           </div>
 
-          <div className="versePopupLine versePopupLineDe">{(verse?.de || "—").trim()}</div>
+          <div className="singlePlayerLine singlePlayerLineDe">{(verse?.de || "—").trim()}</div>
 
-          <div className="versePopupPlayerBlock">
-            <div className="versePopupAyahNo">#{ay}</div>
-            <div className="versePopupBtns">
-              <button className="versePopupBtn" type="button" onClick={onPrev} aria-label="Prev">
+          <div className="singlePlayerControls">
+            <div className="singlePlayerAyahNo">#{ay}</div>
+            <div className="singlePlayerBtns">
+              <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
                 ◀
               </button>
-              <button
-                className="versePopupBtn versePopupBtnPrimary"
-                type="button"
-                onClick={onPlayPause}
-                aria-label="Play/Pause"
-              >
+              <button className="spBtn spBtnPrimary" type="button" onClick={onPlayPause} aria-label="Play/Pause">
                 {isPlaying ? "⏸" : "▶"}
               </button>
-              <button className="versePopupBtn" type="button" onClick={onNext} aria-label="Next">
+              <button className="spBtn" type="button" onClick={onNext} aria-label="Next">
                 ▶
               </button>
-              <button
-                className="versePopupBtn versePopupBtnClose"
-                type="button"
-                onClick={onClose}
-                aria-label="Close"
-              >
+              <button className="spBtn spBtnClose" type="button" onClick={onClose} aria-label="Close">
                 ✕
               </button>
             </div>
           </div>
 
-          <div className="versePopupLine versePopupLineTr">{(verse?.tr || "—").trim()}</div>
+          <div className="singlePlayerLine singlePlayerLineTr">{(verse?.tr || "—").trim()}</div>
         </div>
       </div>
     </div>
@@ -449,8 +439,8 @@ function PlayerControls({
   bPoint,
   onSetA,
   onSetB,
-  popupOpen,
-  onTogglePopup,
+  singleOn,
+  onToggleSingle,
 }) {
   return (
     <div className="playerControls">
@@ -472,8 +462,8 @@ function PlayerControls({
             ▶
           </button>
 
-          <button className="btnSmall btnToggle" type="button" onClick={onTogglePopup} title="Ayet popup">
-            {popupOpen ? "Popup kapat" : "Popup aç"}
+          <button className={`btnSinglePlayer ${singleOn ? "on" : ""}`} type="button" onClick={onToggleSingle}>
+            {singleOn ? "Single Player: ON" : "Single Player"}
           </button>
 
           <button className="btnSmall btnToggle" type="button" onClick={onToggleCollapsed} title="Toggle tools">
@@ -636,7 +626,6 @@ function SyncPanel({
     setEndInput(Number.isFinite(e) ? String(e) : "");
   }, [activeIndex, active]);
 
-  // auto-apply debounced
   useEffect(() => {
     if (!active) return;
     const t = setTimeout(() => {
@@ -717,8 +706,7 @@ function SyncPanel({
     const jsonText = JSON.stringify(verses, null, 2);
     const content = base64EncodeUtf8(jsonText);
     const message =
-      ghMsg.trim() ||
-      `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
+      ghMsg.trim() || `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
 
     await onCommitGithub({ owner, repo, path, branch, token, message, content });
     setGhMsg("");
@@ -775,9 +763,7 @@ function SyncPanel({
 
               <div className="syncMetaInline">
                 <div className="autoSaved muted">Auto-save</div>
-                <div className={`deltaPill ${deltaOk ? "" : "muted"}`}>
-                  Δ {deltaOk ? `${delta.toFixed(2)}s` : "—"}
-                </div>
+                <div className={`deltaPill ${deltaOk ? "" : "muted"}`}>Δ {deltaOk ? `${delta.toFixed(2)}s` : "—"}</div>
               </div>
             </div>
           </div>
@@ -1013,7 +999,7 @@ export default function App() {
   const [bPoint, setBPoint] = useState(null);
 
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
-  const [popupOpen, setPopupOpen] = useState(false);
+  const [singleOn, setSingleOn] = useState(false);
 
   useEffect(() => {
     document.title = "Türkçe-Almanca Kur’an Player";
@@ -1081,6 +1067,7 @@ export default function App() {
     setCurrentTime(0);
     setDuration(0);
     setIsPlaying(false);
+    setSingleOn(false);
 
     const a = audioRef.current;
     if (a) {
@@ -1229,7 +1216,6 @@ export default function App() {
     });
   }, []);
 
-  // autosave draft (debounced)
   useEffect(() => {
     const t = setTimeout(() => {
       try {
@@ -1302,7 +1288,6 @@ export default function App() {
     if (idx >= 0) seekVerse(idx, true);
   }, [seekVerse]);
 
-  // loop behavior
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1331,7 +1316,6 @@ export default function App() {
     }
   }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint]);
 
-  // active index update + ensure visible
   useEffect(() => {
     if (!verses.length) return;
     const idx = findActiveVerseIndex(verses, currentTime);
@@ -1346,7 +1330,6 @@ export default function App() {
   const setA = useCallback(() => setAPoint(currentTimeRef.current), []);
   const setB = useCallback(() => setBPoint(currentTimeRef.current), []);
 
-  // keyboard shortcuts
   useEffect(() => {
     const onKey = (e) => {
       const tag = document.activeElement?.tagName?.toLowerCase();
@@ -1427,13 +1410,13 @@ export default function App() {
 
   const activeVerse = useMemo(() => (activeIndex >= 0 ? verses[activeIndex] : null), [activeIndex, verses]);
 
-  const closePopup = useCallback(() => {
-    setPopupOpen(false);
+  const closeSingle = useCallback(() => {
+    setSingleOn(false);
     pause();
   }, [pause]);
 
-  const togglePopup = useCallback(() => {
-    setPopupOpen((x) => {
+  const toggleSingle = useCallback(() => {
+    setSingleOn((x) => {
       const next = !x;
       if (!next) pause();
       return next;
@@ -1473,14 +1456,14 @@ export default function App() {
         {header}
         {error ? <div className="errorBox">{error}</div> : null}
 
-        <VersePopupModal
-          open={popupOpen}
+        <SinglePlayerPanel
+          open={singleOn}
           verse={activeVerse}
           isPlaying={isPlaying}
           onPlayPause={onPlayPause}
           onPrev={prevAyah}
           onNext={nextAyah}
-          onClose={closePopup}
+          onClose={closeSingle}
         />
 
         <div className={`playerCard playerSticky ${toolsCollapsed ? "collapsed" : ""}`}>
@@ -1510,8 +1493,8 @@ export default function App() {
             bPoint={bPoint}
             onSetA={setA}
             onSetB={setB}
-            popupOpen={popupOpen}
-            onTogglePopup={togglePopup}
+            singleOn={singleOn}
+            onToggleSingle={toggleSingle}
           />
 
           {toolsCollapsed ? null : (
