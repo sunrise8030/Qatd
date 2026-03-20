@@ -8,6 +8,7 @@
   --accent:rgba(99,179,237,1);
   --danger:rgba(255,120,120,0.18);
 
+  /* column widths for gradient background */
   --w-no: 70px;
   --w-ar: 1.1fr;
   --w-de: 1fr;
@@ -326,8 +327,6 @@ html,body{
   border-radius:16px;
   overflow:auto;
 }
-
-/* keep wide but clean */
 .tableHeader, .row{ min-width:980px; }
 
 .tableHeader{
@@ -344,7 +343,6 @@ html,body{
   z-index:2;
 }
 
-/* gradient column shading */
 .row{
   display:grid;
   grid-template-columns: var(--w-no) var(--w-ar) var(--w-de) var(--w-tr);
@@ -368,13 +366,11 @@ html,body{
     );
 }
 
-/* stronger zebra */
 .tableBody .row:nth-child(odd){ background-color: rgba(255,255,255,0.05); }
 .tableBody .row:nth-child(even){ background-color: rgba(0,0,0,0.18); }
 
 .row:hover{ filter: brightness(1.08); }
 
-/* active stays */
 .row.active{
   background-color: rgba(99,179,237,0.14) !important;
   box-shadow: 0 0 0 1px rgba(99,179,237,0.35) inset;
@@ -418,7 +414,7 @@ html,body{
   .colDe{ display:none; }
 }
 
-/* Popup modal */
+/* -------- Popup modal -------- */
 .versePopupBackdrop{
   position: fixed;
   inset: 0;
@@ -432,88 +428,18 @@ html,body{
 
 .versePopupCard{
   width: min(1040px, 100%);
-  background: rgba(15,21,32,0.70);
+  background: rgba(15,21,32,0.74);
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 20px;
   box-shadow: 0 30px 80px rgba(0,0,0,0.45);
   max-height: 86vh;
   overflow: auto;
   padding: 14px;
-  position: relative;
-}
-
-.versePopupHud{
-  position: sticky;
-  top: 10px;
-  z-index: 5;
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: center;
-  flex-wrap: wrap;
-  padding: 10px 10px;
-  background: rgba(15,21,32,0.58);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 18px;
-  backdrop-filter: blur(14px);
-}
-
-.versePopupAyahNo{
-  font-variant-numeric: tabular-nums;
-  font-weight: 900;
-  letter-spacing: 0.2px;
-  font-size: clamp(22px, 4vw, 36px);
-  padding: 8px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,0.14);
-  background: rgba(0,0,0,0.18);
-}
-
-.versePopupHudBtns{
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.versePopupBtn{
-  min-width: 54px;
-  height: 54px;
-  padding: 0 16px;
-  border-radius: 16px;
-  border: 1px solid rgba(255,255,255,0.18);
-  background: rgba(0,0,0,0.18);
-  color: var(--text);
-  cursor: pointer;
-  font-weight: 900;
-  font-size: 20px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  touch-action: manipulation;
-}
-
-.versePopupBtnPrimary{
-  min-width: 84px;
-  height: 58px;
-  font-size: 22px;
-  border-color: rgba(99,179,237,0.45);
-  box-shadow: 0 0 0 2px rgba(99,179,237,0.12) inset;
-}
-
-.versePopupBtnClose{
-  min-width: 54px;
-}
-
-@media (max-width:520px){
-  .versePopupBtn{ min-width: 58px; height: 58px; font-size: 22px; }
-  .versePopupBtnPrimary{ min-width: 92px; height: 62px; font-size: 24px; }
 }
 
 .versePopupLines{
   display: grid;
   gap: 12px;
-  margin-top: 12px;
 }
 
 .versePopupLine{
@@ -522,8 +448,7 @@ html,body{
   padding: 16px 16px;
   background: rgba(0,0,0,0.14);
 }
-
-.versePopupLine:nth-child(odd){
+.versePopupLines > :nth-child(odd){
   background: rgba(255,255,255,0.06);
 }
 
@@ -548,4 +473,71 @@ html,body{
   font-size: clamp(28px, 4.2vw, 40px);
   line-height: 1.55;
   white-space: pre-wrap;
+}
+
+/* Player block BETWEEN DE and TR */
+.versePopupPlayerBlock{
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 18px;
+  background: rgba(15,21,32,0.58);
+  backdrop-filter: blur(12px);
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.versePopupAyahNo{
+  font-variant-numeric: tabular-nums;
+  font-weight: 950;
+  letter-spacing: 0.3px;
+  font-size: clamp(26px, 5vw, 44px);
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.22);
+}
+
+.versePopupBtns{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.versePopupBtn{
+  min-width: 62px;
+  height: 62px;
+  padding: 0 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.20);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 950;
+  font-size: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+}
+
+.versePopupBtnPrimary{
+  min-width: 104px;
+  height: 66px;
+  font-size: 26px;
+  border-color: rgba(99,179,237,0.50);
+  box-shadow: 0 0 0 2px rgba(99,179,237,0.14) inset;
+}
+
+.versePopupBtnClose{
+  min-width: 62px;
+}
+
+@media (max-width:520px){
+  .versePopupPlayerBlock{ gap: 10px; padding: 12px; }
+  .versePopupBtn{ min-width: 66px; height: 66px; font-size: 24px; }
+  .versePopupBtnPrimary{ min-width: 112px; height: 70px; font-size: 28px; }
 }
