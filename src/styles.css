@@ -706,3 +706,54 @@ html,body{
   border-color: rgba(255,255,255,0.22) !important;
 }
 .spRBtn:active{ transform: translateY(1px); }
+/* ===== Single Player: ORTADA SABİT PLAYER BLOĞU (EN SONA EKLE) ===== */
+
+/* artık alt dock boşluğu yok */
+.singlePlayerLines{
+  padding-bottom: 28px;
+}
+
+/* fixed dock container */
+.spDockFixed{
+  position: fixed;
+  left: 50%;
+  z-index: 10000;
+  width: min(1100px, calc(100% - 28px));
+  transform: translateX(-50%);
+}
+
+/* ortada konum */
+.spDockCenter{
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.spDockInner{
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 18px;
+  background: rgba(0,0,0,0.22);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 12px;
+  min-height: 92px; /* sabit yükseklik => çark dönerken oynamaz */
+}
+
+/* sağ/sol uç yerleşim */
+.spDockSplit{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 14px;
+}
+.spDockLeft,
+.spDockRight{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  flex-wrap:wrap;
+}
+
+/* mobilde ortala */
+@media (max-width:520px){
+  .spDockSplit{ justify-content:center; }
+}
