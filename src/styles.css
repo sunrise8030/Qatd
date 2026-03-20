@@ -1,6 +1,8 @@
 /* =========================================================
-   src/styles.css (TEK PARÇA)
-   - Senin CSS + en altta fixed dock + 3D rulman + r/rr
+   src/styles.css  (TEK PARÇA - güncel)
+   - Senin mevcut temayı korur
+   - Single Player: fixed dock sağda + TR panel altta görünüm için ek sınıflar
+   - Çark (spPicker3D) + r/rr (spRBtn) + butonlar (spBtn) görünür ve 3D
    ========================================================= */
 
 /* src/styles.css */
@@ -229,7 +231,7 @@ html,body{
 .mono{ font-variant-numeric:tabular-nums; }
 .muted{ color:var(--muted); }
 
-/* Single Player button (big, bright, 3D) */
+/* Single Player button */
 .btnSinglePlayer{
   padding: 14px 16px;
   border-radius: 14px;
@@ -387,23 +389,10 @@ html,body{
   color:inherit;
   cursor:pointer;
   align-items: stretch;
-
-  background:
-    linear-gradient(90deg,
-      rgba(0,0,0,0.00) 0%,
-      rgba(0,0,0,0.00) calc(var(--w-no)),
-      rgba(99,179,237,0.06) calc(var(--w-no)),
-      rgba(99,179,237,0.06) calc(var(--w-no) + 33.333%),
-      rgba(255,255,255,0.03) calc(var(--w-no) + 33.333%),
-      rgba(255,255,255,0.03) calc(var(--w-no) + 66.666%),
-      rgba(255,255,255,0.04) calc(var(--w-no) + 66.666%),
-      rgba(255,255,255,0.04) 100%
-    );
 }
 
 .tableBody .row:nth-child(odd){ background-color: rgba(255,255,255,0.05); }
 .tableBody .row:nth-child(even){ background-color: rgba(0,0,0,0.18); }
-
 .row:hover{ filter: brightness(1.08); }
 
 .row.active{
@@ -449,7 +438,7 @@ html,body{
   .colDe{ display:none; }
 }
 
-/* -------- Single Player (CENTERED overlay + blur BACK) -------- */
+/* -------- Single Player overlay -------- */
 .singlePlayerBackdrop{
   position: fixed;
   inset: 0;
@@ -475,11 +464,9 @@ html,body{
   overflow: auto;
 }
 
-/* leave space for fixed dock */
 .singlePlayerLines{
   display: grid;
   gap: 10px;
-  padding-bottom: 150px;
 }
 
 .singlePlayerLine{
@@ -515,33 +502,7 @@ html,body{
   white-space: pre-wrap;
 }
 
-/* =========================================================
-   FIXED DOCK (never moves)
-   ========================================================= */
-.spDockFixed{
-  position: fixed;
-  left: 50%;
-  bottom: 14px;
-  transform: translateX(-50%);
-  width: min(1100px, calc(100% - 28px));
-  z-index: 10000;
-}
-
-.spDockInner{
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 18px;
-  background: rgba(0,0,0,0.22);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  padding: 12px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap: 10px;
-  flex-wrap: wrap;
-  min-height: 92px; /* stable height => no jiggle */
-}
-
+/* -------- Buttons (Single Player) -------- */
 .spBtn{
   min-width: 66px;
   height: 66px;
@@ -584,7 +545,7 @@ html,body{
   .spBtnPrimary{ min-width: 124px; height: 78px; font-size: 32px; }
 }
 
-/* ---------- 3D RULMAN ---------- */
+/* -------- 3D Wheel (spPicker3D) -------- */
 .spPicker3D{
   width: 120px;
   height: 160px;
@@ -678,7 +639,7 @@ html,body{
   pointer-events:none;
 }
 
-/* ---------- r / rr ---------- */
+/* -------- r / rr button -------- */
 .spRBtn{
   min-width: 56px !important;
   height: 56px !important;
@@ -706,82 +667,3 @@ html,body{
   border-color: rgba(255,255,255,0.22) !important;
 }
 .spRBtn:active{ transform: translateY(1px); }
-/* ===== Single Player: ORTADA SABİT PLAYER BLOĞU (EN SONA EKLE) ===== */
-
-/* artık alt dock boşluğu yok */
-.singlePlayerLines{
-  padding-bottom: 28px;
-}
-
-/* fixed dock container */
-.spDockFixed{
-  position: fixed;
-  left: 50%;
-  z-index: 10000;
-  width: min(1100px, calc(100% - 28px));
-  transform: translateX(-50%);
-}
-
-/* ortada konum */
-.spDockCenter{
-  top: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.spDockInner{
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 18px;
-  background: rgba(0,0,0,0.22);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  padding: 12px;
-  min-height: 92px; /* sabit yükseklik => çark dönerken oynamaz */
-}
-
-/* sağ/sol uç yerleşim */
-.spDockSplit{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap: 14px;
-}
-.spDockLeft,
-.spDockRight{
-  display:flex;
-  align-items:center;
-  gap: 10px;
-  flex-wrap:wrap;
-}
-
-/* mobilde ortala */
-@media (max-width:520px){
-  .spDockSplit{ justify-content:center; }
-}
-/* ===== Single Player inline player bar (EN SONA EKLE) ===== */
-.spDockInline { margin: 10px 0; }
-.spDockInlineRow{
-  display:flex;
-  align-items:center;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content:center;
-}
-/* ===== Single Player FIXED Dock Stabilizer (append only) ===== */
-.singlePlayerBackdrop{ z-index: 9999; }
-.singlePlayerControls{ z-index: 10001; }
-
-/* fixed dock yarı şeffaf, blur yok */
-.singlePlayerControls{
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-/* çark + r butonu dock içinde sola kaymasın */
-.singlePlayerBtns{
-  justify-content: center;
-}
-
-/* küçük ek: fixed dock genişken taşma olmasın */
-@media (max-width:520px){
-  .singlePlayerControls{ padding: 10px !important; }
-}
