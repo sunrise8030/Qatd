@@ -714,3 +714,113 @@ html,body{
   padding: 0 12px;
   border-radius: 16px;
 }
+/* =========================================================
+   src/styles.css
+   (mevcut dosyanın SONUNA ekle)
+   - SinglePlayer controls sticky
+   - Rulman 3D güçlendirme
+   ========================================================= */
+
+/* Single Player controls stick to that good location */
+.singlePlayerControlsSticky{
+  position: sticky;
+  top: 10px;
+  z-index: 50;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* 3D picker: stronger cylinder + shine */
+.spPicker3D{
+  width: 120px;
+  height: 160px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(0,0,0,0.18);
+  box-shadow:
+    0 14px 28px rgba(0,0,0,0.35),
+    0 3px 0 rgba(255,255,255,0.14) inset,
+    0 -10px 16px rgba(0,0,0,0.22) inset;
+  position: relative;
+  overflow: hidden;
+  touch-action: none;
+}
+.spPicker3D.disabled{ opacity: 0.55; pointer-events:none; }
+
+.spPickerViewport{
+  width: 100%;
+  height: 100%;
+  outline: none;
+  display:grid;
+  place-items:center;
+  perspective: 980px; /* stronger */
+}
+
+.spPickerItems3D{
+  width: 100%;
+  height: 100%;
+  display:grid;
+  place-items:center;
+  transform-style: preserve-3d;
+}
+
+.spPickerItem3D{
+  position:absolute;
+  width: 100%;
+  text-align:center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 950;
+  font-size: 34px;
+  letter-spacing: 0.6px;
+  color: rgba(255,255,255,0.20);
+  transform-origin: center center;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.25);
+}
+.spPickerItem3D.active{
+  color: rgba(255,255,255,0.96);
+  text-shadow: 0 2px 14px rgba(0,0,0,0.38);
+}
+
+.spPickerShine{
+  position:absolute;
+  inset:-10px;
+  background:
+    radial-gradient(120px 220px at 30% 45%, rgba(255,255,255,0.10), transparent 60%),
+    radial-gradient(120px 220px at 70% 55%, rgba(99,179,237,0.10), transparent 60%);
+  pointer-events:none;
+  mix-blend-mode: screen;
+  opacity: 0.9;
+}
+
+/* center horizontal highlight bar */
+.spPickerBar{
+  position:absolute;
+  left: 10px;
+  right: 10px;
+  top: 50%;
+  height: 46px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.14);
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.18) inset,
+    0 10px 24px rgba(0,0,0,0.22);
+  pointer-events:none;
+}
+
+/* fades top/bottom */
+.spPickerFadeTop{
+  position:absolute;
+  left:0; right:0; top:0;
+  height: 46%;
+  background: linear-gradient(180deg, rgba(15,21,32,0.95), rgba(15,21,32,0.00));
+  pointer-events:none;
+}
+.spPickerFadeBottom{
+  position:absolute;
+  left:0; right:0; bottom:0;
+  height: 46%;
+  background: linear-gradient(0deg, rgba(15,21,32,0.95), rgba(15,21,32,0.00));
+  pointer-events:none;
+}
