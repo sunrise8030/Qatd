@@ -1,8 +1,9 @@
 // =========================================================
 // src/App.jsx  (TAM DOSYA - KISALTMA YOK)
-// - Single Player: ORTADA sabit player bloğu (fixed center)
+// - Single Player: ORTADA sabit player bloğu (fixed center) [CSS gerekli]
 // - Prev/Play/Next/Close sağ uca, Çark + r/rr sol uca
-// - ÇARK YÖNÜ TERS: diğer yönde artış
+// - ÇARK: Yukarı kaydırınca ARTAR ✅
+// - Hassasiyet: STEP_PX=22 ✅, wheel daha hassas ✅
 // - Repeat: r=1 tekrar, rr=2 tekrar, bitince AYNI ayette durur (pause + başa al)
 // - Ses eklenmez. Taptik yalnız vibrate varsa.
 // =========================================================
@@ -352,8 +353,10 @@ function Timeline({
 }
 
 /**
- * DİKEY 3D RULMAN (TERS YÖN)
- * - drag/wheel yönü terslendi: diğer yönde artış
+ * DİKEY 3D RULMAN
+ * - Yukarı kaydırınca ARTAR ✅
+ * - Hassasiyet arttı: STEP_PX=22 ✅
+ * - Wheel daha hassas ✅
  */
 function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const ref = useRef(null);
@@ -366,7 +369,7 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const accumPxRef = useRef(0);
   const rafRef = useRef(0);
 
-  const STEP_PX = 28;
+  const STEP_PX = 22;
 
   useEffect(() => {
     return () => {
@@ -383,13 +386,21 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
 
   const tickSteps = () => {
     let did = false;
-    while (Math.abs(accumPxRef.current) >= STEP_PX) {
-      // ✅ TERS: önce down => -1 (azalsın), up => +1 (artsın)
-      const dir = accumPxRef.current > 0 ? -1 : +1;
-      onStep(dir);
-      accumPxRef.current -= (dir === +1 ? -1 : +1) * STEP_PX; // ters denge
+
+    // up (accum negative) => +1
+    while (accumPxRef.current <= -STEP_PX) {
+      onStep(+1);
+      accumPxRef.current += STEP_PX;
       did = true;
     }
+
+    // down (accum positive) => -1
+    while (accumPxRef.current >= STEP_PX) {
+      onStep(-1);
+      accumPxRef.current -= STEP_PX;
+      did = true;
+    }
+
     if (did) tactilePulse(8);
   };
 
@@ -463,9 +474,10 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
     stop();
 
     const dy = e.deltaY;
-    const steps = clamp(Math.round(Math.abs(dy) / 35), 1, 10);
-    // ✅ TERS: scroll down => -1, scroll up => +1
-    const dir = dy > 0 ? -1 : +1;
+    const steps = clamp(Math.round(Math.abs(dy) / 28), 1, 12);
+
+    // wheel up (dy < 0) => +1
+    const dir = dy < 0 ? +1 : -1;
 
     for (let i = 0; i < steps; i += 1) onStep(dir);
     tactilePulse(8);
@@ -1742,7 +1754,7 @@ export default function App() {
           onClose={closeSingle}
           dialDisabled={dialDisabled}
           onDialStep={(dir) => {
-            // NOTE: dir artık component tarafından ters üretildi
+            // dir: +1 = next, -1 = prev
             const cur = activeIndexRef.current;
             const base = cur >= 0 ? cur : 0;
             const next = clamp(base + dir, 0, Math.max(0, versesRef.current.length - 1));
