@@ -1,6 +1,6 @@
-/* =========================================================
-   src/App.jsx
-   ========================================================= */
+// =========================================================
+// src/App.jsx
+// =========================================================
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
 
@@ -338,21 +338,26 @@ function Timeline({
 }
 
 /**
- * VerticalWheel (single player overlay)
- * - Drag up/down / wheel / arrow keys
- * - Acceleration: hızlı input => 1..5 step
- * - Inertia: bırakınca momentum
+ * GearDial (single player üzerinde)
+ * - gerçek dişli görünüm
+ * - sürükle (dönerek) + wheel + ok tuşları
+ * - acceleration (hızlı input -> 1..5 step)
+ * - inertia (momentum)
  */
-function VerticalWheel({ disabled, onStep }) {
-  const wrapRef = useRef(null);
+function GearDial({ disabled, onStep }) {
+  const gearRef = useRef(null);
 
-  // click anim
-  const tickTimerRef = useRef(null);
+  // visual rotation
+  const rotRef = useRef(0);
+  const rafTickRef = useRef(0);
 
-  // drag state
+  // pointer
   const draggingRef = useRef(false);
-  const lastYRef = useRef(0);
+  const lastAngleRef = useRef(null);
   const lastMoveTsRef = useRef(0);
+
+  // tick anim
+  const tickTimerRef = useRef(null);
 
   // acceleration
   const lastStepTsRef = useRef(0);
@@ -360,19 +365,27 @@ function VerticalWheel({ disabled, onStep }) {
 
   // inertia
   const inertiaRafRef = useRef(0);
-  const inertiaVelRef = useRef(0); // px/ms
-  const inertiaAccumRef = useRef(0); // px accumulated
+  const inertiaVelRef = useRef(0); // deg/ms
+  const inertiaAccumRef = useRef(0);
   const inertiaLastTsRef = useRef(0);
 
   useEffect(() => {
     return () => {
       if (tickTimerRef.current) window.clearTimeout(tickTimerRef.current);
       if (inertiaRafRef.current) cancelAnimationFrame(inertiaRafRef.current);
+      if (rafTickRef.current) cancelAnimationFrame(rafTickRef.current);
     };
   }, []);
 
+  const applyRotation = (degDelta) => {
+    rotRef.current += degDelta;
+    const el = gearRef.current;
+    if (!el) return;
+    el.style.setProperty("--rot", `${rotRef.current}deg`);
+  };
+
   const doTick = () => {
-    const el = wrapRef.current;
+    const el = gearRef.current;
     if (!el) return;
 
     el.classList.remove("tick");
@@ -380,7 +393,7 @@ function VerticalWheel({ disabled, onStep }) {
     el.classList.add("tick");
 
     if (tickTimerRef.current) window.clearTimeout(tickTimerRef.current);
-    tickTimerRef.current = window.setTimeout(() => el.classList.remove("tick"), 140);
+    tickTimerRef.current = window.setTimeout(() => el.classList.remove("tick"), 160);
 
     try {
       if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
@@ -427,13 +440,13 @@ function VerticalWheel({ disabled, onStep }) {
 
   const startInertia = () => {
     const vel = inertiaVelRef.current;
-    if (!Number.isFinite(vel) || Math.abs(vel) < 0.04) {
+    if (!Number.isFinite(vel) || Math.abs(vel) < 0.045) {
       stopInertia();
       return;
     }
 
     inertiaLastTsRef.current = performance.now();
-    const TH_PX = 22;
+    const TH_DEG = 18;
     const DECAY_PER_MS = 0.0068;
     const MAX_MS = 1200;
     const startTs = performance.now();
@@ -448,18 +461,19 @@ function VerticalWheel({ disabled, onStep }) {
       const nextSpeed = Math.max(0, speed * (1 - DECAY_PER_MS * dt));
       inertiaVelRef.current = sign * nextSpeed;
 
-      inertiaAccumRef.current += inertiaVelRef.current * dt;
+      const ddeg = inertiaVelRef.current * dt;
+      inertiaAccumRef.current += ddeg;
+      applyRotation(ddeg);
 
-      while (Math.abs(inertiaAccumRef.current) >= TH_PX) {
-        // px>0 => down => NEXT (+1), px<0 => up => PREV (-1)
+      while (Math.abs(inertiaAccumRef.current) >= TH_DEG) {
         const dir = inertiaAccumRef.current > 0 ? +1 : -1;
         const extra = nextSpeed > 0.55 ? 2 : nextSpeed > 0.35 ? 1 : 0;
         acceleratedStep(dir, extra);
-        inertiaAccumRef.current -= dir * TH_PX;
+        inertiaAccumRef.current -= dir * TH_DEG;
       }
 
       const elapsed = now - startTs;
-      if (nextSpeed < 0.04 || elapsed > MAX_MS) {
+      if (nextSpeed < 0.045 || elapsed > MAX_MS) {
         stopInertia();
         return;
       }
@@ -469,36 +483,69 @@ function VerticalWheel({ disabled, onStep }) {
     inertiaRafRef.current = requestAnimationFrame(tick);
   };
 
+  const getAngle = (clientX, clientY) => {
+    const el = gearRef.current;
+    if (!el) return 0;
+    const r = el.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    const dx = clientX - cx;
+    const dy = clientY - cy;
+    return Math.atan2(dy, dx) * (180 / Math.PI);
+  };
+
+  const normDelta = (a, b) => {
+    let d = a - b;
+    while (d > 180) d -= 360;
+    while (d < -180) d += 360;
+    return d;
+  };
+
   const onPointerDown = (e) => {
     if (disabled) return;
     stopInertia();
     draggingRef.current = true;
-    lastYRef.current = e.clientY;
+    lastAngleRef.current = getAngle(e.clientX, e.clientY);
     lastMoveTsRef.current = performance.now();
-    wrapRef.current?.setPointerCapture?.(e.pointerId);
+    gearRef.current?.setPointerCapture?.(e.pointerId);
   };
 
   const onPointerMove = (e) => {
     if (disabled || !draggingRef.current) return;
 
     const now = performance.now();
-    const dy = e.clientY - lastYRef.current;
+    const cur = getAngle(e.clientX, e.clientY);
+    const last = lastAngleRef.current;
+
+    if (last == null) {
+      lastAngleRef.current = cur;
+      lastMoveTsRef.current = now;
+      return;
+    }
+
+    const d = normDelta(cur, last);
     const dt = Math.max(1, now - (lastMoveTsRef.current || now));
     lastMoveTsRef.current = now;
-    lastYRef.current = e.clientY;
+    lastAngleRef.current = cur;
 
-    inertiaVelRef.current = dy / dt;
+    // seed inertia
+    inertiaVelRef.current = d / dt;
 
-    const TH_PX = 22;
-    const abs = Math.abs(dy);
-    if (abs >= TH_PX) {
-      const extra = abs >= 90 ? 3 : abs >= 65 ? 2 : abs >= 40 ? 1 : 0;
-      acceleratedStep(dy > 0 ? +1 : -1, extra);
+    // visual rotate
+    applyRotation(d);
+
+    // step threshold
+    const TH = 18;
+    const abs = Math.abs(d);
+    if (abs >= TH) {
+      const extra = abs >= 70 ? 3 : abs >= 50 ? 2 : abs >= 35 ? 1 : 0;
+      acceleratedStep(d > 0 ? +1 : -1, extra);
     }
   };
 
   const onPointerUp = () => {
     draggingRef.current = false;
+    lastAngleRef.current = null;
     burstRef.current = 0;
     startInertia();
   };
@@ -508,54 +555,90 @@ function VerticalWheel({ disabled, onStep }) {
     e.preventDefault();
     stopInertia();
 
+    // wheel: rotate gear + step
+    const dir = e.deltaY > 0 ? +1 : -1;
     const abs = Math.abs(e.deltaY);
     const extra = abs >= 220 ? 3 : abs >= 140 ? 2 : abs >= 80 ? 1 : 0;
 
-    inertiaVelRef.current = clamp((e.deltaY / 1200) * 0.9, -0.9, 0.9);
-    acceleratedStep(e.deltaY > 0 ? +1 : -1, extra);
+    const ddeg = clamp((abs / 6) * dir, -80, 80);
+    applyRotation(ddeg);
+
+    inertiaVelRef.current = clamp((dir * abs) / 1200, -0.9, 0.9);
+    acceleratedStep(dir, extra);
     startInertia();
   };
 
   return (
-    <div className={`spWheelWrap ${disabled ? "disabled" : ""}`}>
-      <div className="spWheelLabel muted">Çark</div>
-      <div
-        ref={wrapRef}
-        className="spWheel"
-        role="slider"
-        aria-label="Ayet çarkı (dikey)"
-        tabIndex={disabled ? -1 : 0}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        onWheel={onWheel}
-        onKeyDown={(e) => {
-          if (disabled) return;
-          stopInertia();
-          if (e.key === "ArrowUp") {
-            e.preventDefault();
-            acceleratedStep(-1, e.repeat ? 1 : 0);
-          }
-          if (e.key === "ArrowDown") {
-            e.preventDefault();
-            acceleratedStep(+1, e.repeat ? 1 : 0);
-          }
-        }}
-        title="Yukarı/aşağı sürükle • mouse wheel • ↑/↓ • hızlıysa hızlanır • bırakınca momentum"
-      >
-        <div className="spWheelThumb" />
-      </div>
-      <div className="spWheelHint muted">↑ prev • ↓ next</div>
-    </div>
+    <button
+      type="button"
+      className={`spGear ${disabled ? "disabled" : ""}`}
+      aria-label="Çark"
+      title="Çark"
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+      onWheel={onWheel}
+      onKeyDown={(e) => {
+        if (disabled) return;
+        stopInertia();
+        if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+          e.preventDefault();
+          applyRotation(-22);
+          acceleratedStep(-1, e.repeat ? 1 : 0);
+        }
+        if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+          e.preventDefault();
+          applyRotation(+22);
+          acceleratedStep(+1, e.repeat ? 1 : 0);
+        }
+      }}
+      ref={gearRef}
+    >
+      <svg className="spGearSvg" viewBox="0 0 100 100" aria-hidden="true">
+        {/* Teeth ring */}
+        <g className="spGearTeeth">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <rect
+              key={i}
+              x="47"
+              y="2"
+              width="6"
+              height="14"
+              rx="2"
+              ry="2"
+              transform={`rotate(${i * 30} 50 50)`}
+            />
+          ))}
+        </g>
+
+        {/* Body */}
+        <circle className="spGearBody" cx="50" cy="50" r="36" />
+        <circle className="spGearInner" cx="50" cy="50" r="22" />
+        <circle className="spGearCore" cx="50" cy="50" r="8" />
+
+        {/* Spokes */}
+        <g className="spGearSpokes">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <rect
+              key={i}
+              x="48.5"
+              y="20"
+              width="3"
+              height="18"
+              rx="1.5"
+              transform={`rotate(${i * 60} 50 50)`}
+            />
+          ))}
+        </g>
+      </svg>
+    </button>
   );
 }
 
 /**
- * Single Player (centered overlay, blur BACK)
- * - Çark + Repeat burada (dikey)
- * - Close => pause
- * - No close-on-backdrop-click
+ * Single Player (centered overlay)
+ * - Çark + r/rr + Auto-reset + Close => hepsi player bloğunun ÜSTÜNDE
  */
 function SinglePlayerPanel({
   open,
@@ -596,69 +679,64 @@ function SinglePlayerPanel({
   if (!open) return null;
 
   const ay = verse?.ayah != null ? String(verse.ayah) : "—";
-  const repeatTitle =
-    repeatMode === 0 ? "Tekrar: kapalı" : repeatMode === 1 ? "Tekrar: 1×" : "Tekrar: 2×";
 
   return (
     <div className="singlePlayerBackdrop" role="dialog" aria-modal="true" aria-label="Single Player">
       <div className="singlePlayerCard">
-        <div className="singlePlayerLayout">
-          <div className="singlePlayerLines">
-            <div className="singlePlayerLine singlePlayerLineAr" dir="rtl">
-              {(verse?.ar || "—").trim()}
-            </div>
-
-            <div className="singlePlayerLine singlePlayerLineDe">{(verse?.de || "—").trim()}</div>
-
-            <div className="singlePlayerControls">
-              <div className="singlePlayerAyahNo">#{ay}</div>
-              <div className="singlePlayerBtns">
-                <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
-                  ◀
-                </button>
-                <button
-                  className="spBtn spBtnPrimary"
-                  type="button"
-                  onClick={onPlayPause}
-                  aria-label="Play/Pause"
-                >
-                  {isPlaying ? "⏸" : "▶"}
-                </button>
-                <button className="spBtn" type="button" onClick={onNext} aria-label="Next">
-                  ▶
-                </button>
-              </div>
-            </div>
-
-            <div className="singlePlayerLine singlePlayerLineTr">{(verse?.tr || "—").trim()}</div>
+        <div className="singlePlayerLines">
+          <div className="singlePlayerLine singlePlayerLineAr" dir="rtl">
+            {(verse?.ar || "—").trim()}
           </div>
 
-          {/* ✅ RIGHT SIDE VERTICAL CONTROLS */}
-          <div className="spSideRail">
-            <VerticalWheel disabled={dialDisabled} onStep={onDialStep} />
+          <div className="singlePlayerLine singlePlayerLineDe">{(verse?.de || "—").trim()}</div>
 
-            <button
-              className={`btnRepeat spRepeatBtn ${repeatMode ? "on" : "off"}`}
-              type="button"
-              onClick={onToggleRepeat}
-              title={repeatTitle}
-              aria-label={repeatTitle}
-            >
-              <span className="repeatIcon" aria-hidden="true">
-                {repeatMode === 0 ? "r" : repeatMode === 1 ? "r" : "rr"}
-              </span>
-              <span className="repeatText">Tekrar</span>
-            </button>
+          {/* ✅ player bloğu üst kontrol barı */}
+          <div className="singlePlayerControls singlePlayerTopBar">
+            <div className="singlePlayerAyahNo">#{ay}</div>
 
-            <label className="chip spRepeatReset" title="Ayah değişince tekrar sayacı sıfırlansın">
-              <input type="checkbox" checked={repeatAutoReset} onChange={onToggleRepeatAutoReset} />
-              Auto-reset
-            </label>
+            <div className="singlePlayerBtns">
+              <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
+                ◀
+              </button>
+              <button
+                className="spBtn spBtnPrimary"
+                type="button"
+                onClick={onPlayPause}
+                aria-label="Play/Pause"
+              >
+                {isPlaying ? "⏸" : "▶"}
+              </button>
+              <button className="spBtn" type="button" onClick={onNext} aria-label="Next">
+                ▶
+              </button>
 
-            <button className="spBtn spBtnClose spCloseBtn" type="button" onClick={onClose} aria-label="Close">
-              ✕
-            </button>
+              {/* ✅ gerçek dişli çark */}
+              <GearDial disabled={dialDisabled} onStep={onDialStep} />
+
+              {/* ✅ r/rr tek buton (etiket yok) */}
+              <button
+                className={`spRBtn ${repeatMode ? "on" : "off"}`}
+                type="button"
+                onClick={onToggleRepeat}
+                aria-label="Repeat"
+                title="Repeat"
+              >
+                {repeatMode === 2 ? "rr" : "r"}
+              </button>
+
+              {/* ✅ auto reset küçük toggle */}
+              <label className="spAutoReset chip" title="Auto-reset">
+                <input type="checkbox" checked={repeatAutoReset} onChange={onToggleRepeatAutoReset} />
+                Auto-reset
+              </label>
+
+              <button className="spBtn spBtnClose" type="button" onClick={onClose} aria-label="Close">
+                ✕
+              </button>
+            </div>
           </div>
+
+          <div className="singlePlayerLine singlePlayerLineTr">{(verse?.tr || "—").trim()}</div>
         </div>
       </div>
     </div>
@@ -1277,7 +1355,6 @@ export default function App() {
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
   const [singleOn, setSingleOn] = useState(false);
 
-  // repeat: 0 off, 1 => 1 tekrar, 2 => 2 tekrar
   const [repeatMode, setRepeatMode] = useState(0);
   const [repeatAutoReset, setRepeatAutoReset] = useState(true);
   const repeatRef = useRef({ idx: -1, done: 0 });
