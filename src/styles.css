@@ -8,7 +8,6 @@
   --accent:rgba(99,179,237,1);
   --danger:rgba(255,120,120,0.18);
 
-  /* column widths for gradient background */
   --w-no: 70px;
   --w-ar: 1.1fr;
   --w-de: 1fr;
@@ -391,7 +390,6 @@ html,body{
 .cell:last-child{ border-right:none; }
 
 .colNo{ color:var(--muted); font-variant-numeric:tabular-nums; }
-/* Arabic alignment */
 .colAr{
   display: block !important;
   direction: rtl;
@@ -434,52 +432,86 @@ html,body{
 
 .versePopupCard{
   width: min(1040px, 100%);
-  border: 1px solid rgba(255,255,255,0.14);
-  background: rgba(15,21,32,0.88);
+  background: rgba(15,21,32,0.70);
+  border: 1px solid rgba(255,255,255,0.12);
   border-radius: 20px;
-  padding: 14px;
   box-shadow: 0 30px 80px rgba(0,0,0,0.45);
   max-height: 86vh;
   overflow: auto;
+  padding: 14px;
+  position: relative;
 }
 
-.versePopupTop{
+.versePopupHud{
   position: sticky;
-  top: 0;
-  z-index: 3;
-  display:flex;
+  top: 10px;
+  z-index: 5;
+  display: flex;
   justify-content: space-between;
-  gap: 10px;
-  flex-wrap: wrap;
+  gap: 12px;
   align-items: center;
+  flex-wrap: wrap;
   padding: 10px 10px;
-  background: rgba(15,21,32,0.96);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(15,21,32,0.58);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 18px;
+  backdrop-filter: blur(14px);
+}
+
+.versePopupAyahNo{
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+  font-size: clamp(22px, 4vw, 36px);
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.18);
+}
+
+.versePopupHudBtns{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.versePopupBtn{
+  min-width: 54px;
+  height: 54px;
+  padding: 0 16px;
   border-radius: 16px;
-}
-
-.versePopupActions{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  flex-wrap:wrap;
-}
-
-.versePopupActions .btnSmall{
-  padding: 14px 16px;
-  font-size: 18px;
-  border-radius: 14px;
-}
-
-.versePopupActions .btnPrimary{
-  padding: 16px 26px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.18);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 900;
   font-size: 20px;
-  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+}
+
+.versePopupBtnPrimary{
+  min-width: 84px;
+  height: 58px;
+  font-size: 22px;
+  border-color: rgba(99,179,237,0.45);
+  box-shadow: 0 0 0 2px rgba(99,179,237,0.12) inset;
+}
+
+.versePopupBtnClose{
+  min-width: 54px;
+}
+
+@media (max-width:520px){
+  .versePopupBtn{ min-width: 58px; height: 58px; font-size: 22px; }
+  .versePopupBtnPrimary{ min-width: 92px; height: 62px; font-size: 24px; }
 }
 
 .versePopupLines{
-  display:grid;
+  display: grid;
   gap: 12px;
   margin-top: 12px;
 }
@@ -500,20 +532,20 @@ html,body{
   unicode-bidi: isolate-override;
   text-align: right;
   font-family: "Noto Naskh Arabic","Amiri","Scheherazade New","Noto Sans Arabic", serif;
-  font-size: clamp(44px, 6.8vw, 72px);
+  font-size: clamp(46px, 7.2vw, 78px);
   line-height: 1.75;
   white-space: pre-wrap;
 }
 
 .versePopupLineDe{
-  font-size: clamp(26px, 3.8vw, 38px);
+  font-size: clamp(28px, 4.2vw, 40px);
   line-height: 1.55;
   color: rgba(255,255,255,0.80);
   white-space: pre-wrap;
 }
 
 .versePopupLineTr{
-  font-size: clamp(26px, 3.8vw, 38px);
+  font-size: clamp(28px, 4.2vw, 40px);
   line-height: 1.55;
   white-space: pre-wrap;
 }
