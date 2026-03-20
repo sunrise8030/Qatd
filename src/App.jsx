@@ -1,4 +1,6 @@
-// src/App.jsx
+/* =========================================================
+   src/App.jsx
+   ========================================================= */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
 
@@ -336,6 +338,253 @@ function Timeline({
 }
 
 /**
+ * VerseDial: acceleration + inertia
+ * - Drag: angle delta -> step
+ * - Wheel: delta -> step
+ * - Acceleration: hızlı input -> multiplier 1..5
+ * - Inertia: bırakınca momentum ile azalarak devam
+ */
+function VerseDial({ disabled, onStep }) {
+  const knobRef = useRef(null);
+  const draggingRef = useRef(false);
+  const lastAngleRef = useRef(null);
+  const lastMoveTsRef = useRef(0);
+
+  // click animation
+  const tickTimerRef = useRef(null);
+
+  // acceleration
+  const lastStepTsRef = useRef(0);
+  const burstRef = useRef(0);
+
+  // inertia
+  const inertiaRafRef = useRef(0);
+  const inertiaVelRef = useRef(0); // degrees per ms (signed)
+  const inertiaAccumRef = useRef(0); // degrees accumulated
+  const inertiaLastTsRef = useRef(0);
+
+  useEffect(() => {
+    return () => {
+      if (tickTimerRef.current) window.clearTimeout(tickTimerRef.current);
+      if (inertiaRafRef.current) cancelAnimationFrame(inertiaRafRef.current);
+    };
+  }, []);
+
+  const doTick = () => {
+    const el = knobRef.current;
+    if (!el) return;
+
+    el.classList.remove("tick");
+    void el.offsetWidth;
+    el.classList.add("tick");
+
+    if (tickTimerRef.current) window.clearTimeout(tickTimerRef.current);
+    tickTimerRef.current = window.setTimeout(() => el.classList.remove("tick"), 140);
+
+    try {
+      if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+        navigator.vibrate(8);
+      }
+    } catch {}
+  };
+
+  const computeMultiplier = () => {
+    const now = performance.now();
+    const dt = now - (lastStepTsRef.current || 0);
+    lastStepTsRef.current = now;
+
+    if (dt < 110) burstRef.current = Math.min(6, burstRef.current + 1);
+    else if (dt < 170) burstRef.current = Math.min(5, Math.max(1, burstRef.current));
+    else if (dt < 250) burstRef.current = Math.min(3, Math.max(1, burstRef.current));
+    else burstRef.current = 0;
+
+    if (burstRef.current <= 0) return 1;
+    if (burstRef.current <= 2) return 2;
+    if (burstRef.current <= 4) return 3;
+    if (burstRef.current === 5) return 4;
+    return 5;
+  };
+
+  const step = (dir, times = 1) => {
+    const n = clamp(times, 1, 10);
+    for (let i = 0; i < n; i += 1) onStep(dir);
+    doTick();
+  };
+
+  const acceleratedStep = (dir, extra = 0) => {
+    const mul = clamp(computeMultiplier() + extra, 1, 10);
+    step(dir, mul);
+  };
+
+  const stopInertia = () => {
+    if (inertiaRafRef.current) cancelAnimationFrame(inertiaRafRef.current);
+    inertiaRafRef.current = 0;
+    inertiaVelRef.current = 0;
+    inertiaAccumRef.current = 0;
+    inertiaLastTsRef.current = 0;
+  };
+
+  const startInertia = () => {
+    const vel = inertiaVelRef.current;
+    if (!Number.isFinite(vel) || Math.abs(vel) < 0.05) {
+      stopInertia();
+      return;
+    }
+
+    inertiaLastTsRef.current = performance.now();
+
+    const TH_DEG = 18;
+    const DECAY_PER_MS = 0.0065; // bigger -> quicker stop
+    const MAX_MS = 1200;
+    const startTs = performance.now();
+
+    const tick = () => {
+      const now = performance.now();
+      const dt = now - (inertiaLastTsRef.current || now);
+      inertiaLastTsRef.current = now;
+
+      // exponential-ish decay
+      const sign = Math.sign(inertiaVelRef.current || vel);
+      const speed = Math.abs(inertiaVelRef.current || vel);
+      const nextSpeed = Math.max(0, speed * (1 - DECAY_PER_MS * dt));
+      inertiaVelRef.current = sign * nextSpeed;
+
+      inertiaAccumRef.current += inertiaVelRef.current * dt;
+
+      // convert degrees to steps
+      while (Math.abs(inertiaAccumRef.current) >= TH_DEG) {
+        const dir = inertiaAccumRef.current > 0 ? +1 : -1;
+        const extra = nextSpeed > 0.45 ? 2 : nextSpeed > 0.30 ? 1 : 0; // mild accel inside inertia
+        acceleratedStep(dir, extra);
+        inertiaAccumRef.current -= dir * TH_DEG;
+      }
+
+      const elapsed = now - startTs;
+      if (nextSpeed < 0.05 || elapsed > MAX_MS) {
+        stopInertia();
+        return;
+      }
+
+      inertiaRafRef.current = requestAnimationFrame(tick);
+    };
+
+    inertiaRafRef.current = requestAnimationFrame(tick);
+  };
+
+  const getAngle = (clientX, clientY) => {
+    const el = knobRef.current;
+    if (!el) return 0;
+    const r = el.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    const dx = clientX - cx;
+    const dy = clientY - cy;
+    return Math.atan2(dy, dx) * (180 / Math.PI);
+  };
+
+  const normDelta = (a, b) => {
+    let d = a - b;
+    while (d > 180) d -= 360;
+    while (d < -180) d += 360;
+    return d;
+  };
+
+  const onPointerDown = (e) => {
+    if (disabled) return;
+    stopInertia();
+    draggingRef.current = true;
+    lastAngleRef.current = getAngle(e.clientX, e.clientY);
+    lastMoveTsRef.current = performance.now();
+    knobRef.current?.setPointerCapture?.(e.pointerId);
+  };
+
+  const onPointerMove = (e) => {
+    if (disabled || !draggingRef.current) return;
+
+    const cur = getAngle(e.clientX, e.clientY);
+    const last = lastAngleRef.current;
+    const now = performance.now();
+
+    if (last == null) {
+      lastAngleRef.current = cur;
+      lastMoveTsRef.current = now;
+      return;
+    }
+
+    const d = normDelta(cur, last);
+    const dt = Math.max(1, now - (lastMoveTsRef.current || now));
+    lastMoveTsRef.current = now;
+
+    // capture velocity for inertia (deg/ms)
+    inertiaVelRef.current = d / dt;
+
+    const TH = 18;
+    const abs = Math.abs(d);
+
+    if (abs >= TH) {
+      const extra = abs >= 70 ? 3 : abs >= 50 ? 2 : abs >= 35 ? 1 : 0;
+      acceleratedStep(d > 0 ? +1 : -1, extra);
+      lastAngleRef.current = cur;
+    }
+  };
+
+  const onPointerUp = () => {
+    draggingRef.current = false;
+    lastAngleRef.current = null;
+    burstRef.current = 0;
+    startInertia();
+  };
+
+  const onWheel = (e) => {
+    if (disabled) return;
+    e.preventDefault();
+    stopInertia();
+
+    const abs = Math.abs(e.deltaY);
+    const extra = abs >= 220 ? 3 : abs >= 140 ? 2 : abs >= 80 ? 1 : 0;
+
+    // wheel also seeds inertia slightly
+    inertiaVelRef.current = clamp((e.deltaY > 0 ? 1 : -1) * (abs / 1200), -0.9, 0.9);
+
+    acceleratedStep(e.deltaY > 0 ? +1 : -1, extra);
+    startInertia();
+  };
+
+  return (
+    <div className={`dialWrap ${disabled ? "disabled" : ""}`}>
+      <div className="dialLabel muted">Çark</div>
+      <div
+        ref={knobRef}
+        className="dialKnob"
+        role="slider"
+        aria-label="Ayet çarkı"
+        tabIndex={disabled ? -1 : 0}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        onWheel={onWheel}
+        onKeyDown={(e) => {
+          if (disabled) return;
+          stopInertia();
+          if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+            e.preventDefault();
+            acceleratedStep(-1, e.repeat ? 1 : 0);
+          }
+          if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+            e.preventDefault();
+            acceleratedStep(+1, e.repeat ? 1 : 0);
+          }
+        }}
+        title="Sürükle / mouse wheel / ok tuşları • hızlı çevirince hızlanır • bırakınca momentum"
+      >
+        <div className="dialDot" />
+      </div>
+    </div>
+  );
+}
+
+/**
  * Single Player (centered overlay, blur BACK)
  * Close => pause
  * No close-on-backdrop-click
@@ -432,7 +681,18 @@ function PlayerControls({
   onSetB,
   singleOn,
   onToggleSingle,
+
+  // NEW
+  repeatMode,
+  onToggleRepeat,
+  repeatAutoReset,
+  onToggleRepeatAutoReset,
+  onDialStep,
+  dialDisabled,
 }) {
+  const repeatTitle =
+    repeatMode === 0 ? "Tekrar: kapalı" : repeatMode === 1 ? "Tekrar: 1×" : "Tekrar: 2×";
+
   return (
     <div className="playerControls">
       <div className="liveTimeBar">
@@ -451,6 +711,21 @@ function PlayerControls({
           </button>
           <button className="btnSmall" type="button" onClick={onNext} title="Next ayah">
             ▶
+          </button>
+
+          <VerseDial disabled={dialDisabled} onStep={onDialStep} />
+
+          <button
+            className={`btnRepeat ${repeatMode ? "on" : "off"}`}
+            type="button"
+            onClick={onToggleRepeat}
+            title={repeatTitle}
+            aria-label={repeatTitle}
+          >
+            <span className="repeatIcon" aria-hidden="true">
+              {repeatMode === 0 ? "r" : repeatMode === 1 ? "r" : "rr"}
+            </span>
+            <span className="repeatText">Tekrar</span>
           </button>
 
           <button className={`btnSinglePlayer ${singleOn ? "on" : ""}`} type="button" onClick={onToggleSingle}>
@@ -497,6 +772,13 @@ function PlayerControls({
             <button className="btnSmall" type="button" onClick={onSetB} title="Set B (B)">
               Set B {bPoint != null ? `(${formatTime(bPoint)})` : ""}
             </button>
+
+            <div className="divider" />
+
+            <label className="chip" title="Ayah değişince tekrar sayacı sıfırlansın">
+              <input type="checkbox" checked={repeatAutoReset} onChange={onToggleRepeatAutoReset} />
+              Repeat auto-reset
+            </label>
 
             <div className="divider" />
 
@@ -693,7 +975,8 @@ function SyncPanel({
     const jsonText = JSON.stringify(verses, null, 2);
     const content = base64EncodeUtf8(jsonText);
     const message =
-      ghMsg.trim() || `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
+      ghMsg.trim() ||
+      `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
 
     await onCommitGithub({ owner, repo, path, branch, token, message, content });
     setGhMsg("");
@@ -750,7 +1033,9 @@ function SyncPanel({
 
               <div className="syncMetaInline">
                 <div className="autoSaved muted">Auto-save</div>
-                <div className={`deltaPill ${deltaOk ? "" : "muted"}`}>Δ {deltaOk ? `${delta.toFixed(2)}s` : "—"}</div>
+                <div className={`deltaPill ${deltaOk ? "" : "muted"}`}>
+                  Δ {deltaOk ? `${delta.toFixed(2)}s` : "—"}
+                </div>
               </div>
             </div>
           </div>
@@ -1022,6 +1307,19 @@ export default function App() {
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
   const [singleOn, setSingleOn] = useState(false);
 
+  // repeat: 0 off, 1 => 1 tekrar, 2 => 2 tekrar
+  const [repeatMode, setRepeatMode] = useState(0);
+
+  // auto reset: ayah değişince tekrar sayacı sıfırlansın
+  const [repeatAutoReset, setRepeatAutoReset] = useState(true);
+
+  // repeat counter
+  const repeatRef = useRef({ idx: -1, done: 0 });
+
+  const resetRepeatCounter = useCallback((idx = -1) => {
+    repeatRef.current = { idx, done: 0 };
+  }, []);
+
   useEffect(() => {
     document.title = "Türkçe-Almanca Kur’an Player";
   }, []);
@@ -1038,6 +1336,19 @@ export default function App() {
       localStorage.setItem("qatd:toolsCollapsed", toolsCollapsed ? "1" : "0");
     } catch {}
   }, [toolsCollapsed]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("qatd:repeatAutoReset");
+      if (raw === "0") setRepeatAutoReset(false);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("qatd:repeatAutoReset", repeatAutoReset ? "1" : "0");
+    } catch {}
+  }, [repeatAutoReset]);
 
   const versesRef = useRef(verses);
   const activeIndexRef = useRef(activeIndex);
@@ -1066,8 +1377,14 @@ export default function App() {
     });
   }, [query]);
 
-  const audioSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""), [selectedSurah]);
-  const versesSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.versesUrl) : ""), [selectedSurah]);
+  const audioSrc = useMemo(
+    () => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""),
+    [selectedSurah]
+  );
+  const versesSrc = useMemo(
+    () => (selectedSurah ? resolvePublicUrl(selectedSurah.versesUrl) : ""),
+    [selectedSurah]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -1079,6 +1396,8 @@ export default function App() {
     setDuration(0);
     setIsPlaying(false);
     setSingleOn(false);
+    setRepeatMode(0);
+    resetRepeatCounter(-1);
 
     const a = audioRef.current;
     if (a) {
@@ -1113,7 +1432,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [versesSrc]);
+  }, [versesSrc, resetRepeatCounter]);
 
   useEffect(() => {
     const a = audioRef.current;
@@ -1164,9 +1483,11 @@ export default function App() {
       if (!v) return;
       const start = Number(v.start);
       if (!Number.isFinite(start)) return;
+
+      if (repeatAutoReset) resetRepeatCounter(idx);
       seekTo(start, autoPlay);
     },
-    [seekTo]
+    [seekTo, resetRepeatCounter, repeatAutoReset]
   );
 
   const onPlayPause = useCallback(() => {
@@ -1206,6 +1527,18 @@ export default function App() {
     const idx = cur >= 0 ? Math.min(vs.length - 1, cur + 1) : 0;
     seekVerse(idx, true);
   }, [seekVerse]);
+
+  const dialStep = useCallback(
+    (dir) => {
+      const vs = versesRef.current;
+      if (!vs.length) return;
+      const cur = activeIndexRef.current;
+      const base = cur >= 0 ? cur : 0;
+      const next = clamp(base + dir, 0, vs.length - 1);
+      seekVerse(next, true);
+    },
+    [seekVerse]
+  );
 
   const updateVerse = useCallback((idx, patch) => {
     setVerses((prev) => {
@@ -1289,6 +1622,7 @@ export default function App() {
     if (idx >= 0) seekVerse(idx, true);
   }, [seekVerse]);
 
+  // Loop / Repeat engine (priority: loopAB > loopAyah > repeatMode)
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1303,19 +1637,42 @@ export default function App() {
       return;
     }
 
-    if (loopAyah && verses.length) {
-      const idx = findActiveVerseIndex(verses, currentTime);
-      if (idx >= 0) {
-        const v = verses[idx];
-        const s = Number(v?.start);
-        const e = Number(v?.end);
-        if (Number.isFinite(s) && Number.isFinite(e) && e > s && currentTime >= e) {
-          a.currentTime = s;
-          a.play().catch(() => {});
-        }
+    if (!verses.length) return;
+
+    const idx = findActiveVerseIndex(verses, currentTime);
+    if (idx < 0) return;
+    const v = verses[idx];
+    const s = Number(v?.start);
+    const e = Number(v?.end);
+    if (!Number.isFinite(s) || !Number.isFinite(e) || e <= s) return;
+
+    if (loopAyah) {
+      if (currentTime >= e) {
+        a.currentTime = s;
+        a.play().catch(() => {});
       }
+      return;
     }
-  }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint]);
+
+    if (repeatMode > 0 && currentTime >= e) {
+      const st = repeatRef.current;
+      const sameIdx = st.idx === idx;
+
+      const done = sameIdx ? st.done : 0;
+      const target = repeatMode;
+
+      if (done < target) {
+        repeatRef.current = { idx, done: done + 1 };
+        a.currentTime = s;
+        a.play().catch(() => {});
+        return;
+      }
+
+      repeatRef.current = { idx: -1, done: 0 };
+      const nextIdx = Math.min(verses.length - 1, idx + 1);
+      seekVerse(nextIdx, true);
+    }
+  }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint, repeatMode, seekVerse]);
 
   useEffect(() => {
     if (!verses.length) return;
@@ -1326,7 +1683,9 @@ export default function App() {
 
     const el = rowRefs.current[idx];
     if (el) ensureRowVisible(el, 10);
-  }, [currentTime, verses, activeIndex]);
+
+    if (repeatAutoReset) resetRepeatCounter(idx);
+  }, [currentTime, verses, activeIndex, resetRepeatCounter, repeatAutoReset]);
 
   const setA = useCallback(() => setAPoint(currentTimeRef.current), []);
   const setB = useCallback(() => setBPoint(currentTimeRef.current), []);
@@ -1418,6 +1777,11 @@ export default function App() {
     });
   }, [pause]);
 
+  const toggleRepeat = useCallback(() => {
+    setRepeatMode((m) => (m === 0 ? 1 : m === 1 ? 2 : 0));
+    if (repeatAutoReset) resetRepeatCounter(activeIndexRef.current);
+  }, [resetRepeatCounter, repeatAutoReset]);
+
   const header = selectedSurah ? (
     <div className="surahHeader">
       <div className="surahHeaderLeft">
@@ -1436,6 +1800,8 @@ export default function App() {
       </div>
     </div>
   ) : null;
+
+  const dialDisabled = !verses.length;
 
   return (
     <div className="appShell">
@@ -1490,6 +1856,12 @@ export default function App() {
             onSetB={setB}
             singleOn={singleOn}
             onToggleSingle={toggleSingle}
+            repeatMode={repeatMode}
+            onToggleRepeat={toggleRepeat}
+            repeatAutoReset={repeatAutoReset}
+            onToggleRepeatAutoReset={() => setRepeatAutoReset((x) => !x)}
+            onDialStep={dialStep}
+            dialDisabled={dialDisabled}
           />
 
           {toolsCollapsed ? null : (
