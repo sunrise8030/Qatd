@@ -39,7 +39,6 @@ function formatSec(sec) {
   return Number.isFinite(sec) ? `${sec.toFixed(2)}s` : "—";
 }
 
-// Overlap-safe
 function findActiveVerseIndex(verses, t) {
   if (!Array.isArray(verses) || verses.length === 0 || !Number.isFinite(t)) return -1;
 
@@ -58,7 +57,6 @@ function findActiveVerseIndex(verses, t) {
   }
   if (bestIdx !== -1) return bestIdx;
 
-  // fallback: closest start
   let closest = -1;
   let bestDelta = Infinity;
   for (let i = 0; i < verses.length; i += 1) {
@@ -100,13 +98,6 @@ function ensureRowVisible(el, padding = 10) {
   }
 }
 
-/**
- * Tolerant JSON parsing:
- * - strips BOM
- * - rejects HTML
- * - removes trailing commas before } or ]
- * - if parse fails, includes position + context
- */
 function parseJsonTolerant(text, urlForMsg = "") {
   const raw = String(text ?? "");
   let s = raw.replace(/^\uFEFF/, "").trim();
@@ -379,20 +370,20 @@ function VersePopupModal({ open, verse, isPlaying, onPlayPause, onPrev, onNext, 
   return (
     <div className="versePopupBackdrop" role="dialog" aria-modal="true" aria-label="Aktif ayet">
       <div className="versePopupCard">
-        <div className="versePopupTop">
-          <div className="badge">Aktif ayet: {ay}</div>
+        <div className="versePopupHud">
+          <div className="versePopupAyahNo">#{ay}</div>
 
-          <div className="versePopupActions">
-            <button className="btnSmall" type="button" onClick={onPrev} title="Prev">
+          <div className="versePopupHudBtns">
+            <button className="versePopupBtn" type="button" onClick={onPrev} aria-label="Prev">
               ◀
             </button>
-            <button className="btnPrimary" type="button" onClick={onPlayPause} title="Play/Pause">
-              {isPlaying ? "Pause" : "Play"}
+            <button className="versePopupBtn versePopupBtnPrimary" type="button" onClick={onPlayPause} aria-label="Play/Pause">
+              {isPlaying ? "⏸" : "▶"}
             </button>
-            <button className="btnSmall" type="button" onClick={onNext} title="Next">
+            <button className="versePopupBtn" type="button" onClick={onNext} aria-label="Next">
               ▶
             </button>
-            <button className="btnSmall btnToggle" type="button" onClick={onClose} title="Kapat">
+            <button className="versePopupBtn versePopupBtnClose" type="button" onClick={onClose} aria-label="Close">
               ✕
             </button>
           </div>
@@ -621,6 +612,7 @@ function SyncPanel({
     setEndInput(Number.isFinite(e) ? String(e) : "");
   }, [activeIndex, active]);
 
+  // auto-apply debounced
   useEffect(() => {
     if (!active) return;
     const t = setTimeout(() => {
@@ -701,7 +693,8 @@ function SyncPanel({
     const jsonText = JSON.stringify(verses, null, 2);
     const content = base64EncodeUtf8(jsonText);
     const message =
-      ghMsg.trim() || `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
+      ghMsg.trim() ||
+      `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
 
     await onCommitGithub({ owner, repo, path, branch, token, message, content });
     setGhMsg("");
@@ -758,7 +751,9 @@ function SyncPanel({
 
               <div className="syncMetaInline">
                 <div className="autoSaved muted">Auto-save</div>
-                <div className={`deltaPill ${deltaOk ? "" : "muted"}`}>Δ {deltaOk ? `${delta.toFixed(2)}s` : "—"}</div>
+                <div className={`deltaPill ${deltaOk ? "" : "muted"}`}>
+                  Δ {deltaOk ? `${delta.toFixed(2)}s` : "—"}
+                </div>
               </div>
             </div>
           </div>
@@ -1044,8 +1039,14 @@ export default function App() {
     });
   }, [query]);
 
-  const audioSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""), [selectedSurah]);
-  const versesSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.versesUrl) : ""), [selectedSurah]);
+  const audioSrc = useMemo(
+    () => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""),
+    [selectedSurah]
+  );
+  const versesSrc = useMemo(
+    () => (selectedSurah ? resolvePublicUrl(selectedSurah.versesUrl) : ""),
+    [selectedSurah]
+  );
 
   useEffect(() => {
     let cancelled = false;
