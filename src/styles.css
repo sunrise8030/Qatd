@@ -669,3 +669,108 @@ html,body{
   border-color: rgba(255,255,255,0.20);
 }
 .repeatText{ font-size:12px; font-weight:800; }
+
+/* =========================================================
+   src/styles.css
+   (Senin mevcut dosyan + aşağıdaki ekler)
+   NOT: Dosyanın geri kalanı aynen kalsın; bu dosyaya EKLE.
+   ========================================================= */
+
+/* --- Single Player: layout + vertical side rail --- */
+.singlePlayerLayout{
+  display:grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items:start;
+}
+
+.spSideRail{
+  display:flex;
+  flex-direction:column;
+  gap: 10px;
+  align-items:stretch;
+  position: sticky;
+  top: 10px;
+}
+
+/* --- Vertical Wheel --- */
+.spWheelWrap{
+  border:1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.18);
+  border-radius: 18px;
+  padding: 10px;
+  display:grid;
+  gap: 8px;
+  justify-items:center;
+}
+.spWheelWrap.disabled{ opacity: 0.55; }
+
+.spWheelLabel{ font-size: 12px; }
+
+.spWheel{
+  width: 72px;
+  height: 220px;
+  border-radius: 999px;
+  border:1px solid rgba(255,255,255,0.16);
+  background:
+    radial-gradient(circle at 35% 20%, rgba(255,255,255,0.18), transparent 40%),
+    radial-gradient(circle at 70% 80%, rgba(0,0,0,0.35), transparent 55%),
+    linear-gradient(180deg, rgba(210,235,255,0.22), rgba(145,205,250,0.10));
+  box-shadow:
+    0 14px 28px rgba(0,0,0,0.42),
+    0 2px 0 rgba(255,255,255,0.14) inset,
+    0 -10px 16px rgba(0,0,0,0.22) inset;
+  position: relative;
+  cursor: ns-resize;
+  user-select:none;
+  touch-action:none;
+  display:grid;
+  place-items:center;
+  outline:none;
+}
+
+.spWheelThumb{
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border:1px solid rgba(255,255,255,0.22);
+  background: rgba(99,179,237,0.55);
+  box-shadow: 0 0 0 6px rgba(99,179,237,0.14);
+}
+
+.spWheelHint{ font-size: 12px; }
+
+.spWheel.tick{
+  animation: spWheelTick 140ms ease-out;
+}
+@keyframes spWheelTick{
+  0%{ transform: translateY(0) scale(1); filter: brightness(1); }
+  45%{ transform: translateY(1px) scale(0.985); filter: brightness(1.08); }
+  100%{ transform: translateY(0) scale(1); filter: brightness(1); }
+}
+
+/* --- Repeat in Single Player rail --- */
+.spRepeatBtn{
+  justify-content:center;
+  width: 100%;
+}
+.spRepeatReset{
+  justify-content:center;
+  width: 100%;
+}
+.spCloseBtn{
+  width: 100%;
+  justify-content:center;
+}
+
+/* Mobile: rail to bottom */
+@media (max-width:720px){
+  .singlePlayerLayout{ grid-template-columns: 1fr; }
+  .spSideRail{
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .spWheel{ height: 170px; }
+}
