@@ -420,59 +420,97 @@ html,body{
   inset: 0;
   z-index: 9999;
   background: rgba(0,0,0,0.55);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
   display: grid;
   place-items: center;
   padding: 14px;
 }
 
 .versePopupCard{
-  width: min(980px, 100%);
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(15,21,32,0.86);
-  border-radius: 18px;
+  width: min(1040px, 100%);
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(15,21,32,0.88);
+  border-radius: 20px;
   padding: 16px;
   box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+  max-height: 86vh;
+  overflow: auto;
 }
 
 .versePopupTop{
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display:flex;
   justify-content: space-between;
   gap: 10px;
   flex-wrap: wrap;
   align-items: center;
-  margin-bottom: 10px;
+
+  margin: -16px -16px 14px;
+  padding: 12px 16px;
+  background: rgba(15,21,32,0.96);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,255,255,0.10);
+  border-radius: 20px 20px 14px 14px;
 }
 
 .versePopupActions{
   display:flex;
   align-items:center;
-  gap:8px;
+  gap:10px;
   flex-wrap:wrap;
 }
 
-.versePopupAr{
+/* Bigger buttons in popup only */
+.versePopupActions .btnSmall{
+  padding: 12px 14px;
+  font-size: 16px;
+  border-radius: 14px;
+}
+
+.versePopupActions .btnPrimary{
+  padding: 14px 22px;
+  font-size: 18px;
+  border-radius: 16px;
+}
+
+/* zebra-like separation */
+.versePopupLines{
+  display:grid;
+  gap: 12px;
+}
+
+.versePopupLine{
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 14px 14px;
+  background: rgba(0,0,0,0.14);
+}
+
+.versePopupLine:nth-child(odd){
+  background: rgba(255,255,255,0.05);
+}
+
+.versePopupLineAr{
   direction: rtl;
   unicode-bidi: isolate-override;
   text-align: right;
   font-family: "Noto Naskh Arabic","Amiri","Scheherazade New","Noto Sans Arabic", serif;
-  font-size: clamp(26px, 4.8vw, 46px);
-  line-height: 1.65;
-  margin-top: 8px;
+  font-size: clamp(36px, 6.2vw, 64px);
+  line-height: 1.7;
   white-space: pre-wrap;
 }
 
-.versePopupTr{
-  font-size: clamp(16px, 2.9vw, 24px);
+.versePopupLineTr{
+  font-size: clamp(22px, 3.6vw, 34px);
   line-height: 1.55;
-  margin-top: 14px;
   white-space: pre-wrap;
 }
 
-.versePopupDe{
-  font-size: clamp(14px, 2.6vw, 20px);
+.versePopupLineDe{
+  font-size: clamp(20px, 3.2vw, 30px);
   line-height: 1.5;
-  margin-top: 10px;
   color: var(--muted);
   white-space: pre-wrap;
 }
