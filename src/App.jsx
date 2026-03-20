@@ -1,11 +1,14 @@
-﻿﻿// =========================================================
-// src/App.jsx  (TAM DOSYA)
-// - Single Player: FIXED player bloğu => ekranın %60'ında (3/5 altta) sabit
-// - Overlay gibi durmasın diye: yarı şeffaf + blur yok (backdropFilter yok)
-// - Sıra: Prev, Play, Next, Çark, r/rr, Close
-// - Çark: Yukarı kaydırınca ARTAR, STEP_PX=22, wheel hassas
-// - Repeat: r=1, rr=2, bitince aynı ayette durur (pause + başa al)
-// - Diğer fonksiyonlar (Timeline/Sync/GitHub/Import-Export/Draft) bozulmaz
+// =========================================================
+// src/App.jsx (TAM DOSYA)
+// - Single Player UI:
+//   - Arabic + German: üstte (card içinde)
+//   - Player dock: fixed, SAĞA yaslı
+//   - Turkish: player dock'un ALTINDA ayrı fixed panel
+// - Repeat (R): r=1, rr=2
+//   - ayet segmenti (start/end) bittiğinde tekrar play eder
+//   - tekrarlar bitince pause + ayet başına döner
+// - Çark: Yukarı kaydırınca ayet ARTAR, STEP_PX=22
+// - Diğer fonksiyonlar bozulmaz: Timeline/Sync/GitHub/Import-Export/Draft vs.
 // =========================================================
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
@@ -387,12 +390,14 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const tickSteps = () => {
     let did = false;
 
+    // up => +1
     while (accumPxRef.current <= -STEP_PX) {
       onStep(+1);
       accumPxRef.current += STEP_PX;
       did = true;
     }
 
+    // down => -1
     while (accumPxRef.current >= STEP_PX) {
       onStep(-1);
       accumPxRef.current -= STEP_PX;
@@ -540,9 +545,10 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
 }
 
 /**
- * Single Player (FIXED DOCK)
- * - Dock: top 60% (3/5 altta), translate(-50%,-50%)
- * - CSS’e dokunmadan inline style ile
+ * Single Player:
+ * - Arabic + German üstte (card)
+ * - Dock: fixed sağda
+ * - Turkish: dock altında ayrı panel
  */
 function SinglePlayerPanel({
   open,
@@ -582,8 +588,53 @@ function SinglePlayerPanel({
 
   const ay = Number(verse?.ayah || 0);
 
+  // Dock sağda, ekranın 3/5 aşağısı
+  const dock = {
+    position: "fixed",
+    right: 14,
+    top: "60%",
+    transform: "translateY(-50%)",
+    zIndex: 10001,
+    width: "min(520px, calc(100% - 28px))",
+    minHeight: 92,
+    padding: 10,
+    borderRadius: 18,
+    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(0,0,0,0.16)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    pointerEvents: "auto",
+  };
+
+  const dockRow = {
+    display: "flex",
+    gap: 10,
+    alignItems: "center",
+    flexWrap: "wrap",
+    justifyContent: "center",
+  };
+
+  const trPanel = {
+    position: "fixed",
+    right: 14,
+    top: "calc(60% + 92px)",
+    zIndex: 10001,
+    width: "min(520px, calc(100% - 28px))",
+    maxHeight: "30vh",
+    overflow: "auto",
+    padding: 12,
+    borderRadius: 16,
+    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(0,0,0,0.14)",
+    color: "rgba(255,255,255,0.92)",
+    lineHeight: 1.55,
+    pointerEvents: "auto",
+  };
+
   return (
     <div className="singlePlayerBackdrop" role="dialog" aria-modal="true" aria-label="Single Player">
+      {/* Üst içerik: Arapça + Almanca */}
       <div className="singlePlayerCard">
         <div className="singlePlayerLines">
           <div className="singlePlayerLine singlePlayerLineAr" dir="rtl">
@@ -592,41 +643,13 @@ function SinglePlayerPanel({
 
           <div className="singlePlayerLine singlePlayerLineDe">{(verse?.de || "—").trim()}</div>
 
-          <div className="singlePlayerLine singlePlayerLineTr">{(verse?.tr || "—").trim()}</div>
+          {/* Türkçe burada artık yok */}
         </div>
       </div>
 
-      {/* ✅ FIXED PLAYER BLOĞU (3/5 altta) */}
-      <div
-        className="singlePlayerControls"
-        style={{
-          position: "fixed",
-          left: "50%",
-          top: "60%",
-          transform: "translate(-50%, -50%)",
-          zIndex: 10001,
-          width: "min(1100px, calc(100% - 28px))",
-          minHeight: 92,
-          padding: 10,
-          borderRadius: 18,
-          border: "1px solid rgba(255,255,255,0.10)",
-          background: "rgba(0,0,0,0.16)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          pointerEvents: "auto",
-        }}
-      >
-        <div
-          className="singlePlayerBtns"
-          style={{
-            display: "flex",
-            gap: 10,
-            alignItems: "center",
-            flexWrap: "wrap",
-            justifyContent: "center",
-          }}
-        >
+      {/* ✅ FIXED DOCK (sağa yaslı) */}
+      <div className="singlePlayerControls" style={dock}>
+        <div className="singlePlayerBtns" style={dockRow}>
           <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
             ◀
           </button>
@@ -639,7 +662,6 @@ function SinglePlayerPanel({
             ▶
           </button>
 
-          {/* ✅ ÇARK: prev/play/next hemen sonrası */}
           <IOSPickerWheelVertical3D disabled={dialDisabled} value={ay} onStep={onDialStep} />
 
           <button
@@ -658,6 +680,11 @@ function SinglePlayerPanel({
             ✕
           </button>
         </div>
+      </div>
+
+      {/* ✅ Türkçe panel dock'un altında */}
+      <div style={trPanel} aria-label="Turkish">
+        {(verse?.tr || "—").trim()}
       </div>
     </div>
   );
@@ -695,8 +722,12 @@ function PlayerControls({
       <div className="liveTimeBar">
         <div className="liveTime">
           <span className="liveLabel">LIVE</span>
-          <span className="liveSec">{Number.isFinite(currentTime) ? currentTime.toFixed(2) : "0.00"}s</span>
-          <span className="liveDur muted">/ {Number.isFinite(duration) ? duration.toFixed(2) : "0.00"}s</span>
+          <span className="liveSec">
+            {Number.isFinite(currentTime) ? currentTime.toFixed(2) : "0.00"}s
+          </span>
+          <span className="liveDur muted">
+            / {Number.isFinite(duration) ? duration.toFixed(2) : "0.00"}s
+          </span>
         </div>
 
         <div className="liveActions">
@@ -710,7 +741,11 @@ function PlayerControls({
             ▶
           </button>
 
-          <button className={`btnSinglePlayer ${singleOn ? "on" : ""}`} type="button" onClick={onToggleSingle}>
+          <button
+            className={`btnSinglePlayer ${singleOn ? "on" : ""}`}
+            type="button"
+            onClick={onToggleSingle}
+          >
             {singleOn ? "Single Player: ON" : "Single Player"}
           </button>
 
@@ -1277,8 +1312,7 @@ export default function App() {
 
   // 0 off, 1 => 1 tekrar, 2 => 2 tekrar
   const [repeatMode, setRepeatMode] = useState(0);
-  const repeatRef = useRef({ idx: -1, done: 0 });
-  const edgeRef = useRef({ idx: -1, armed: true });
+  const repeatStateRef = useRef({ idx: -1, done: 0, armed: true });
 
   useEffect(() => {
     document.title = "Türkçe-Almanca Kur’an Player";
@@ -1339,8 +1373,7 @@ export default function App() {
     setSingleOn(false);
 
     setRepeatMode(0);
-    repeatRef.current = { idx: -1, done: 0 };
-    edgeRef.current = { idx: -1, armed: true };
+    repeatStateRef.current = { idx: -1, done: 0, armed: true };
 
     const a = audioRef.current;
     if (a) {
@@ -1427,9 +1460,7 @@ export default function App() {
       const start = Number(v.start);
       if (!Number.isFinite(start)) return;
 
-      repeatRef.current = { idx, done: 0 };
-      edgeRef.current = { idx, armed: true };
-
+      repeatStateRef.current = { idx, done: 0, armed: true };
       seekTo(start, autoPlay);
     },
     [seekTo]
@@ -1491,6 +1522,7 @@ export default function App() {
     });
   }, []);
 
+  // Draft auto-save
   useEffect(() => {
     const t = setTimeout(() => {
       try {
@@ -1555,48 +1587,90 @@ export default function App() {
     if (idx >= 0) seekVerse(idx, true);
   }, [seekVerse]);
 
+  // ✅ Repeat toggle: off -> 1 -> 2 -> off
   const toggleRepeat = useCallback(() => {
     setRepeatMode((m) => {
       const next = m === 0 ? 1 : m === 1 ? 2 : 0;
 
-      let idx = activeIndexRef.current;
-      if (idx < 0 && versesRef.current.length) {
-        idx = findActiveVerseIndex(versesRef.current, currentTimeRef.current);
+      if (next <= 0) {
+        repeatStateRef.current = { idx: -1, done: 0, armed: true };
+        return next;
       }
 
-      if (next > 0 && idx >= 0) {
-        const v = versesRef.current[idx];
-        const s = Number(v?.start);
-        if (Number.isFinite(s)) {
-          repeatRef.current = { idx, done: 0 };
-          edgeRef.current = { idx, armed: true };
-          tactilePulse(10);
-          seekTo(s, true);
-        }
-      } else {
-        repeatRef.current = { idx: -1, done: 0 };
-        edgeRef.current = { idx: -1, armed: true };
+      // repeat ON => aktif ayeti yakala ve baştan oynat
+      const vs = versesRef.current;
+      if (!vs.length) return next;
+
+      let idx = activeIndexRef.current;
+      if (idx < 0) idx = findActiveVerseIndex(vs, currentTimeRef.current);
+      idx = clamp(idx, 0, vs.length - 1);
+
+      const v = vs[idx];
+      const s = Number(v?.start);
+      if (Number.isFinite(s)) {
+        repeatStateRef.current = { idx, done: 0, armed: true };
+        tactilePulse(10);
+        seekTo(s, true);
       }
 
       return next;
     });
   }, [seekTo]);
 
+  // ✅ Repeat engine (asıl düzeltme)
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
-    if (!verses.length) return;
+    const vs = versesRef.current;
+    if (!vs.length) return;
+    if (repeatMode <= 0) return;
 
-    const idx = findActiveVerseIndex(verses, currentTime);
-    if (idx < 0) return;
+    // aktif ayet index
+    let idx = activeIndexRef.current;
+    if (idx < 0 || !vs[idx]) idx = findActiveVerseIndex(vs, currentTime);
+    if (idx < 0 || !vs[idx]) return;
 
-    const v = verses[idx];
+    const v = vs[idx];
     const s = Number(v?.start);
     const e = Number(v?.end);
     if (!Number.isFinite(s) || !Number.isFinite(e) || e <= s) return;
 
-    if (edgeRef.current.idx !== idx) edgeRef.current = { idx, armed: true };
-    else if (currentTime < e - 0.05) edgeRef.current.armed = true;
+    // state reset on verse change
+    const st = repeatStateRef.current;
+    if (st.idx !== idx) repeatStateRef.current = { idx, done: 0, armed: true };
+
+    // re-arm while well before end
+    if (currentTime < e - 0.12) {
+      repeatStateRef.current.armed = true;
+      return;
+    }
+
+    // trigger once near end
+    const nearEnd = currentTime >= e - 0.02;
+    if (!nearEnd || !repeatStateRef.current.armed) return;
+
+    repeatStateRef.current.armed = false;
+
+    const done = repeatStateRef.current.done || 0;
+
+    if (done < repeatMode) {
+      repeatStateRef.current.done = done + 1;
+      a.currentTime = s;
+      a.play().catch(() => {});
+      return;
+    }
+
+    // repeats finished
+    repeatStateRef.current.done = 0;
+    a.pause();
+    a.currentTime = s;
+    setCurrentTime(s);
+  }, [currentTime, repeatMode]);
+
+  // existing loop features
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a) return;
 
     if (loopAB && aPoint != null && bPoint != null) {
       const lo = Math.min(aPoint, bPoint);
@@ -1608,37 +1682,21 @@ export default function App() {
       return;
     }
 
-    if (loopAyah) {
-      if (currentTime >= e) {
-        a.currentTime = s;
-        a.play().catch(() => {});
+    if (loopAyah && verses.length) {
+      const idx = findActiveVerseIndex(verses, currentTime);
+      if (idx >= 0) {
+        const v = verses[idx];
+        const s = Number(v?.start);
+        const e = Number(v?.end);
+        if (Number.isFinite(s) && Number.isFinite(e) && e > s && currentTime >= e) {
+          a.currentTime = s;
+          a.play().catch(() => {});
+        }
       }
-      return;
     }
+  }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint]);
 
-    if (repeatMode <= 0) return;
-
-    const nearEnd = currentTime >= e - 0.005;
-    if (!nearEnd || !edgeRef.current.armed) return;
-    edgeRef.current.armed = false;
-
-    const st = repeatRef.current;
-    const done = st.idx === idx ? st.done : 0;
-
-    if (done < repeatMode) {
-      repeatRef.current = { idx, done: done + 1 };
-      a.currentTime = s;
-      a.play().catch(() => {});
-      return;
-    }
-
-    repeatRef.current = { idx, done: 0 };
-    edgeRef.current = { idx, armed: true };
-    a.pause();
-    a.currentTime = s;
-    setCurrentTime(s);
-  }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint, repeatMode]);
-
+  // active row sync
   useEffect(() => {
     if (!verses.length) return;
     const idx = findActiveVerseIndex(verses, currentTime);
@@ -1653,6 +1711,7 @@ export default function App() {
   const setA = useCallback(() => setAPoint(currentTimeRef.current), []);
   const setB = useCallback(() => setBPoint(currentTimeRef.current), []);
 
+  // keyboard
   useEffect(() => {
     const onKey = (e) => {
       const tag = document.activeElement?.tagName?.toLowerCase();
