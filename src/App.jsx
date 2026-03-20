@@ -39,7 +39,6 @@ function formatSec(sec) {
   return Number.isFinite(sec) ? `${sec.toFixed(2)}s` : "—";
 }
 
-// Overlap-safe
 function findActiveVerseIndex(verses, t) {
   if (!Array.isArray(verses) || verses.length === 0 || !Number.isFinite(t)) return -1;
 
@@ -58,7 +57,6 @@ function findActiveVerseIndex(verses, t) {
   }
   if (bestIdx !== -1) return bestIdx;
 
-  // fallback: closest start
   let closest = -1;
   let bestDelta = Infinity;
   for (let i = 0; i < verses.length; i += 1) {
@@ -90,8 +88,7 @@ function ensureRowVisible(el, padding = 10) {
 
   const viewportTop = padding;
   const viewportBottom = window.innerHeight - padding;
-  const effectiveBottom =
-    overlayTop != null ? Math.min(viewportBottom, overlayTop - padding) : viewportBottom;
+  const effectiveBottom = overlayTop != null ? Math.min(viewportBottom, overlayTop - padding) : viewportBottom;
 
   const above = r.top < viewportTop;
   const below = r.bottom > effectiveBottom;
@@ -101,13 +98,6 @@ function ensureRowVisible(el, padding = 10) {
   }
 }
 
-/**
- * Tolerant JSON parsing:
- * - strips BOM
- * - rejects HTML
- * - removes trailing commas before } or ]
- * - if parse fails, includes position + context
- */
 function parseJsonTolerant(text, urlForMsg = "") {
   const raw = String(text ?? "");
   let s = raw.replace(/^\uFEFF/, "").trim();
@@ -121,7 +111,6 @@ function parseJsonTolerant(text, urlForMsg = "") {
     throw new Error(`Expected JSON but got HTML | url=${urlForMsg} | head=${s.slice(0, 80)}`);
   }
 
-  // Remove trailing commas
   s = s.replace(/,\s*([}\]])/g, "$1");
 
   try {
@@ -352,211 +341,75 @@ function Timeline({
   );
 }
 
-/* ---------- Popup window implementation ---------- */
-
-function escapeHtml(s) {
-  return String(s ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function buildPopupHtml(title) {
-  const safeTitle = escapeHtml(title || "Aktif Ayet");
-  return `<!doctype html>
-<html lang="tr">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>${safeTitle}</title>
-<style>
-  :root{
-    --bg:#0b0f16;
-    --panel:rgba(15,21,32,0.82);
-    --border:rgba(255,255,255,0.12);
-    --text:rgba(255,255,255,0.92);
-    --muted:rgba(255,255,255,0.68);
-  }
-  *{ box-sizing:border-box; }
-  html,body{
-    height:100%;
-    margin:0;
-    background:
-      radial-gradient(900px 600px at 30% 15%, rgba(120,120,255,0.12), transparent 55%),
-      radial-gradient(900px 600px at 70% 35%, rgba(255,120,120,0.10), transparent 55%),
-      var(--bg);
-    color:var(--text);
-    font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,"Noto Sans";
-  }
-  .wrap{
-    min-height:100%;
-    display:grid;
-    place-items:center;
-    padding:16px;
-  }
-  .card{
-    width:min(980px, 100%);
-    border:1px solid var(--border);
-    background:var(--panel);
-    backdrop-filter: blur(10px);
-    border-radius:18px;
-    padding:18px;
-    box-shadow: 0 30px 80px rgba(0,0,0,0.45);
-  }
-  .top{
-    display:flex;
-    justify-content:space-between;
-    gap:12px;
-    flex-wrap:wrap;
-    align-items:center;
-    margin-bottom:12px;
-  }
-  .badge{
-    font-size:12px;
-    color:var(--muted);
-    border:1px solid var(--border);
-    background:rgba(0,0,0,0.20);
-    padding:6px 10px;
-    border-radius:999px;
-  }
-  .btn{
-    border:1px solid var(--border);
-    background:rgba(0,0,0,0.25);
-    color:var(--text);
-    cursor:pointer;
-    padding:10px 12px;
-    border-radius:12px;
-    font-weight:800;
-  }
-  .btn:hover{ border-color:rgba(255,255,255,0.18); }
-  .ar{
-    direction: rtl;
-    unicode-bidi: isolate-override;
-    text-align:right;
-    font-family: "Noto Naskh Arabic","Amiri","Scheherazade New","Noto Sans Arabic", serif;
-    font-size: clamp(26px, 4.5vw, 46px);
-    line-height: 1.65;
-    margin-top:10px;
-    white-space: pre-wrap;
-  }
-  .tr{
-    font-size: clamp(16px, 2.7vw, 24px);
-    line-height: 1.55;
-    margin-top:14px;
-    white-space: pre-wrap;
-  }
-  .de{
-    font-size: clamp(14px, 2.4vw, 20px);
-    line-height: 1.5;
-    margin-top:10px;
-    color: var(--muted);
-    white-space: pre-wrap;
-  }
-  .hint{
-    margin-top:14px;
-    color: var(--muted);
-    font-size: 12px;
-  }
-</style>
-</head>
-<body>
-  <div class="wrap">
-    <div class="card">
-      <div class="top">
-        <div class="badge" id="meta">Aktif ayet: —</div>
-        <button class="btn" id="closeBtn">Kapat</button>
-      </div>
-      <div class="ar" id="ar">—</div>
-      <div class="tr" id="tr">—</div>
-      <div class="de" id="de">—</div>
-      <div class="hint">Bu pencere ana sayfadan canlı güncellenir.</div>
-    </div>
-  </div>
-<script>
-  const metaEl = document.getElementById('meta');
-  const arEl = document.getElementById('ar');
-  const trEl = document.getElementById('tr');
-  const deEl = document.getElementById('de');
-  const closeBtn = document.getElementById('closeBtn');
-
-  closeBtn.addEventListener('click', () => window.close());
-
-  function applyVerse(payload){
-    const ayah = payload && payload.ayah != null ? payload.ayah : '—';
-    metaEl.textContent = 'Aktif ayet: ' + ayah;
-    arEl.textContent = (payload && payload.ar || '—').trim();
-    trEl.textContent = (payload && payload.tr || '—').trim();
-    deEl.textContent = (payload && payload.de || '—').trim();
-    document.title = 'Ayet ' + ayah;
-  }
-
-  window.addEventListener('message', (ev) => {
-    const d = ev.data;
-    if (!d || typeof d !== 'object') return;
-    if (d.type === 'verse') applyVerse(d.payload || {});
-  });
-
-  try { window.opener && window.opener.postMessage({ type:'popup-ready' }, '*'); } catch {}
-</script>
-</body>
-</html>`;
-}
-
-function openVersePopupWindow({ title }) {
-  const w = window.open(
-    "",
-    "ayat_popup",
-    "popup=yes,width=920,height=620,resizable=yes,scrollbars=no"
-  );
-  if (!w) return null;
-
-  try {
-    w.document.open();
-    w.document.write(buildPopupHtml(title));
-    w.document.close();
-  } catch {
-    // If writing fails, close and fallback.
-    try {
-      w.close();
-    } catch {
-      // ignore
-    }
-    return null;
-  }
-
-  return w;
-}
-
-/* ---------- Modal fallback (popup blocked) ---------- */
-
-function VerseModal({ open, verse, ayahLabel, onClose }) {
+function VersePopupModal({
+  open,
+  verse,
+  isPlaying,
+  onPlayPause,
+  onPrev,
+  onNext,
+  onClose,
+}) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => {
       if (e.key === "Escape") onClose();
+      if (e.code === "Space") {
+        e.preventDefault();
+        onPlayPause();
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        onPrev();
+      }
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        onNext();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open, onClose, onPlayPause, onPrev, onNext]);
 
   if (!open) return null;
 
+  const ay = verse?.ayah != null ? String(verse.ayah) : "—";
+
   return (
-    <div className="verseModalBackdrop" role="dialog" aria-modal="true" aria-label="Aktif ayet popup">
-      <div className="verseModalCard">
-        <div className="verseModalTop">
-          <div className="badge">Aktif ayet: {ayahLabel}</div>
-          <button className="btnSmall btnToggle" type="button" onClick={onClose}>
-            Kapat (Esc)
-          </button>
+    <div
+      className="versePopupBackdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Aktif ayet"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="versePopupCard">
+        <div className="versePopupTop">
+          <div className="badge">Aktif ayet: {ay}</div>
+
+          <div className="versePopupActions">
+            <button className="btnSmall" type="button" onClick={onPrev} title="Prev">
+              ◀
+            </button>
+            <button className="btnPrimary" type="button" onClick={onPlayPause} title="Play/Pause">
+              {isPlaying ? "Pause" : "Play"}
+            </button>
+            <button className="btnSmall" type="button" onClick={onNext} title="Next">
+              ▶
+            </button>
+            <button className="btnSmall btnToggle" type="button" onClick={onClose} title="Kapat">
+              ✕
+            </button>
+          </div>
         </div>
-        <div className="verseModalAr" dir="rtl">
+
+        <div className="versePopupAr" dir="rtl">
           {(verse?.ar || "—").trim()}
         </div>
-        <div className="verseModalTr">{(verse?.tr || "—").trim()}</div>
-        <div className="verseModalDe">{(verse?.de || "—").trim()}</div>
+        <div className="versePopupTr">{(verse?.tr || "—").trim()}</div>
+        <div className="versePopupDe">{(verse?.de || "—").trim()}</div>
       </div>
     </div>
   );
@@ -587,8 +440,7 @@ function PlayerControls({
   onSetA,
   onSetB,
   popupOpen,
-  onOpenPopup,
-  onClosePopup,
+  onTogglePopup,
 }) {
   return (
     <div className="playerControls">
@@ -610,15 +462,9 @@ function PlayerControls({
             ▶
           </button>
 
-          {popupOpen ? (
-            <button className="btnSmall btnToggle" type="button" onClick={onClosePopup} title="Popup kapat">
-              Popup kapat
-            </button>
-          ) : (
-            <button className="btnSmall btnToggle" type="button" onClick={onOpenPopup} title="Yeni pencere popup">
-              Popup aç
-            </button>
-          )}
+          <button className="btnSmall btnToggle" type="button" onClick={onTogglePopup} title="Ayet popup">
+            {popupOpen ? "Popup kapat" : "Popup aç"}
+          </button>
 
           <button className="btnSmall btnToggle" type="button" onClick={onToggleCollapsed} title="Toggle tools">
             {collapsed ? "Open tools" : "Close tools"}
@@ -780,7 +626,6 @@ function SyncPanel({
     setEndInput(Number.isFinite(e) ? String(e) : "");
   }, [activeIndex, active]);
 
-  // auto-apply debounced
   useEffect(() => {
     if (!active) return;
     const t = setTimeout(() => {
@@ -861,8 +706,7 @@ function SyncPanel({
     const jsonText = JSON.stringify(verses, null, 2);
     const content = base64EncodeUtf8(jsonText);
     const message =
-      ghMsg.trim() ||
-      `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
+      ghMsg.trim() || `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
 
     await onCommitGithub({ owner, repo, path, branch, token, message, content });
     setGhMsg("");
@@ -890,12 +734,7 @@ function SyncPanel({
             <button className="btnSmall" type="button" onClick={setEndToT} disabled={!active}>
               Set END = t (E)
             </button>
-            <button
-              className="btnSmall"
-              type="button"
-              onClick={setEndToTAndNext}
-              disabled={!active}
-            >
+            <button className="btnSmall" type="button" onClick={setEndToTAndNext} disabled={!active}>
               END=t + Next (N)
             </button>
           </div>
@@ -924,9 +763,7 @@ function SyncPanel({
 
               <div className="syncMetaInline">
                 <div className="autoSaved muted">Auto-save</div>
-                <div className={`deltaPill ${deltaOk ? "" : "muted"}`}>
-                  Δ {deltaOk ? `${delta.toFixed(2)}s` : "—"}
-                </div>
+                <div className={`deltaPill ${deltaOk ? "" : "muted"}`}>Δ {deltaOk ? `${delta.toFixed(2)}s` : "—"}</div>
               </div>
             </div>
           </div>
@@ -970,12 +807,7 @@ function SyncPanel({
           <div className="syncRow">
             <label className="miniLabel">
               Jump ayah
-              <input
-                className="miniInput"
-                value={jumpAyah}
-                onChange={(e) => setJumpAyah(e.target.value)}
-                inputMode="numeric"
-              />
+              <input className="miniInput" value={jumpAyah} onChange={(e) => setJumpAyah(e.target.value)} inputMode="numeric" />
             </label>
             <button className="btnSmall" type="button" onClick={jumpToAyah}>
               Go
@@ -983,12 +815,7 @@ function SyncPanel({
 
             <label className="miniLabel">
               Jump time (s)
-              <input
-                className="miniInput"
-                value={jumpTime}
-                onChange={(e) => setJumpTime(e.target.value)}
-                inputMode="decimal"
-              />
+              <input className="miniInput" value={jumpTime} onChange={(e) => setJumpTime(e.target.value)} inputMode="decimal" />
             </label>
             <button className="btnSmall" type="button" onClick={jumpToTime}>
               Seek
@@ -1057,44 +884,24 @@ function SyncPanel({
               <div className="syncRow">
                 <label className="miniLabel">
                   Repo (owner/repo)
-                  <input
-                    className="miniInput"
-                    value={ghRepo}
-                    onChange={(e) => setGhRepo(e.target.value)}
-                    placeholder="yourname/yourrepo"
-                  />
+                  <input className="miniInput" value={ghRepo} onChange={(e) => setGhRepo(e.target.value)} placeholder="yourname/yourrepo" />
                 </label>
 
                 <label className="miniLabel">
                   Branch
-                  <input
-                    className="miniInput"
-                    value={ghBranch}
-                    onChange={(e) => setGhBranch(e.target.value)}
-                    placeholder="main"
-                  />
+                  <input className="miniInput" value={ghBranch} onChange={(e) => setGhBranch(e.target.value)} placeholder="main" />
                 </label>
               </div>
 
               <div className="syncRow">
                 <label className="miniLabel">
                   File path in repo
-                  <input
-                    className="miniInput"
-                    value={ghPath}
-                    onChange={(e) => setGhPath(e.target.value)}
-                    placeholder="public/data/yusuf.json"
-                  />
+                  <input className="miniInput" value={ghPath} onChange={(e) => setGhPath(e.target.value)} placeholder="public/data/yusuf.json" />
                 </label>
 
                 <label className="miniLabel">
                   Commit message
-                  <input
-                    className="miniInput"
-                    value={ghMsg}
-                    onChange={(e) => setGhMsg(e.target.value)}
-                    placeholder="optional"
-                  />
+                  <input className="miniInput" value={ghMsg} onChange={(e) => setGhMsg(e.target.value)} placeholder="optional" />
                 </label>
               </div>
 
@@ -1111,11 +918,7 @@ function SyncPanel({
                 </label>
 
                 <label className="chip" title="Store token in localStorage on this browser">
-                  <input
-                    type="checkbox"
-                    checked={ghRemember}
-                    onChange={(e) => setGhRemember(e.target.checked)}
-                  />
+                  <input type="checkbox" checked={ghRemember} onChange={(e) => setGhRemember(e.target.checked)} />
                   Remember token
                 </label>
 
@@ -1197,10 +1000,7 @@ export default function App() {
 
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
 
-  // Popup state
-  const popupWinRef = useRef(null);
-  const [popupIsOpen, setPopupIsOpen] = useState(false);
-  const [popupModalOpen, setPopupModalOpen] = useState(false);
+  const [popupOpen, setPopupOpen] = useState(false);
 
   useEffect(() => {
     document.title = "Türkçe-Almanca Kur’an Player";
@@ -1250,14 +1050,8 @@ export default function App() {
     });
   }, [query]);
 
-  const audioSrc = useMemo(
-    () => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""),
-    [selectedSurah]
-  );
-  const versesSrc = useMemo(
-    () => (selectedSurah ? resolvePublicUrl(selectedSurah.versesUrl) : ""),
-    [selectedSurah]
-  );
+  const audioSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""), [selectedSurah]);
+  const versesSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.versesUrl) : ""), [selectedSurah]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1307,7 +1101,6 @@ export default function App() {
     };
   }, [versesSrc]);
 
-  // Audio listeners
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1333,7 +1126,6 @@ export default function App() {
     };
   }, []);
 
-  // Playback rate
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1368,6 +1160,12 @@ export default function App() {
     if (!a) return;
     if (a.paused) a.play().catch(() => {});
     else a.pause();
+  }, []);
+
+  const pause = useCallback(() => {
+    const a = audioRef.current;
+    if (!a) return;
+    a.pause();
   }, []);
 
   const nudge = useCallback(
@@ -1415,7 +1213,6 @@ export default function App() {
     });
   }, []);
 
-  // autosave draft (debounced)
   useEffect(() => {
     const t = setTimeout(() => {
       try {
@@ -1428,9 +1225,7 @@ export default function App() {
   }, [draftKey, verses]);
 
   const exportJson = useCallback(() => {
-    const blob = new Blob([JSON.stringify(versesRef.current, null, 2)], {
-      type: "application/json",
-    });
+    const blob = new Blob([JSON.stringify(versesRef.current, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -1486,13 +1281,10 @@ export default function App() {
 
   const jumpFirstUntimed = useCallback(() => {
     const vs = versesRef.current;
-    const idx = vs.findIndex(
-      (v) => !Number.isFinite(Number(v?.start)) || !Number.isFinite(Number(v?.end))
-    );
+    const idx = vs.findIndex((v) => !Number.isFinite(Number(v?.start)) || !Number.isFinite(Number(v?.end)));
     if (idx >= 0) seekVerse(idx, true);
   }, [seekVerse]);
 
-  // loop behavior
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1521,7 +1313,6 @@ export default function App() {
     }
   }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint]);
 
-  // active index update + ensure visible
   useEffect(() => {
     if (!verses.length) return;
     const idx = findActiveVerseIndex(verses, currentTime);
@@ -1536,12 +1327,10 @@ export default function App() {
   const setA = useCallback(() => setAPoint(currentTimeRef.current), []);
   const setB = useCallback(() => setBPoint(currentTimeRef.current), []);
 
-  // keyboard shortcuts
   useEffect(() => {
     const onKey = (e) => {
       const tag = document.activeElement?.tagName?.toLowerCase();
-      const typing =
-        tag === "input" || tag === "textarea" || document.activeElement?.isContentEditable;
+      const typing = tag === "input" || tag === "textarea" || document.activeElement?.isContentEditable;
       if (typing) return;
 
       if (e.code === "Space") {
@@ -1616,84 +1405,20 @@ export default function App() {
     }
   }, []);
 
-  // Active verse -> payload for popup updates
   const activeVerse = useMemo(() => (activeIndex >= 0 ? verses[activeIndex] : null), [activeIndex, verses]);
-  const activeVersePayload = useMemo(() => {
-    if (!activeVerse) return { ayah: null, ar: "", tr: "", de: "" };
-    return {
-      ayah: activeVerse.ayah,
-      ar: activeVerse.ar || "",
-      tr: activeVerse.tr || "",
-      de: activeVerse.de || "",
-    };
-  }, [activeVerse]);
 
   const closePopup = useCallback(() => {
-    const w = popupWinRef.current;
-    popupWinRef.current = null;
-    if (w && !w.closed) w.close();
-    setPopupIsOpen(false);
-    setPopupModalOpen(false);
-  }, []);
+    setPopupOpen(false);
+    pause();
+  }, [pause]);
 
-  const openPopup = useCallback(() => {
-    const title = selectedSurah ? `${selectedSurah.nameTr} — Aktif Ayet` : "Aktif Ayet";
-    const w = openVersePopupWindow({ title });
-    if (!w) {
-      // blocked -> modal fallback
-      setPopupModalOpen(true);
-      setPopupIsOpen(true);
-      return;
-    }
-    popupWinRef.current = w;
-    setPopupModalOpen(false);
-    setPopupIsOpen(true);
-  }, [selectedSurah]);
-
-  // If user closes window manually
-  useEffect(() => {
-    if (!popupIsOpen) return;
-    const t = window.setInterval(() => {
-      const w = popupWinRef.current;
-      if (w && w.closed) {
-        popupWinRef.current = null;
-        setPopupIsOpen(false);
-      }
-    }, 400);
-    return () => window.clearInterval(t);
-  }, [popupIsOpen]);
-
-  // Send updates while open
-  useEffect(() => {
-    if (!popupIsOpen) return;
-    const w = popupWinRef.current;
-    if (w && !w.closed) {
-      try {
-        w.postMessage({ type: "verse", payload: activeVersePayload }, "*");
-      } catch {
-        // ignore
-      }
-    }
-  }, [popupIsOpen, activeVersePayload]);
-
-  // Popup ready handshake -> push immediately
-  useEffect(() => {
-    const onMsg = (ev) => {
-      if (!ev?.data || typeof ev.data !== "object") return;
-      if (ev.data.type === "popup-ready") {
-        const w = popupWinRef.current;
-        if (w && !w.closed) {
-          try {
-            w.postMessage({ type: "verse", payload: activeVersePayload }, "*");
-          } catch {
-            // ignore
-          }
-        }
-      }
-    };
-    window.addEventListener("message", onMsg);
-    return () => window.removeEventListener("message", onMsg);
-  }, [activeVersePayload]);
+  const togglePopup = useCallback(() => {
+    setPopupOpen((x) => {
+      const next = !x;
+      if (!next) pause();
+      return next;
+    });
+  }, [pause]);
 
   const header = selectedSurah ? (
     <div className="surahHeader">
@@ -1728,10 +1453,13 @@ export default function App() {
         {header}
         {error ? <div className="errorBox">{error}</div> : null}
 
-        <VerseModal
-          open={popupModalOpen}
+        <VersePopupModal
+          open={popupOpen}
           verse={activeVerse}
-          ayahLabel={activeVerse?.ayah != null ? String(activeVerse.ayah) : "—"}
+          isPlaying={isPlaying}
+          onPlayPause={onPlayPause}
+          onPrev={prevAyah}
+          onNext={nextAyah}
           onClose={closePopup}
         />
 
@@ -1762,9 +1490,8 @@ export default function App() {
             bPoint={bPoint}
             onSetA={setA}
             onSetB={setB}
-            popupOpen={popupIsOpen}
-            onOpenPopup={openPopup}
-            onClosePopup={closePopup}
+            popupOpen={popupOpen}
+            onTogglePopup={togglePopup}
           />
 
           {toolsCollapsed ? null : (
