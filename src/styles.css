@@ -766,3 +766,22 @@ html,body{
   flex-wrap: wrap;
   justify-content:center;
 }
+/* ===== Single Player FIXED Dock Stabilizer (append only) ===== */
+.singlePlayerBackdrop{ z-index: 9999; }
+.singlePlayerControls{ z-index: 10001; }
+
+/* fixed dock yarı şeffaf, blur yok */
+.singlePlayerControls{
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* çark + r butonu dock içinde sola kaymasın */
+.singlePlayerBtns{
+  justify-content: center;
+}
+
+/* küçük ek: fixed dock genişken taşma olmasın */
+@media (max-width:520px){
+  .singlePlayerControls{ padding: 10px !important; }
+}
