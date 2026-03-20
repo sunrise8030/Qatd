@@ -1005,3 +1005,129 @@ html,body{
   padding: 0 12px;
   border-radius: 16px;
 }
+/* =========================================================
+   src/styles.css
+   (Mevcut dosyanın SONUNA EKLE)
+   iOS picker wheel + r/rr görünür garantisi
+   ========================================================= */
+
+.singlePlayerTopBar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ---- iOS Picker Wheel ---- */
+.spPicker{
+  width: 120px;
+  height: 150px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(0,0,0,0.18);
+  box-shadow:
+    0 14px 28px rgba(0,0,0,0.35),
+    0 3px 0 rgba(255,255,255,0.14) inset,
+    0 -10px 16px rgba(0,0,0,0.22) inset;
+  position: relative;
+  overflow: hidden;
+  touch-action: none;
+}
+.spPicker.disabled{ opacity: 0.55; pointer-events:none; }
+
+.spPickerViewport{
+  width: 100%;
+  height: 100%;
+  outline: none;
+  display: grid;
+  place-items: center;
+}
+
+.spPickerItems{
+  width: 100%;
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  padding: 10px 0;
+}
+
+.spPickerItem{
+  width: 100%;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  font-size: 30px;
+  color: rgba(255,255,255,0.28);
+  letter-spacing: 0.5px;
+}
+.spPickerItem.active{
+  color: rgba(255,255,255,0.92);
+  text-shadow: 0 2px 12px rgba(0,0,0,0.35);
+}
+
+.spPickerBar{
+  position:absolute;
+  left: 10px;
+  right: 10px;
+  top: 50%;
+  height: 44px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.18) inset;
+  pointer-events:none;
+}
+
+.spPickerFadeTop{
+  position:absolute;
+  left:0; right:0; top:0;
+  height: 46%;
+  background: linear-gradient(180deg, rgba(15,21,32,0.92), rgba(15,21,32,0.00));
+  pointer-events:none;
+}
+.spPickerFadeBottom{
+  position:absolute;
+  left:0; right:0; bottom:0;
+  height: 46%;
+  background: linear-gradient(0deg, rgba(15,21,32,0.92), rgba(15,21,32,0.00));
+  pointer-events:none;
+}
+
+/* ---- r/rr (görünür garanti) ---- */
+.spRBtn{
+  min-width: 56px !important;
+  height: 56px !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  background: rgba(0,0,0,0.18) !important;
+  color: rgba(255,255,255,0.70) !important;
+  font-weight: 950 !important;
+  font-size: 18px !important;
+  letter-spacing: 0.5px !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow:
+    0 10px 22px rgba(0,0,0,0.30),
+    0 3px 0 rgba(255,255,255,0.12) inset,
+    0 -6px 10px rgba(0,0,0,0.20) inset;
+}
+.spRBtn.off{ opacity: 0.55; }
+.spRBtn.on{
+  color: rgba(10,14,22,0.98) !important;
+  background: linear-gradient(180deg, rgba(170,220,255,1), rgba(99,179,237,1)) !important;
+  border-color: rgba(255,255,255,0.22) !important;
+}
+.spRBtn:active{ transform: translateY(1px); }
+
+.spAutoReset{
+  height: 56px;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding: 0 12px;
+  border-radius: 16px;
+}
