@@ -98,6 +98,13 @@ function ensureRowVisible(el, padding = 10) {
   }
 }
 
+/**
+ * Tolerant JSON parsing:
+ * - strips BOM
+ * - rejects HTML
+ * - removes trailing commas before } or ]
+ * - if parse fails, includes position + context
+ */
 function parseJsonTolerant(text, urlForMsg = "") {
   const raw = String(text ?? "");
   let s = raw.replace(/^\uFEFF/, "").trim();
@@ -341,15 +348,7 @@ function Timeline({
   );
 }
 
-function VersePopupModal({
-  open,
-  verse,
-  isPlaying,
-  onPlayPause,
-  onPrev,
-  onNext,
-  onClose,
-}) {
+function VersePopupModal({ open, verse, isPlaying, onPlayPause, onPrev, onNext, onClose }) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => {
@@ -376,15 +375,7 @@ function VersePopupModal({
   const ay = verse?.ayah != null ? String(verse.ayah) : "—";
 
   return (
-    <div
-      className="versePopupBackdrop"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Aktif ayet"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
+    <div className="versePopupBackdrop" role="dialog" aria-modal="true" aria-label="Aktif ayet">
       <div className="versePopupCard">
         <div className="versePopupTop">
           <div className="badge">Aktif ayet: {ay}</div>
@@ -405,11 +396,13 @@ function VersePopupModal({
           </div>
         </div>
 
-        <div className="versePopupAr" dir="rtl">
-          {(verse?.ar || "—").trim()}
+        <div className="versePopupLines">
+          <div className="versePopupLine versePopupLineAr" dir="rtl">
+            {(verse?.ar || "—").trim()}
+          </div>
+          <div className="versePopupLine versePopupLineTr">{(verse?.tr || "—").trim()}</div>
+          <div className="versePopupLine versePopupLineDe">{(verse?.de || "—").trim()}</div>
         </div>
-        <div className="versePopupTr">{(verse?.tr || "—").trim()}</div>
-        <div className="versePopupDe">{(verse?.de || "—").trim()}</div>
       </div>
     </div>
   );
@@ -706,7 +699,8 @@ function SyncPanel({
     const jsonText = JSON.stringify(verses, null, 2);
     const content = base64EncodeUtf8(jsonText);
     const message =
-      ghMsg.trim() || `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
+      ghMsg.trim() ||
+      `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
 
     await onCommitGithub({ owner, repo, path, branch, token, message, content });
     setGhMsg("");
@@ -999,7 +993,6 @@ export default function App() {
   const [bPoint, setBPoint] = useState(null);
 
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
-
   const [popupOpen, setPopupOpen] = useState(false);
 
   useEffect(() => {
@@ -1081,10 +1074,7 @@ export default function App() {
         }
 
         const data = parseJsonTolerant(text, versesSrc);
-
-        if (!Array.isArray(data)) {
-          throw new Error(`Invalid verses JSON (expected array) | url=${versesSrc}`);
-        }
+        if (!Array.isArray(data)) throw new Error(`Invalid verses JSON (expected array) | url=${versesSrc}`);
 
         if (!cancelled) {
           rowRefs.current = [];
