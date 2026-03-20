@@ -41,6 +41,14 @@ function formatSec(sec) {
   return Number.isFinite(sec) ? `${sec.toFixed(2)}s` : "—";
 }
 
+function hapticPulse(ms = 10) {
+  try {
+    if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+      navigator.vibrate(ms);
+    }
+  } catch {}
+}
+
 // Overlap-safe
 function findActiveVerseIndex(verses, t) {
   if (!Array.isArray(verses) || verses.length === 0 || !Number.isFinite(t)) return -1;
@@ -212,7 +220,7 @@ function SurahList({ surahs, selectedId, query, onQuery, onSelect }) {
           className="searchInput"
           value={query}
           onChange={(e) => onQuery(e.target.value)}
-          placeholder="e.g. yusuf, 12, يوسف"
+          placeholder="e.g. yusuf, 12, Yusuf"
           autoComplete="off"
         />
       </div>
@@ -338,9 +346,10 @@ function Timeline({
 }
 
 /**
- * DİKEY 3D RULMAN (yüz kullanıcıya bakar)
+ * DİKEY 3D RULMAN (daha güçlü)
  * - drag UP/DOWN + wheel + inertia
- * - her step => onStep(+1/-1)
+ * - step => onStep(+1/-1)
+ * - step'te haptik
  */
 function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const ref = useRef(null);
@@ -353,7 +362,7 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const accumPxRef = useRef(0);
   const rafRef = useRef(0);
 
-  const STEP_PX = 34;
+  const STEP_PX = 30;
 
   useEffect(() => {
     return () => {
@@ -369,11 +378,14 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   };
 
   const tickSteps = () => {
+    let stepped = false;
     while (Math.abs(accumPxRef.current) >= STEP_PX) {
       const dir = accumPxRef.current > 0 ? +1 : -1; // down => next
       onStep(dir);
       accumPxRef.current -= dir * STEP_PX;
+      stepped = true;
     }
+    if (stepped) hapticPulse(8);
   };
 
   const startInertia = () => {
@@ -383,8 +395,8 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
       return;
     }
 
-    const DECAY = 0.0065;
-    const MAX_MS = 1100;
+    const DECAY = 0.0062;
+    const MAX_MS = 1200;
     const startTs = performance.now();
     let last = performance.now();
 
@@ -446,25 +458,28 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
     stop();
 
     const dy = e.deltaY;
-    const steps = clamp(Math.round(Math.abs(dy) / 40), 1, 6);
+    const steps = clamp(Math.round(Math.abs(dy) / 35), 1, 8);
     const dir = dy > 0 ? +1 : -1;
 
     for (let i = 0; i < steps; i += 1) onStep(dir);
+    hapticPulse(8);
 
-    velRef.current = clamp(dy / 900, -0.9, 0.9);
+    velRef.current = clamp(dy / 850, -1.0, 1.0);
     startInertia();
   };
 
   const items = useMemo(() => {
     const v = Number(value) || 0;
-    return [v - 2, v - 1, v, v + 1, v + 2].map((n) => n);
+    return [v - 3, v - 2, v - 1, v, v + 1, v + 2, v + 3].map((n) => n);
   }, [value]);
 
-  const angles = [-60, -30, 0, 30, 60];
-  const radius = 72;
+  // stronger cylinder
+  const angles = [-78, -52, -26, 0, 26, 52, 78];
+  const radius = 86;
 
   return (
     <div className={`spPicker3D ${disabled ? "disabled" : ""}`}>
+      <div className="spPickerShine" />
       <div className="spPickerFadeTop" />
       <div className="spPickerFadeBottom" />
       <div className="spPickerBar" />
@@ -485,10 +500,12 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
           if (e.key === "ArrowUp") {
             e.preventDefault();
             onStep(-1);
+            hapticPulse(6);
           }
           if (e.key === "ArrowDown") {
             e.preventDefault();
             onStep(+1);
+            hapticPulse(6);
           }
         }}
       >
@@ -496,11 +513,20 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
           {items.map((n, i) => {
             const ang = angles[i] ?? 0;
             const active = n === Number(value);
+            const abs = Math.abs(ang);
+            const opacity = clamp(1 - abs / 95, 0.15, 1);
+            const blur = clamp(abs / 60, 0, 1.35);
+            const scale = clamp(1 - abs / 220, 0.88, 1);
+
             return (
               <div
                 key={n}
                 className={`spPickerItem3D ${active ? "active" : ""}`}
-                style={{ transform: `rotateX(${ang}deg) translateZ(${radius}px)` }}
+                style={{
+                  opacity,
+                  filter: `blur(${blur}px)`,
+                  transform: `rotateX(${ang}deg) translateZ(${radius}px) scale(${scale})`,
+                }}
               >
                 {n <= 0 ? "—" : String(n).padStart(2, "0")}
               </div>
@@ -514,8 +540,8 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
 
 /**
  * Single Player overlay
- * - DİKEY 3D rulman + r/rr burada
- * - r için açıklama yok
+ * - player bloğu sticky
+ * - rulman + r/rr burada
  */
 function SinglePlayerPanel({
   open,
@@ -567,19 +593,15 @@ function SinglePlayerPanel({
 
           <div className="singlePlayerLine singlePlayerLineDe">{(verse?.de || "—").trim()}</div>
 
-          <div className="singlePlayerControls singlePlayerTopBar">
+          {/* ✅ sticky controls */}
+          <div className="singlePlayerControls singlePlayerTopBar singlePlayerControlsSticky">
             <div className="singlePlayerAyahNo">#{ay || "—"}</div>
 
             <div className="singlePlayerBtns">
               <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
                 ◀
               </button>
-              <button
-                className="spBtn spBtnPrimary"
-                type="button"
-                onClick={onPlayPause}
-                aria-label="Play/Pause"
-              >
+              <button className="spBtn spBtnPrimary" type="button" onClick={onPlayPause} aria-label="Play/Pause">
                 {isPlaying ? "⏸" : "▶"}
               </button>
               <button className="spBtn" type="button" onClick={onNext} aria-label="Next">
@@ -591,7 +613,10 @@ function SinglePlayerPanel({
               <button
                 className={`spRBtn ${repeatMode ? "on" : "off"}`}
                 type="button"
-                onClick={onToggleRepeat}
+                onClick={() => {
+                  hapticPulse(8);
+                  onToggleRepeat();
+                }}
                 aria-label="Repeat"
                 title="Repeat"
               >
@@ -599,11 +624,7 @@ function SinglePlayerPanel({
               </button>
 
               <label className="spAutoReset chip" title="Auto-reset">
-                <input
-                  type="checkbox"
-                  checked={repeatAutoReset}
-                  onChange={onToggleRepeatAutoReset}
-                />
+                <input type="checkbox" checked={repeatAutoReset} onChange={onToggleRepeatAutoReset} />
                 Auto-reset
               </label>
 
@@ -652,12 +673,8 @@ function PlayerControls({
       <div className="liveTimeBar">
         <div className="liveTime">
           <span className="liveLabel">LIVE</span>
-          <span className="liveSec">
-            {Number.isFinite(currentTime) ? currentTime.toFixed(2) : "0.00"}s
-          </span>
-          <span className="liveDur muted">
-            / {Number.isFinite(duration) ? duration.toFixed(2) : "0.00"}s
-          </span>
+          <span className="liveSec">{Number.isFinite(currentTime) ? currentTime.toFixed(2) : "0.00"}s</span>
+          <span className="liveDur muted">/ {Number.isFinite(duration) ? duration.toFixed(2) : "0.00"}s</span>
         </div>
 
         <div className="liveActions">
@@ -671,20 +688,11 @@ function PlayerControls({
             ▶
           </button>
 
-          <button
-            className={`btnSinglePlayer ${singleOn ? "on" : ""}`}
-            type="button"
-            onClick={onToggleSingle}
-          >
+          <button className={`btnSinglePlayer ${singleOn ? "on" : ""}`} type="button" onClick={onToggleSingle}>
             {singleOn ? "Single Player: ON" : "Single Player"}
           </button>
 
-          <button
-            className="btnSmall btnToggle"
-            type="button"
-            onClick={onToggleCollapsed}
-            title="Toggle tools"
-          >
+          <button className="btnSmall btnToggle" type="button" onClick={onToggleCollapsed} title="Toggle tools">
             {collapsed ? "Open tools" : "Close tools"}
           </button>
         </div>
@@ -755,8 +763,8 @@ function PlayerControls({
           </div>
 
           <div className="kbdHelp muted">
-            Space play/pause • ↑/↓ prev/next • ←/→ ±1s • Shift+←/→ ±0.1s • S start • E end • N end+next • L
-            loop ayah • Shift+L loop AB • A/B set points
+            Space play/pause • ↑/↓ prev/next • ←/→ ±1s • Shift+←/→ ±0.1s • S start • E end • N end+next • L loop ayah •
+            Shift+L loop AB • A/B set points
           </div>
         </>
       )}
@@ -920,8 +928,7 @@ function SyncPanel({
     const jsonText = JSON.stringify(verses, null, 2);
     const content = base64EncodeUtf8(jsonText);
     const message =
-      ghMsg.trim() ||
-      `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
+      ghMsg.trim() || `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
 
     await onCommitGithub({ owner, repo, path, branch, token, message, content });
     setGhMsg("");
@@ -958,29 +965,17 @@ function SyncPanel({
             <div className="syncInputs">
               <label className="miniLabel">
                 start
-                <input
-                  className="miniInput"
-                  value={startInput}
-                  onChange={(e) => setStartInput(e.target.value)}
-                  inputMode="decimal"
-                />
+                <input className="miniInput" value={startInput} onChange={(e) => setStartInput(e.target.value)} inputMode="decimal" />
               </label>
 
               <label className="miniLabel">
                 end
-                <input
-                  className="miniInput"
-                  value={endInput}
-                  onChange={(e) => setEndInput(e.target.value)}
-                  inputMode="decimal"
-                />
+                <input className="miniInput" value={endInput} onChange={(e) => setEndInput(e.target.value)} inputMode="decimal" />
               </label>
 
               <div className="syncMetaInline">
                 <div className="autoSaved muted">Auto-save</div>
-                <div className={`deltaPill ${deltaOk ? "" : "muted"}`}>
-                  Δ {deltaOk ? `${delta.toFixed(2)}s` : "—"}
-                </div>
+                <div className={`deltaPill ${deltaOk ? "" : "muted"}`}>Δ {deltaOk ? `${delta.toFixed(2)}s` : "—"}</div>
               </div>
             </div>
           </div>
@@ -1024,12 +1019,7 @@ function SyncPanel({
           <div className="syncRow">
             <label className="miniLabel">
               Jump ayah
-              <input
-                className="miniInput"
-                value={jumpAyah}
-                onChange={(e) => setJumpAyah(e.target.value)}
-                inputMode="numeric"
-              />
+              <input className="miniInput" value={jumpAyah} onChange={(e) => setJumpAyah(e.target.value)} inputMode="numeric" />
             </label>
             <button className="btnSmall" type="button" onClick={jumpToAyah}>
               Go
@@ -1037,12 +1027,7 @@ function SyncPanel({
 
             <label className="miniLabel">
               Jump time (s)
-              <input
-                className="miniInput"
-                value={jumpTime}
-                onChange={(e) => setJumpTime(e.target.value)}
-                inputMode="decimal"
-              />
+              <input className="miniInput" value={jumpTime} onChange={(e) => setJumpTime(e.target.value)} inputMode="decimal" />
             </label>
             <button className="btnSmall" type="button" onClick={jumpToTime}>
               Seek
@@ -1111,44 +1096,24 @@ function SyncPanel({
               <div className="syncRow">
                 <label className="miniLabel">
                   Repo (owner/repo)
-                  <input
-                    className="miniInput"
-                    value={ghRepo}
-                    onChange={(e) => setGhRepo(e.target.value)}
-                    placeholder="yourname/yourrepo"
-                  />
+                  <input className="miniInput" value={ghRepo} onChange={(e) => setGhRepo(e.target.value)} placeholder="yourname/yourrepo" />
                 </label>
 
                 <label className="miniLabel">
                   Branch
-                  <input
-                    className="miniInput"
-                    value={ghBranch}
-                    onChange={(e) => setGhBranch(e.target.value)}
-                    placeholder="main"
-                  />
+                  <input className="miniInput" value={ghBranch} onChange={(e) => setGhBranch(e.target.value)} placeholder="main" />
                 </label>
               </div>
 
               <div className="syncRow">
                 <label className="miniLabel">
                   File path in repo
-                  <input
-                    className="miniInput"
-                    value={ghPath}
-                    onChange={(e) => setGhPath(e.target.value)}
-                    placeholder="public/data/yusuf.json"
-                  />
+                  <input className="miniInput" value={ghPath} onChange={(e) => setGhPath(e.target.value)} placeholder="public/data/yusuf.json" />
                 </label>
 
                 <label className="miniLabel">
                   Commit message
-                  <input
-                    className="miniInput"
-                    value={ghMsg}
-                    onChange={(e) => setGhMsg(e.target.value)}
-                    placeholder="optional"
-                  />
+                  <input className="miniInput" value={ghMsg} onChange={(e) => setGhMsg(e.target.value)} placeholder="optional" />
                 </label>
               </div>
 
@@ -1248,6 +1213,7 @@ export default function App() {
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
   const [singleOn, setSingleOn] = useState(false);
 
+  // repeat: 0 off, 1 => 1 tekrar, 2 => 2 tekrar
   const [repeatMode, setRepeatMode] = useState(0);
   const [repeatAutoReset, setRepeatAutoReset] = useState(true);
   const repeatRef = useRef({ idx: -1, done: 0 });
@@ -1322,6 +1288,7 @@ export default function App() {
     setDuration(0);
     setIsPlaying(false);
     setSingleOn(false);
+
     setRepeatMode(0);
     repeatRef.current = { idx: -1, done: 0 };
 
@@ -1548,6 +1515,7 @@ export default function App() {
     if (idx >= 0) seekVerse(idx, true);
   }, [seekVerse]);
 
+  // loop / repeat
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1705,10 +1673,27 @@ export default function App() {
     });
   }, [pause]);
 
+  // ✅ FIX: R açılınca AKTİF AYETİ HEMEN BAŞTAN PLAY
   const toggleRepeat = useCallback(() => {
-    setRepeatMode((m) => (m === 0 ? 1 : m === 1 ? 2 : 0));
-    if (repeatAutoReset) repeatRef.current = { idx: activeIndexRef.current, done: 0 };
-  }, [repeatAutoReset]);
+    setRepeatMode((m) => {
+      const next = m === 0 ? 1 : m === 1 ? 2 : 0;
+
+      const idx = activeIndexRef.current;
+      if (next > 0 && idx >= 0) {
+        repeatRef.current = { idx, done: 0 };
+        const v = versesRef.current[idx];
+        const s = Number(v?.start);
+        if (Number.isFinite(s)) {
+          seekTo(s, true);
+          hapticPulse(10);
+        }
+      } else {
+        repeatRef.current = { idx: -1, done: 0 };
+      }
+
+      return next;
+    });
+  }, [seekTo]);
 
   const header = selectedSurah ? (
     <div className="surahHeader">
