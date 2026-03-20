@@ -1,6 +1,6 @@
 /* =========================================================
    src/styles.css (TEK PARÇA)
-   - SENİN CSS'in aynısı + en altta Single Player dock + rulman + r/rr fix
+   - Senin CSS + en altta fixed dock + 3D rulman + r/rr
    ========================================================= */
 
 /* src/styles.css */
@@ -475,11 +475,11 @@ html,body{
   overflow: auto;
 }
 
-/* Dock sabit kalacağı için content altta pay bıraksın */
+/* leave space for fixed dock */
 .singlePlayerLines{
   display: grid;
   gap: 10px;
-  padding-bottom: 130px; /* dock yüksekliği + nefes */
+  padding-bottom: 150px;
 }
 
 .singlePlayerLine{
@@ -515,37 +515,31 @@ html,body{
   white-space: pre-wrap;
 }
 
-/* Dock bar: sabit ve boyu sabit -> çark dönerken yer oynamaz */
-.singlePlayerControls{
+/* =========================================================
+   FIXED DOCK (never moves)
+   ========================================================= */
+.spDockFixed{
+  position: fixed;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  width: min(1100px, calc(100% - 28px));
+  z-index: 10000;
+}
+
+.spDockInner{
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 18px;
-  background: rgba(0,0,0,0.20);
-  padding: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  min-height: 92px; /* sabit yükseklik */
-}
-
-.singlePlayerControlsDock{
-  position: sticky;
-  bottom: 10px;
-  z-index: 80;
+  background: rgba(0,0,0,0.22);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-}
-
-.singlePlayerBtns{
+  padding: 12px;
   display:flex;
-  gap: 10px;
   align-items:center;
-  flex-wrap:wrap;
-}
-
-.singlePlayerBtnsDock{
   justify-content:center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-height: 92px; /* stable height => no jiggle */
 }
 
 .spBtn{
