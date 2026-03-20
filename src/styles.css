@@ -8,6 +8,7 @@
   --accent:rgba(99,179,237,1);
   --danger:rgba(255,120,120,0.18);
 
+  /* column widths for gradient background */
   --w-no: 70px;
   --w-ar: 1.1fr;
   --w-de: 1fr;
@@ -327,6 +328,7 @@ html,body{
   overflow:auto;
 }
 
+/* keep wide but clean */
 .tableHeader, .row{ min-width:980px; }
 
 .tableHeader{
@@ -343,6 +345,7 @@ html,body{
   z-index:2;
 }
 
+/* gradient column shading */
 .row{
   display:grid;
   grid-template-columns: var(--w-no) var(--w-ar) var(--w-de) var(--w-tr);
@@ -366,11 +369,13 @@ html,body{
     );
 }
 
+/* stronger zebra */
 .tableBody .row:nth-child(odd){ background-color: rgba(255,255,255,0.05); }
 .tableBody .row:nth-child(even){ background-color: rgba(0,0,0,0.18); }
 
 .row:hover{ filter: brightness(1.08); }
 
+/* active stays */
 .row.active{
   background-color: rgba(99,179,237,0.14) !important;
   box-shadow: 0 0 0 1px rgba(99,179,237,0.35) inset;
@@ -386,6 +391,7 @@ html,body{
 .cell:last-child{ border-right:none; }
 
 .colNo{ color:var(--muted); font-variant-numeric:tabular-nums; }
+/* Arabic alignment */
 .colAr{
   display: block !important;
   direction: rtl;
@@ -431,7 +437,7 @@ html,body{
   border: 1px solid rgba(255,255,255,0.14);
   background: rgba(15,21,32,0.88);
   border-radius: 20px;
-  padding: 16px;
+  padding: 14px;
   box-shadow: 0 30px 80px rgba(0,0,0,0.45);
   max-height: 86vh;
   overflow: auto;
@@ -440,19 +446,17 @@ html,body{
 .versePopupTop{
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 3;
   display:flex;
   justify-content: space-between;
   gap: 10px;
   flex-wrap: wrap;
   align-items: center;
-
-  margin: -16px -16px 14px;
-  padding: 12px 16px;
+  padding: 10px 10px;
   background: rgba(15,21,32,0.96);
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255,255,255,0.10);
-  border-radius: 20px 20px 14px 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 16px;
 }
 
 .versePopupActions{
@@ -462,34 +466,33 @@ html,body{
   flex-wrap:wrap;
 }
 
-/* Bigger buttons in popup only */
 .versePopupActions .btnSmall{
-  padding: 12px 14px;
-  font-size: 16px;
+  padding: 14px 16px;
+  font-size: 18px;
   border-radius: 14px;
 }
 
 .versePopupActions .btnPrimary{
-  padding: 14px 22px;
-  font-size: 18px;
+  padding: 16px 26px;
+  font-size: 20px;
   border-radius: 16px;
 }
 
-/* zebra-like separation */
 .versePopupLines{
   display:grid;
   gap: 12px;
+  margin-top: 12px;
 }
 
 .versePopupLine{
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 16px;
-  padding: 14px 14px;
+  padding: 16px 16px;
   background: rgba(0,0,0,0.14);
 }
 
 .versePopupLine:nth-child(odd){
-  background: rgba(255,255,255,0.05);
+  background: rgba(255,255,255,0.06);
 }
 
 .versePopupLineAr{
@@ -497,20 +500,20 @@ html,body{
   unicode-bidi: isolate-override;
   text-align: right;
   font-family: "Noto Naskh Arabic","Amiri","Scheherazade New","Noto Sans Arabic", serif;
-  font-size: clamp(36px, 6.2vw, 64px);
-  line-height: 1.7;
-  white-space: pre-wrap;
-}
-
-.versePopupLineTr{
-  font-size: clamp(22px, 3.6vw, 34px);
-  line-height: 1.55;
+  font-size: clamp(44px, 6.8vw, 72px);
+  line-height: 1.75;
   white-space: pre-wrap;
 }
 
 .versePopupLineDe{
-  font-size: clamp(20px, 3.2vw, 30px);
-  line-height: 1.5;
-  color: var(--muted);
+  font-size: clamp(26px, 3.8vw, 38px);
+  line-height: 1.55;
+  color: rgba(255,255,255,0.80);
+  white-space: pre-wrap;
+}
+
+.versePopupLineTr{
+  font-size: clamp(26px, 3.8vw, 38px);
+  line-height: 1.55;
   white-space: pre-wrap;
 }
