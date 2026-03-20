@@ -1,11 +1,10 @@
 // =========================================================
-// src/App.jsx  (TAM DOSYA - KISALTMA YOK)
-// - Single Player: ORTADA sabit player bloğu (fixed center) [CSS gerekli]
-// - Prev/Play/Next/Close sağ uca, Çark + r/rr sol uca
-// - ÇARK: Yukarı kaydırınca ARTAR ✅
-// - Hassasiyet: STEP_PX=22 ✅, wheel daha hassas ✅
-// - Repeat: r=1 tekrar, rr=2 tekrar, bitince AYNI ayette durur (pause + başa al)
-// - Ses eklenmez. Taptik yalnız vibrate varsa.
+// src/App.jsx  (TAM DOSYA - CSS DEĞİŞMEDEN)
+// - Single Player kontrol bloğu: De altında, Tr üstünde (resimdeki lokasyon)
+// - Kontrol bloğu: card içinde STICKY (inline style) => override/fixed yok
+// - Çark: Prev/Play/Next’ten hemen sonra
+// - Çark: Yukarı kaydırınca ARTAR, STEP_PX=22, wheel hassas
+// - Repeat: r=1, rr=2, bitince aynı ayette durur (pause + başa al)
 // =========================================================
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
@@ -354,9 +353,9 @@ function Timeline({
 
 /**
  * DİKEY 3D RULMAN
- * - Yukarı kaydırınca ARTAR ✅
- * - Hassasiyet arttı: STEP_PX=22 ✅
- * - Wheel daha hassas ✅
+ * - Yukarı kaydırınca ARTAR
+ * - STEP_PX=22 (hassas)
+ * - wheel daha hassas
  */
 function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const ref = useRef(null);
@@ -387,14 +386,12 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const tickSteps = () => {
     let did = false;
 
-    // up (accum negative) => +1
     while (accumPxRef.current <= -STEP_PX) {
       onStep(+1);
       accumPxRef.current += STEP_PX;
       did = true;
     }
 
-    // down (accum positive) => -1
     while (accumPxRef.current >= STEP_PX) {
       onStep(-1);
       accumPxRef.current -= STEP_PX;
@@ -475,8 +472,6 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
 
     const dy = e.deltaY;
     const steps = clamp(Math.round(Math.abs(dy) / 28), 1, 12);
-
-    // wheel up (dy < 0) => +1
     const dir = dy < 0 ? +1 : -1;
 
     for (let i = 0; i < steps; i += 1) onStep(dir);
@@ -543,6 +538,12 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   );
 }
 
+/**
+ * Single Player
+ * - Kontrol bloğu: De altında, Tr üstünde
+ * - Card içinde sticky (inline style) => override yok, CSS değiştirmeden sabit
+ * - Çark: Prev/Play/Next hemen sonrası
+ */
 function SinglePlayerPanel({
   open,
   verse,
@@ -591,41 +592,64 @@ function SinglePlayerPanel({
 
           <div className="singlePlayerLine singlePlayerLineDe">{(verse?.de || "—").trim()}</div>
 
-          <div className="singlePlayerLine singlePlayerLineTr">{(verse?.tr || "—").trim()}</div>
-        </div>
-      </div>
-
-      <div className="spDockFixed spDockCenter" role="group" aria-label="Player">
-        <div className="spDockInner spDockSplit">
-          <div className="spDockLeft">
-            <IOSPickerWheelVertical3D disabled={dialDisabled} value={ay} onStep={onDialStep} />
-            <button
-              className={`spRBtn ${repeatMode ? "on" : "off"}`}
-              type="button"
-              onClick={() => {
-                tactilePulse(10);
-                onToggleRepeat();
+          <div
+            className="singlePlayerControls"
+            style={{
+              position: "sticky",
+              bottom: 10,
+              zIndex: 50,
+              background: "rgba(0,0,0,0.16)",
+              border: "1px solid rgba(255,255,255,0.10)",
+              borderRadius: 18,
+              padding: 10,
+              minHeight: 92,
+              backdropFilter: "none",
+              WebkitBackdropFilter: "none",
+            }}
+          >
+            <div
+              className="singlePlayerBtns"
+              style={{
+                display: "flex",
+                gap: 10,
+                alignItems: "center",
+                flexWrap: "wrap",
+                justifyContent: "center",
               }}
-              aria-label="Repeat"
             >
-              {repeatMode === 2 ? "rr" : "r"}
-            </button>
+              <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
+                ◀
+              </button>
+
+              <button className="spBtn spBtnPrimary" type="button" onClick={onPlayPause} aria-label="Play/Pause">
+                {isPlaying ? "⏸" : "▶"}
+              </button>
+
+              <button className="spBtn" type="button" onClick={onNext} aria-label="Next">
+                ▶
+              </button>
+
+              <IOSPickerWheelVertical3D disabled={dialDisabled} value={ay} onStep={onDialStep} />
+
+              <button
+                className={`spRBtn ${repeatMode ? "on" : "off"}`}
+                type="button"
+                onClick={() => {
+                  tactilePulse(10);
+                  onToggleRepeat();
+                }}
+                aria-label="Repeat"
+              >
+                {repeatMode === 2 ? "rr" : "r"}
+              </button>
+
+              <button className="spBtn spBtnClose" type="button" onClick={onClose} aria-label="Close">
+                ✕
+              </button>
+            </div>
           </div>
 
-          <div className="spDockRight">
-            <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
-              ◀
-            </button>
-            <button className="spBtn spBtnPrimary" type="button" onClick={onPlayPause} aria-label="Play/Pause">
-              {isPlaying ? "⏸" : "▶"}
-            </button>
-            <button className="spBtn" type="button" onClick={onNext} aria-label="Next">
-              ▶
-            </button>
-            <button className="spBtn spBtnClose" type="button" onClick={onClose} aria-label="Close">
-              ✕
-            </button>
-          </div>
+          <div className="singlePlayerLine singlePlayerLineTr">{(verse?.tr || "—").trim()}</div>
         </div>
       </div>
     </div>
@@ -1244,7 +1268,7 @@ export default function App() {
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
   const [singleOn, setSingleOn] = useState(false);
 
-  const [repeatMode, setRepeatMode] = useState(0); // 0 off, 1 => 1 tekrar, 2 => 2 tekrar
+  const [repeatMode, setRepeatMode] = useState(0);
   const repeatRef = useRef({ idx: -1, done: 0 });
   const edgeRef = useRef({ idx: -1, armed: true });
 
@@ -1550,7 +1574,6 @@ export default function App() {
     });
   }, [seekTo]);
 
-  // repeat engine: bitince aynı ayette dur
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1754,7 +1777,6 @@ export default function App() {
           onClose={closeSingle}
           dialDisabled={dialDisabled}
           onDialStep={(dir) => {
-            // dir: +1 = next, -1 = prev
             const cur = activeIndexRef.current;
             const base = cur >= 0 ? cur : 0;
             const next = clamp(base + dir, 0, Math.max(0, versesRef.current.length - 1));
