@@ -678,23 +678,30 @@ html,body{
 
 /* === EK: Bottom dock (format bozmaz, sadece yeni class) === */
 .singlePlayerDockBottom{
-  position: fixed;
-  right: 14px;
-  left: auto;
-  bottom: calc(14px + env(safe-area-inset-bottom));
-  z-index: 10001;
+  position: fixed !important;
 
-  width: min(720px, calc(100% - 28px)); /* ✅ sağda sabit ama mobilde taşmaz */
+  right: 14px !important;
+  left: auto !important;
 
-  padding: 10px;
-  border-radius: 18px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(0,0,0,0.20);
+  bottom: calc(14px + env(safe-area-inset-bottom)) !important;
 
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  white-space: nowrap;
+  top: auto !important;
+  transform: none !important;
+
+  z-index: 10001 !important;
+
+  width: min(640px, calc(100% - 28px)) !important; /* sağda net dursun */
+  max-width: calc(100% - 28px) !important;
+
+  padding: 10px !important;
+  border-radius: 18px !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  background: rgba(0,0,0,0.20) !important;
+
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  white-space: nowrap !important;
 }
 .singlePlayerDockRow{
   display: flex;
