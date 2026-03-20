@@ -878,3 +878,130 @@ html,body{
   padding: 0 12px;
   border-radius: 16px;
 }
+
+/* =========================================================
+   src/styles.css
+   (Mevcut dosyana EKLE: en altına koy)
+   ========================================================= */
+
+.singlePlayerTopBar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ---- Gear ---- */
+.spGear{
+  --rot: 0deg;
+  width: 78px;
+  height: 78px;
+  border-radius: 22px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.18);
+  box-shadow:
+    0 14px 28px rgba(0,0,0,0.42),
+    0 3px 0 rgba(255,255,255,0.16) inset,
+    0 -10px 16px rgba(0,0,0,0.22) inset;
+  display:grid;
+  place-items:center;
+  cursor: grab;
+  touch-action:none;
+  user-select:none;
+}
+.spGear:active{ cursor: grabbing; transform: translateY(1px); }
+.spGear.disabled{ opacity: 0.55; pointer-events:none; }
+
+.spGearSvg{
+  width: 64px;
+  height: 64px;
+  transform: rotate(var(--rot));
+  transition: transform 20ms linear;
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.35));
+}
+.spGear.tick .spGearSvg{
+  animation: gearTick 160ms ease-out;
+}
+@keyframes gearTick{
+  0%{ transform: rotate(var(--rot)) scale(1); filter: brightness(1) drop-shadow(0 6px 12px rgba(0,0,0,0.35)); }
+  45%{ transform: rotate(var(--rot)) scale(0.985); filter: brightness(1.12) drop-shadow(0 6px 12px rgba(0,0,0,0.35)); }
+  100%{ transform: rotate(var(--rot)) scale(1); filter: brightness(1) drop-shadow(0 6px 12px rgba(0,0,0,0.35)); }
+}
+
+/* BACK teeth look embedded */
+.spGearTeethBack rect{
+  fill: rgba(210,235,255,0.18);
+  stroke: rgba(255,255,255,0.10);
+  stroke-width: 1;
+}
+
+/* FRONT teeth: only 3 visible, bright */
+.spGearTeethFront rect{
+  fill: rgba(210,235,255,0.78);
+  stroke: rgba(255,255,255,0.30);
+  stroke-width: 1;
+}
+
+.spGearBody{
+  fill: rgba(145,205,250,0.18);
+  stroke: rgba(255,255,255,0.16);
+  stroke-width: 1.4;
+}
+.spGearInner{
+  fill: rgba(0,0,0,0.18);
+  stroke: rgba(255,255,255,0.16);
+  stroke-width: 1.2;
+}
+.spGearCore{
+  fill: rgba(99,179,237,0.70);
+  stroke: rgba(255,255,255,0.22);
+  stroke-width: 1.2;
+}
+.spGearSpokes rect{
+  fill: rgba(255,255,255,0.14);
+}
+
+.spGearText{
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  font-weight: 950;
+  font-size: 18px;
+  fill: rgba(255,255,255,0.92);
+  paint-order: stroke;
+  stroke: rgba(0,0,0,0.45);
+  stroke-width: 3px;
+}
+
+/* ---- r/rr button (no label) ---- */
+.spRBtn{
+  min-width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.18);
+  color: rgba(255,255,255,0.70);
+  font-weight: 950;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  box-shadow:
+    0 10px 22px rgba(0,0,0,0.30),
+    0 3px 0 rgba(255,255,255,0.12) inset,
+    0 -6px 10px rgba(0,0,0,0.20) inset;
+}
+.spRBtn.off{ opacity: 0.55; }
+.spRBtn.on{
+  color: rgba(10,14,22,0.98);
+  background: linear-gradient(180deg, rgba(170,220,255,1), rgba(99,179,237,1));
+  border-color: rgba(255,255,255,0.22);
+}
+.spRBtn:active{ transform: translateY(1px); }
+
+.spAutoReset{
+  height: 54px;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding: 0 12px;
+  border-radius: 16px;
+}
