@@ -667,3 +667,25 @@ html,body{
   border-color: rgba(255,255,255,0.22) !important;
 }
 .spRBtn:active{ transform: translateY(1px); }
+/* =========================
+   FILE: src/styles.css
+   (EN SONA EKLE — SADECE EK BÖLÜM)
+   ========================= */
+
+/* Bigger TR panel + dock: tek satır */
+.singlePlayerTrPanel{
+  font-size: 18px;
+  line-height: 1.65;
+}
+
+.singlePlayerDockRight{
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  white-space: nowrap;
+}
+
+/* mobilde okunurluk */
+@media (max-width:520px){
+  .singlePlayerTrPanel{ font-size: 18px; }
+}
