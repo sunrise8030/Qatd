@@ -1,5 +1,6 @@
 // =========================================================
 // src/App.jsx
+// (iOS picker wheel mantığı + r/rr görünür + diğer her şey korunur)
 // =========================================================
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
@@ -338,326 +339,171 @@ function Timeline({
 }
 
 /**
- * GearDial:
- * - 12 diş (arkada gömülü 9, önde parlak 3)
- * - ayah no çarkın üstünde
- * - gerçek dişli step: akümülasyon (STEP_DEG) ile tık tık
- * - momentum + hızlanma
+ * iOS picker wheel (alarm UI mantığı)
+ * - drag up/down + wheel + inertia
+ * - step => onStep(+1/-1)
  */
-function GearDial({ disabled, label, onStep }) {
-  const btnRef = useRef(null);
+function IOSPickerWheel({ disabled, value, onStep }) {
+  const ref = useRef(null);
 
-  const rotDegRef = useRef(0);
-  const accumRef = useRef(0);
-
-  // pointer
   const draggingRef = useRef(false);
-  const lastAngleRef = useRef(null);
-  const lastMoveTsRef = useRef(0);
+  const lastYRef = useRef(0);
+  const lastTsRef = useRef(0);
 
-  // tick visual + haptic
-  const tickTimerRef = useRef(0);
+  const velRef = useRef(0); // px/ms
+  const accumPxRef = useRef(0);
+  const rafRef = useRef(0);
 
-  // acceleration
-  const lastStepTsRef = useRef(0);
-  const burstRef = useRef(0);
-
-  // inertia
-  const inertiaRafRef = useRef(0);
-  const inertiaVelRef = useRef(0); // deg/ms
-  const inertiaLastTsRef = useRef(0);
-
-  const STEP_DEG = 24; // daha "dişli" hissi
+  const STEP_PX = 34;
 
   useEffect(() => {
     return () => {
-      if (tickTimerRef.current) window.clearTimeout(tickTimerRef.current);
-      if (inertiaRafRef.current) cancelAnimationFrame(inertiaRafRef.current);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, []);
 
-  const applyRotation = (ddeg) => {
-    rotDegRef.current += ddeg;
-    const el = btnRef.current;
-    if (!el) return;
-    el.style.setProperty("--rot", `${rotDegRef.current}deg`);
+  const stop = () => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = 0;
+    velRef.current = 0;
+    accumPxRef.current = 0;
   };
 
-  const doTick = () => {
-    const el = btnRef.current;
-    if (!el) return;
-
-    el.classList.remove("tick");
-    void el.offsetWidth;
-    el.classList.add("tick");
-
-    if (tickTimerRef.current) window.clearTimeout(tickTimerRef.current);
-    tickTimerRef.current = window.setTimeout(() => el.classList.remove("tick"), 160);
-
-    try {
-      if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
-        navigator.vibrate(8);
-      }
-    } catch {}
-  };
-
-  const computeMultiplier = () => {
-    const now = performance.now();
-    const dt = now - (lastStepTsRef.current || 0);
-    lastStepTsRef.current = now;
-
-    if (dt < 110) burstRef.current = Math.min(6, burstRef.current + 1);
-    else if (dt < 170) burstRef.current = Math.min(5, Math.max(1, burstRef.current));
-    else if (dt < 250) burstRef.current = Math.min(3, Math.max(1, burstRef.current));
-    else burstRef.current = 0;
-
-    if (burstRef.current <= 0) return 1;
-    if (burstRef.current <= 2) return 2;
-    if (burstRef.current <= 4) return 3;
-    if (burstRef.current === 5) return 4;
-    return 5;
-  };
-
-  const step = (dir, times = 1) => {
-    const n = clamp(times, 1, 10);
-    for (let i = 0; i < n; i += 1) onStep(dir);
-    doTick();
-  };
-
-  const acceleratedStep = (dir, extra = 0) => {
-    const mul = clamp(computeMultiplier() + extra, 1, 10);
-    step(dir, mul);
-  };
-
-  const processAccum = () => {
-    while (Math.abs(accumRef.current) >= STEP_DEG) {
-      const dir = accumRef.current > 0 ? +1 : -1;
-      const extra = Math.abs(inertiaVelRef.current) > 0.55 ? 2 : Math.abs(inertiaVelRef.current) > 0.35 ? 1 : 0;
-      acceleratedStep(dir, extra);
-      accumRef.current -= dir * STEP_DEG;
+  const tickSteps = () => {
+    while (Math.abs(accumPxRef.current) >= STEP_PX) {
+      const dir = accumPxRef.current > 0 ? +1 : -1; // down => next
+      onStep(dir);
+      accumPxRef.current -= dir * STEP_PX;
     }
-  };
-
-  const stopInertia = () => {
-    if (inertiaRafRef.current) cancelAnimationFrame(inertiaRafRef.current);
-    inertiaRafRef.current = 0;
-    inertiaVelRef.current = 0;
-    inertiaLastTsRef.current = 0;
   };
 
   const startInertia = () => {
-    const vel0 = inertiaVelRef.current;
-    if (!Number.isFinite(vel0) || Math.abs(vel0) < 0.05) {
-      stopInertia();
+    const v0 = velRef.current;
+    if (!Number.isFinite(v0) || Math.abs(v0) < 0.05) {
+      stop();
       return;
     }
 
-    inertiaLastTsRef.current = performance.now();
-    const DECAY_PER_MS = 0.0068;
-    const MAX_MS = 1200;
+    const DECAY = 0.0065;
+    const MAX_MS = 1100;
     const startTs = performance.now();
+    let last = performance.now();
 
-    const tick = () => {
+    const frame = () => {
       const now = performance.now();
-      const dt = now - (inertiaLastTsRef.current || now);
-      inertiaLastTsRef.current = now;
+      const dt = now - last;
+      last = now;
 
-      const sign = Math.sign(inertiaVelRef.current || vel0);
-      const speed = Math.abs(inertiaVelRef.current || vel0);
-      const nextSpeed = Math.max(0, speed * (1 - DECAY_PER_MS * dt));
-      inertiaVelRef.current = sign * nextSpeed;
+      const sign = Math.sign(velRef.current || v0);
+      const sp = Math.abs(velRef.current || v0);
+      const nextSp = Math.max(0, sp * (1 - DECAY * dt));
+      velRef.current = sign * nextSp;
 
-      const ddeg = inertiaVelRef.current * dt;
-      applyRotation(ddeg);
-      accumRef.current += ddeg;
-      processAccum();
+      accumPxRef.current += velRef.current * dt;
+      tickSteps();
 
-      const elapsed = now - startTs;
-      if (nextSpeed < 0.05 || elapsed > MAX_MS) {
-        stopInertia();
+      if (nextSp < 0.05 || now - startTs > MAX_MS) {
+        stop();
         return;
       }
-      inertiaRafRef.current = requestAnimationFrame(tick);
+      rafRef.current = requestAnimationFrame(frame);
     };
 
-    inertiaRafRef.current = requestAnimationFrame(tick);
-  };
-
-  const getAngle = (clientX, clientY) => {
-    const el = btnRef.current;
-    if (!el) return 0;
-    const r = el.getBoundingClientRect();
-    const cx = r.left + r.width / 2;
-    const cy = r.top + r.height / 2;
-    const dx = clientX - cx;
-    const dy = clientY - cy;
-    return Math.atan2(dy, dx) * (180 / Math.PI);
-  };
-
-  const normDelta = (a, b) => {
-    let d = a - b;
-    while (d > 180) d -= 360;
-    while (d < -180) d += 360;
-    return d;
+    rafRef.current = requestAnimationFrame(frame);
   };
 
   const onPointerDown = (e) => {
     if (disabled) return;
-    stopInertia();
+    stop();
     draggingRef.current = true;
-    lastAngleRef.current = getAngle(e.clientX, e.clientY);
-    lastMoveTsRef.current = performance.now();
-    btnRef.current?.setPointerCapture?.(e.pointerId);
+    lastYRef.current = e.clientY;
+    lastTsRef.current = performance.now();
+    ref.current?.setPointerCapture?.(e.pointerId);
   };
 
   const onPointerMove = (e) => {
     if (disabled || !draggingRef.current) return;
 
     const now = performance.now();
-    const cur = getAngle(e.clientX, e.clientY);
-    const last = lastAngleRef.current;
+    const dy = e.clientY - lastYRef.current;
+    const dt = Math.max(1, now - (lastTsRef.current || now));
 
-    if (last == null) {
-      lastAngleRef.current = cur;
-      lastMoveTsRef.current = now;
-      return;
-    }
+    lastYRef.current = e.clientY;
+    lastTsRef.current = now;
 
-    const d = normDelta(cur, last);
-    const dt = Math.max(1, now - (lastMoveTsRef.current || now));
-    lastMoveTsRef.current = now;
-    lastAngleRef.current = cur;
-
-    inertiaVelRef.current = d / dt;
-
-    applyRotation(d);
-    accumRef.current += d;
-    processAccum();
+    velRef.current = dy / dt;
+    accumPxRef.current += dy;
+    tickSteps();
   };
 
   const onPointerUp = () => {
     draggingRef.current = false;
-    lastAngleRef.current = null;
-    burstRef.current = 0;
     startInertia();
   };
 
   const onWheel = (e) => {
     if (disabled) return;
     e.preventDefault();
-    stopInertia();
+    stop();
 
-    const dir = e.deltaY > 0 ? +1 : -1;
-    const abs = Math.abs(e.deltaY);
+    const dy = e.deltaY;
+    const steps = clamp(Math.round(Math.abs(dy) / 40), 1, 6);
+    const dir = dy > 0 ? +1 : -1;
 
-    // wheel -> rotate + seed inertia
-    const ddeg = clamp((abs / 6) * dir, -90, 90);
-    applyRotation(ddeg);
-    accumRef.current += ddeg;
+    for (let i = 0; i < steps; i += 1) onStep(dir);
 
-    inertiaVelRef.current = clamp((dir * abs) / 1200, -0.9, 0.9);
-
-    processAccum();
+    velRef.current = clamp(dy / 900, -0.9, 0.9);
     startInertia();
   };
 
+  const items = useMemo(() => {
+    const v = Number(value) || 0;
+    return [v - 2, v - 1, v, v + 1, v + 2].map((n) => n);
+  }, [value]);
+
   return (
-    <button
-      ref={btnRef}
-      type="button"
-      className={`spGear ${disabled ? "disabled" : ""}`}
-      aria-label="Çark"
-      title="Çark"
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerUp}
-      onWheel={onWheel}
-      onKeyDown={(e) => {
-        if (disabled) return;
-        stopInertia();
-        if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
-          e.preventDefault();
-          const d = -STEP_DEG;
-          applyRotation(d);
-          accumRef.current += d;
-          processAccum();
-        }
-        if (e.key === "ArrowDown" || e.key === "ArrowRight") {
-          e.preventDefault();
-          const d = +STEP_DEG;
-          applyRotation(d);
-          accumRef.current += d;
-          processAccum();
-        }
-      }}
-    >
-      <svg className="spGearSvg" viewBox="0 0 100 100" aria-hidden="true">
-        {/* BACK (gömülü) teeth: all 12 but faint */}
-        <g className="spGearTeeth spGearTeethBack">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <rect
-              key={`b-${i}`}
-              x="47"
-              y="2"
-              width="6"
-              height="14"
-              rx="2"
-              ry="2"
-              transform={`rotate(${i * 30} 50 50)`}
-            />
+    <div className={`spPicker ${disabled ? "disabled" : ""}`}>
+      <div className="spPickerFadeTop" />
+      <div className="spPickerFadeBottom" />
+      <div className="spPickerBar" />
+      <div
+        ref={ref}
+        className="spPickerViewport"
+        role="slider"
+        aria-label="Ayet çarkı"
+        tabIndex={disabled ? -1 : 0}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        onWheel={onWheel}
+        onKeyDown={(e) => {
+          if (disabled) return;
+          if (e.key === "ArrowUp") {
+            e.preventDefault();
+            onStep(-1);
+          }
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            onStep(+1);
+          }
+        }}
+      >
+        <div className="spPickerItems">
+          {items.map((n) => (
+            <div key={n} className={`spPickerItem ${n === Number(value) ? "active" : ""}`}>
+              {n <= 0 ? "—" : String(n).padStart(2, "0")}
+            </div>
           ))}
-        </g>
-
-        {/* BODY covers back teeth => looks embedded */}
-        <circle className="spGearBody" cx="50" cy="50" r="36" />
-        <circle className="spGearInner" cx="50" cy="50" r="22" />
-        <circle className="spGearCore" cx="50" cy="50" r="8" />
-
-        {/* FRONT teeth: only 3 visible */}
-        <g className="spGearTeeth spGearTeethFront">
-          {[-30, 0, 30].map((deg) => (
-            <rect
-              key={`f-${deg}`}
-              x="47"
-              y="2"
-              width="6"
-              height="14"
-              rx="2"
-              ry="2"
-              transform={`rotate(${deg} 50 50)`}
-            />
-          ))}
-        </g>
-
-        {/* Spokes */}
-        <g className="spGearSpokes">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <rect
-              key={`s-${i}`}
-              x="48.5"
-              y="20"
-              width="3"
-              height="18"
-              rx="1.5"
-              transform={`rotate(${i * 60} 50 50)`}
-            />
-          ))}
-        </g>
-
-        {/* label NOT rotating */}
-        <text className="spGearText" x="50" y="56" textAnchor="middle">
-          {label}
-        </text>
-      </svg>
-    </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
 /**
- * Single Player
- * - Çark üstünde ayah no
- * - r/rr buton
+ * Single Player (iOS picker wheel + r/rr)
+ * - r için açıklama yok (sadece r/rr)
  */
 function SinglePlayerPanel({
   open,
@@ -697,7 +543,7 @@ function SinglePlayerPanel({
 
   if (!open) return null;
 
-  const ay = verse?.ayah != null ? String(verse.ayah) : "—";
+  const ay = verse?.ayah != null ? Number(verse.ayah) : 0;
 
   return (
     <div className="singlePlayerBackdrop" role="dialog" aria-modal="true" aria-label="Single Player">
@@ -710,25 +556,20 @@ function SinglePlayerPanel({
           <div className="singlePlayerLine singlePlayerLineDe">{(verse?.de || "—").trim()}</div>
 
           <div className="singlePlayerControls singlePlayerTopBar">
-            <div className="singlePlayerAyahNo">#{ay}</div>
+            <div className="singlePlayerAyahNo">#{ay || "—"}</div>
 
             <div className="singlePlayerBtns">
               <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
                 ◀
               </button>
-              <button
-                className="spBtn spBtnPrimary"
-                type="button"
-                onClick={onPlayPause}
-                aria-label="Play/Pause"
-              >
+              <button className="spBtn spBtnPrimary" type="button" onClick={onPlayPause} aria-label="Play/Pause">
                 {isPlaying ? "⏸" : "▶"}
               </button>
               <button className="spBtn" type="button" onClick={onNext} aria-label="Next">
                 ▶
               </button>
 
-              <GearDial disabled={dialDisabled} label={ay} onStep={onDialStep} />
+              <IOSPickerWheel disabled={dialDisabled} value={ay} onStep={onDialStep} />
 
               <button
                 className={`spRBtn ${repeatMode ? "on" : "off"}`}
@@ -1082,22 +923,12 @@ function SyncPanel({
             <div className="syncInputs">
               <label className="miniLabel">
                 start
-                <input
-                  className="miniInput"
-                  value={startInput}
-                  onChange={(e) => setStartInput(e.target.value)}
-                  inputMode="decimal"
-                />
+                <input className="miniInput" value={startInput} onChange={(e) => setStartInput(e.target.value)} inputMode="decimal" />
               </label>
 
               <label className="miniLabel">
                 end
-                <input
-                  className="miniInput"
-                  value={endInput}
-                  onChange={(e) => setEndInput(e.target.value)}
-                  inputMode="decimal"
-                />
+                <input className="miniInput" value={endInput} onChange={(e) => setEndInput(e.target.value)} inputMode="decimal" />
               </label>
 
               <div className="syncMetaInline">
@@ -1146,12 +977,7 @@ function SyncPanel({
           <div className="syncRow">
             <label className="miniLabel">
               Jump ayah
-              <input
-                className="miniInput"
-                value={jumpAyah}
-                onChange={(e) => setJumpAyah(e.target.value)}
-                inputMode="numeric"
-              />
+              <input className="miniInput" value={jumpAyah} onChange={(e) => setJumpAyah(e.target.value)} inputMode="numeric" />
             </label>
             <button className="btnSmall" type="button" onClick={jumpToAyah}>
               Go
@@ -1159,12 +985,7 @@ function SyncPanel({
 
             <label className="miniLabel">
               Jump time (s)
-              <input
-                className="miniInput"
-                value={jumpTime}
-                onChange={(e) => setJumpTime(e.target.value)}
-                inputMode="decimal"
-              />
+              <input className="miniInput" value={jumpTime} onChange={(e) => setJumpTime(e.target.value)} inputMode="decimal" />
             </label>
             <button className="btnSmall" type="button" onClick={jumpToTime}>
               Seek
@@ -1233,44 +1054,24 @@ function SyncPanel({
               <div className="syncRow">
                 <label className="miniLabel">
                   Repo (owner/repo)
-                  <input
-                    className="miniInput"
-                    value={ghRepo}
-                    onChange={(e) => setGhRepo(e.target.value)}
-                    placeholder="yourname/yourrepo"
-                  />
+                  <input className="miniInput" value={ghRepo} onChange={(e) => setGhRepo(e.target.value)} placeholder="yourname/yourrepo" />
                 </label>
 
                 <label className="miniLabel">
                   Branch
-                  <input
-                    className="miniInput"
-                    value={ghBranch}
-                    onChange={(e) => setGhBranch(e.target.value)}
-                    placeholder="main"
-                  />
+                  <input className="miniInput" value={ghBranch} onChange={(e) => setGhBranch(e.target.value)} placeholder="main" />
                 </label>
               </div>
 
               <div className="syncRow">
                 <label className="miniLabel">
                   File path in repo
-                  <input
-                    className="miniInput"
-                    value={ghPath}
-                    onChange={(e) => setGhPath(e.target.value)}
-                    placeholder="public/data/yusuf.json"
-                  />
+                  <input className="miniInput" value={ghPath} onChange={(e) => setGhPath(e.target.value)} placeholder="public/data/yusuf.json" />
                 </label>
 
                 <label className="miniLabel">
                   Commit message
-                  <input
-                    className="miniInput"
-                    value={ghMsg}
-                    onChange={(e) => setGhMsg(e.target.value)}
-                    placeholder="optional"
-                  />
+                  <input className="miniInput" value={ghMsg} onChange={(e) => setGhMsg(e.target.value)} placeholder="optional" />
                 </label>
               </div>
 
@@ -1370,6 +1171,7 @@ export default function App() {
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
   const [singleOn, setSingleOn] = useState(false);
 
+  // repeat: 0 off, 1 => 1 tekrar, 2 => 2 tekrar
   const [repeatMode, setRepeatMode] = useState(0);
   const [repeatAutoReset, setRepeatAutoReset] = useState(true);
   const repeatRef = useRef({ idx: -1, done: 0 });
@@ -1435,14 +1237,8 @@ export default function App() {
     });
   }, [query]);
 
-  const audioSrc = useMemo(
-    () => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""),
-    [selectedSurah]
-  );
-  const versesSrc = useMemo(
-    () => (selectedSurah ? resolvePublicUrl(selectedSurah.versesUrl) : ""),
-    [selectedSurah]
-  );
+  const audioSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""), [selectedSurah]);
+  const versesSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.versesUrl) : ""), [selectedSurah]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1586,6 +1382,7 @@ export default function App() {
     seekVerse(idx, true);
   }, [seekVerse]);
 
+  // used by picker wheel
   const dialStep = useCallback(
     (dir) => {
       const vs = versesRef.current;
@@ -1680,7 +1477,7 @@ export default function App() {
     if (idx >= 0) seekVerse(idx, true);
   }, [seekVerse]);
 
-  // Loop / Repeat engine (priority: loopAB > loopAyah > repeatMode)
+  // loop/repeat
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1788,25 +1585,11 @@ export default function App() {
       }
       if (k === "a") setA();
       if (k === "b") setB();
-
-      const idx = activeIndexRef.current;
-      const vs = versesRef.current;
-      const t = currentTimeRef.current;
-
-      if (idx >= 0 && vs[idx]) {
-        if (k === "s") updateVerse(idx, { start: t });
-        else if (k === "e") updateVerse(idx, { end: t });
-        else if (k === "n") {
-          updateVerse(idx, { end: t });
-          const nextIdx = Math.min(vs.length - 1, idx + 1);
-          seekVerse(nextIdx, true);
-        }
-      }
     };
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onPlayPause, nudge, prevAyah, nextAyah, updateVerse, seekVerse, setA, setB]);
+  }, [onPlayPause, nudge, prevAyah, nextAyah, setA, setB]);
 
   const commitGithub = useCallback(async ({ owner, repo, path, branch, token, message, content }) => {
     try {
