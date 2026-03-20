@@ -1,6 +1,6 @@
 /* =========================================================
-   src/styles.css  (TEK PARÇA)
-   Senin verdiğin styles.css'in tamamı + en altta ekler
+   src/styles.css (TEK PARÇA)
+   - SENİN CSS'in aynısı + en altta Single Player dock + rulman + r/rr fix
    ========================================================= */
 
 /* src/styles.css */
@@ -475,9 +475,11 @@ html,body{
   overflow: auto;
 }
 
+/* Dock sabit kalacağı için content altta pay bıraksın */
 .singlePlayerLines{
   display: grid;
   gap: 10px;
+  padding-bottom: 130px; /* dock yüksekliği + nefes */
 }
 
 .singlePlayerLine{
@@ -513,6 +515,7 @@ html,body{
   white-space: pre-wrap;
 }
 
+/* Dock bar: sabit ve boyu sabit -> çark dönerken yer oynamaz */
 .singlePlayerControls{
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 18px;
@@ -520,19 +523,18 @@ html,body{
   padding: 12px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 12px;
   flex-wrap: wrap;
+  min-height: 92px; /* sabit yükseklik */
 }
 
-.singlePlayerAyahNo{
-  font-variant-numeric: tabular-nums;
-  font-weight: 950;
-  font-size: clamp(26px, 5vw, 46px);
-  padding: 10px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,0.16);
-  background: rgba(0,0,0,0.22);
+.singlePlayerControlsDock{
+  position: sticky;
+  bottom: 10px;
+  z-index: 80;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .singlePlayerBtns{
@@ -540,6 +542,10 @@ html,body{
   gap: 10px;
   align-items:center;
   flex-wrap:wrap;
+}
+
+.singlePlayerBtnsDock{
+  justify-content:center;
 }
 
 .spBtn{
@@ -584,20 +590,7 @@ html,body{
   .spBtnPrimary{ min-width: 124px; height: 78px; font-size: 32px; }
 }
 
-/* =========================================================
-   EK: Single Player player bloğu sabit (dock)
-   ========================================================= */
-.singlePlayerControlsDock{
-  position: sticky;
-  bottom: 10px;
-  z-index: 60;
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-}
-
-/* =========================================================
-   EK: 3D Rulman + shine
-   ========================================================= */
+/* ---------- 3D RULMAN ---------- */
 .spPicker3D{
   width: 120px;
   height: 160px;
@@ -611,6 +604,7 @@ html,body{
   position: relative;
   overflow: hidden;
   touch-action: none;
+  flex: 0 0 auto;
 }
 .spPicker3D.disabled{ opacity: 0.55; pointer-events:none; }
 
@@ -659,7 +653,6 @@ html,body{
   opacity: 0.9;
 }
 
-/* center highlight bar */
 .spPickerBar{
   position:absolute;
   left: 10px;
@@ -691,9 +684,7 @@ html,body{
   pointer-events:none;
 }
 
-/* =========================================================
-   EK: r/rr (görünür ve net)
-   ========================================================= */
+/* ---------- r / rr ---------- */
 .spRBtn{
   min-width: 56px !important;
   height: 56px !important;
@@ -712,6 +703,7 @@ html,body{
     0 10px 22px rgba(0,0,0,0.30),
     0 3px 0 rgba(255,255,255,0.12) inset,
     0 -6px 10px rgba(0,0,0,0.20) inset;
+  flex: 0 0 auto;
 }
 .spRBtn.off{ opacity: 0.55; }
 .spRBtn.on{
