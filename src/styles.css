@@ -8,7 +8,6 @@
   --accent:rgba(99,179,237,1);
   --danger:rgba(255,120,120,0.18);
 
-  /* column widths for gradient background */
   --w-no: 70px;
   --w-ar: 1.1fr;
   --w-de: 1fr;
@@ -39,6 +38,7 @@ html,body{
   border-right:1px solid var(--border);
   background:rgba(15,21,32,0.72);
   backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
   padding:16px;
 }
 
@@ -124,6 +124,7 @@ html,body{
   top:10px;
   z-index:20;
   backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
 }
 .playerControls{ display:grid; gap:10px; }
 
@@ -223,7 +224,7 @@ html,body{
 .mono{ font-variant-numeric:tabular-nums; }
 .muted{ color:var(--muted); }
 
-/* Single Player button (bigger, brighter, 3D) */
+/* Single Player button (big, bright, 3D) */
 .btnSinglePlayer{
   padding: 14px 16px;
   border-radius: 14px;
@@ -355,8 +356,6 @@ html,body{
   border-radius:16px;
   overflow:auto;
 }
-
-/* keep wide but clean */
 .tableHeader, .row{ min-width:980px; }
 
 .tableHeader{
@@ -370,6 +369,7 @@ html,body{
   top:0;
   background:rgba(15,21,32,0.90);
   backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
   z-index:2;
 }
 
@@ -444,28 +444,30 @@ html,body{
   .colDe{ display:none; }
 }
 
-/* -------- Single Player panel (non-modal, fixed bottom, thumb friendly) -------- */
-.singlePlayerWrap{
+/* -------- Single Player (CENTERED overlay + blur BACK) -------- */
+.singlePlayerBackdrop{
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 14px;
+  inset: 0;
   z-index: 9999;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: grid;
   place-items: center;
-  padding: 0 12px;
-  pointer-events: none;
+  padding: 14px;
 }
 
 .singlePlayerCard{
   width: min(1100px, 100%);
-  background: rgba(15,21,32,0.72);
+  background: rgba(15,21,32,0.74);
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 20px;
-  box-shadow: 0 26px 70px rgba(0,0,0,0.55);
+  box-shadow: 0 30px 90px rgba(0,0,0,0.55);
   backdrop-filter: blur(14px);
-  padding: 12px;
-  pointer-events: auto;
+  -webkit-backdrop-filter: blur(14px);
+  padding: 14px;
+  max-height: 86vh;
+  overflow: auto;
 }
 
 .singlePlayerLines{
@@ -488,21 +490,21 @@ html,body{
   unicode-bidi: isolate-override;
   text-align: right;
   font-family: "Noto Naskh Arabic","Amiri","Scheherazade New","Noto Sans Arabic", serif;
-  font-size: clamp(34px, 5.6vw, 58px);
-  line-height: 1.7;
+  font-size: clamp(44px, 7.0vw, 78px);
+  line-height: 1.75;
   white-space: pre-wrap;
 }
 
 .singlePlayerLineDe{
-  font-size: clamp(18px, 3.0vw, 30px);
-  line-height: 1.45;
+  font-size: clamp(26px, 4.0vw, 40px);
+  line-height: 1.55;
   color: rgba(255,255,255,0.82);
   white-space: pre-wrap;
 }
 
 .singlePlayerLineTr{
-  font-size: clamp(18px, 3.0vw, 30px);
-  line-height: 1.45;
+  font-size: clamp(26px, 4.0vw, 40px);
+  line-height: 1.55;
   white-space: pre-wrap;
 }
 
@@ -510,19 +512,19 @@ html,body{
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 18px;
   background: rgba(0,0,0,0.20);
-  padding: 10px;
+  padding: 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
 .singlePlayerAyahNo{
   font-variant-numeric: tabular-nums;
   font-weight: 950;
-  font-size: clamp(22px, 4vw, 40px);
-  padding: 8px 12px;
+  font-size: clamp(26px, 5vw, 46px);
+  padding: 10px 14px;
   border-radius: 999px;
   border: 1px solid rgba(255,255,255,0.16);
   background: rgba(0,0,0,0.22);
@@ -536,13 +538,13 @@ html,body{
 }
 
 .spBtn{
-  min-width: 64px;
-  height: 64px;
+  min-width: 66px;
+  height: 66px;
   padding: 0 16px;
   border-radius: 18px;
   cursor:pointer;
   font-weight: 950;
-  font-size: 24px;
+  font-size: 26px;
   color: rgba(10,14,22,0.98);
   border: 1px solid rgba(255,255,255,0.22);
   background: linear-gradient(180deg, rgba(210,235,255,1), rgba(145,205,250,1));
@@ -563,9 +565,9 @@ html,body{
     0 -4px 8px rgba(0,0,0,0.20) inset;
 }
 .spBtnPrimary{
-  min-width: 110px;
-  height: 70px;
-  font-size: 28px;
+  min-width: 118px;
+  height: 74px;
+  font-size: 30px;
   background: linear-gradient(180deg, rgba(200,255,220,1), rgba(110,230,165,1));
 }
 .spBtnClose{
@@ -573,8 +575,6 @@ html,body{
 }
 
 @media (max-width:520px){
-  .singlePlayerWrap{ bottom: 10px; }
-  .singlePlayerCard{ border-radius: 18px; }
-  .spBtn{ min-width: 68px; height: 68px; font-size: 26px; }
-  .spBtnPrimary{ min-width: 118px; height: 74px; font-size: 30px; }
+  .spBtn{ min-width: 70px; height: 70px; font-size: 28px; }
+  .spBtnPrimary{ min-width: 124px; height: 78px; font-size: 32px; }
 }
