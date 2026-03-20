@@ -1,5 +1,5 @@
 // =========================
-// FILE: src/App.jsx
+// FILE: src/App.jsx  (FULL)
 // =========================
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
@@ -49,6 +49,7 @@ function tactilePulse(ms = 8) {
   } catch {}
 }
 
+// Overlap-safe
 function findActiveVerseIndex(verses, t) {
   if (!Array.isArray(verses) || verses.length === 0 || !Number.isFinite(t)) return -1;
 
@@ -532,9 +533,7 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
 }
 
 /**
- * Single Player (BOTTOM DOCK)
- * - Card: Ar / De / Tr
- * - Dock: fixed bottom, tek satır, sığmazsa yatay kayar
+ * Single Player (BOTTOM DOCK) + Background Inertia
  */
 function SinglePlayerPanel({
   open,
@@ -551,6 +550,9 @@ function SinglePlayerPanel({
 }) {
   useEffect(() => {
     if (!open) return;
+
+    document.body.classList.add("spOpen");
+
     const onKey = (e) => {
       if (e.key === "Escape") onClose();
       if (e.code === "Space") {
@@ -566,8 +568,12 @@ function SinglePlayerPanel({
         onNext();
       }
     };
+
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.classList.remove("spOpen");
+    };
   }, [open, onClose, onPlayPause, onPrev, onNext]);
 
   if (!open) return null;
@@ -577,7 +583,7 @@ function SinglePlayerPanel({
   return (
     <div className="singlePlayerBackdrop" role="dialog" aria-modal="true" aria-label="Single Player">
       <div className="singlePlayerCard">
-        <div className="singlePlayerLines" style={{ paddingBottom: 120 }}>
+        <div className="singlePlayerLines">
           <div className="singlePlayerLine singlePlayerLineAr" dir="rtl">
             {(verse?.ar || "—").trim()}
           </div>
@@ -585,11 +591,15 @@ function SinglePlayerPanel({
           <div className="singlePlayerLine singlePlayerLineDe">{(verse?.de || "—").trim()}</div>
 
           <div className="singlePlayerLine singlePlayerLineTr">{(verse?.tr || "—").trim()}</div>
+
+          {/* dock altta sabit olduğu için içerik altta kesilmesin */}
+          <div style={{ height: 140 }} />
         </div>
       </div>
 
-      <div className="singlePlayerControls singlePlayerDockBottom" aria-label="Player Dock">
-        <div className="singlePlayerBtns singlePlayerDockRow">
+      {/* ✅ Dock: bottom fixed (tek satır, wrap yok) */}
+      <div className="singlePlayerDockBottom" aria-label="Player Dock">
+        <div className="singlePlayerDockRow">
           <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
             ◀
           </button>
@@ -943,12 +953,22 @@ function SyncPanel({
             <div className="syncInputs">
               <label className="miniLabel">
                 start
-                <input className="miniInput" value={startInput} onChange={(e) => setStartInput(e.target.value)} inputMode="decimal" />
+                <input
+                  className="miniInput"
+                  value={startInput}
+                  onChange={(e) => setStartInput(e.target.value)}
+                  inputMode="decimal"
+                />
               </label>
 
               <label className="miniLabel">
                 end
-                <input className="miniInput" value={endInput} onChange={(e) => setEndInput(e.target.value)} inputMode="decimal" />
+                <input
+                  className="miniInput"
+                  value={endInput}
+                  onChange={(e) => setEndInput(e.target.value)}
+                  inputMode="decimal"
+                />
               </label>
 
               <div className="syncMetaInline">
@@ -961,18 +981,34 @@ function SyncPanel({
           <div className="syncRow">
             <div className="syncNudgeGroup">
               <span className="muted">Start:</span>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.1)} disabled={!active}>-0.1</button>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.1)} disabled={!active}>+0.1</button>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.5)} disabled={!active}>-0.5</button>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.5)} disabled={!active}>+0.5</button>
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.1)} disabled={!active}>
+                -0.1
+              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.1)} disabled={!active}>
+                +0.1
+              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.5)} disabled={!active}>
+                -0.5
+              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.5)} disabled={!active}>
+                +0.5
+              </button>
             </div>
 
             <div className="syncNudgeGroup">
               <span className="muted">End:</span>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.1)} disabled={!active}>-0.1</button>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.1)} disabled={!active}>+0.1</button>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.5)} disabled={!active}>-0.5</button>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.5)} disabled={!active}>+0.5</button>
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.1)} disabled={!active}>
+                -0.1
+              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.1)} disabled={!active}>
+                +0.1
+              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.5)} disabled={!active}>
+                -0.5
+              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.5)} disabled={!active}>
+                +0.5
+              </button>
             </div>
           </div>
         </div>
@@ -981,28 +1017,54 @@ function SyncPanel({
           <div className="syncRow">
             <label className="miniLabel">
               Jump ayah
-              <input className="miniInput" value={jumpAyah} onChange={(e) => setJumpAyah(e.target.value)} inputMode="numeric" />
+              <input
+                className="miniInput"
+                value={jumpAyah}
+                onChange={(e) => setJumpAyah(e.target.value)}
+                inputMode="numeric"
+              />
             </label>
-            <button className="btnSmall" type="button" onClick={jumpToAyah}>Go</button>
+            <button className="btnSmall" type="button" onClick={jumpToAyah}>
+              Go
+            </button>
 
             <label className="miniLabel">
               Jump time (s)
-              <input className="miniInput" value={jumpTime} onChange={(e) => setJumpTime(e.target.value)} inputMode="decimal" />
+              <input
+                className="miniInput"
+                value={jumpTime}
+                onChange={(e) => setJumpTime(e.target.value)}
+                inputMode="decimal"
+              />
             </label>
-            <button className="btnSmall" type="button" onClick={jumpToTime}>Seek</button>
+            <button className="btnSmall" type="button" onClick={jumpToTime}>
+              Seek
+            </button>
           </div>
 
           <div className="syncRow">
-            <button className="btnSmall" type="button" onClick={onJumpFirstUntimed}>First untimed</button>
+            <button className="btnSmall" type="button" onClick={onJumpFirstUntimed}>
+              First untimed
+            </button>
             <div className="divider" />
-            <button className="btnSmall" type="button" onClick={onSaveDraft}>Save draft</button>
-            <button className="btnSmall" type="button" onClick={onRestoreDraft}>Restore draft</button>
-            <button className="btnSmall" type="button" onClick={onClearDraft}>Clear draft</button>
+            <button className="btnSmall" type="button" onClick={onSaveDraft}>
+              Save draft
+            </button>
+            <button className="btnSmall" type="button" onClick={onRestoreDraft}>
+              Restore draft
+            </button>
+            <button className="btnSmall" type="button" onClick={onClearDraft}>
+              Clear draft
+            </button>
           </div>
 
           <div className="syncRow">
-            <button className="btnSmall" type="button" onClick={onExportJson}>Export JSON</button>
-            <button className="btnSmall" type="button" onClick={() => fileRef.current?.click()}>Import JSON</button>
+            <button className="btnSmall" type="button" onClick={onExportJson}>
+              Export JSON
+            </button>
+            <button className="btnSmall" type="button" onClick={() => fileRef.current?.click()}>
+              Import JSON
+            </button>
             <input
               ref={fileRef}
               type="file"
@@ -1042,35 +1104,65 @@ function SyncPanel({
               <div className="syncRow">
                 <label className="miniLabel">
                   Repo (owner/repo)
-                  <input className="miniInput" value={ghRepo} onChange={(e) => setGhRepo(e.target.value)} placeholder="yourname/yourrepo" />
+                  <input
+                    className="miniInput"
+                    value={ghRepo}
+                    onChange={(e) => setGhRepo(e.target.value)}
+                    placeholder="yourname/yourrepo"
+                  />
                 </label>
 
                 <label className="miniLabel">
                   Branch
-                  <input className="miniInput" value={ghBranch} onChange={(e) => setGhBranch(e.target.value)} placeholder="main" />
+                  <input
+                    className="miniInput"
+                    value={ghBranch}
+                    onChange={(e) => setGhBranch(e.target.value)}
+                    placeholder="main"
+                  />
                 </label>
               </div>
 
               <div className="syncRow">
                 <label className="miniLabel">
                   File path in repo
-                  <input className="miniInput" value={ghPath} onChange={(e) => setGhPath(e.target.value)} placeholder="public/data/yusuf.json" />
+                  <input
+                    className="miniInput"
+                    value={ghPath}
+                    onChange={(e) => setGhPath(e.target.value)}
+                    placeholder="public/data/yusuf.json"
+                  />
                 </label>
 
                 <label className="miniLabel">
                   Commit message
-                  <input className="miniInput" value={ghMsg} onChange={(e) => setGhMsg(e.target.value)} placeholder="optional" />
+                  <input
+                    className="miniInput"
+                    value={ghMsg}
+                    onChange={(e) => setGhMsg(e.target.value)}
+                    placeholder="optional"
+                  />
                 </label>
               </div>
 
               <div className="syncRow">
                 <label className="miniLabel" style={{ minWidth: 290 }}>
                   GitHub token (PAT)
-                  <input className="miniInput" value={ghToken} onChange={(e) => setGhToken(e.target.value)} placeholder="ghp_... / github_pat_..." type="password" />
+                  <input
+                    className="miniInput"
+                    value={ghToken}
+                    onChange={(e) => setGhToken(e.target.value)}
+                    placeholder="ghp_... / github_pat_..."
+                    type="password"
+                  />
                 </label>
 
                 <label className="chip" title="Store token in localStorage on this browser">
-                  <input type="checkbox" checked={ghRemember} onChange={(e) => setGhRemember(e.target.checked)} />
+                  <input
+                    type="checkbox"
+                    checked={ghRemember}
+                    onChange={(e) => setGhRemember(e.target.checked)}
+                  />
                   Remember token
                 </label>
 
@@ -1435,6 +1527,7 @@ export default function App() {
     if (idx >= 0) seekVerse(idx, true);
   }, [seekVerse]);
 
+  // repeat: off -> 1 -> 2 -> off
   const toggleRepeat = useCallback(() => {
     setRepeatMode((m) => {
       const next = m === 0 ? 1 : m === 1 ? 2 : 0;
@@ -1513,7 +1606,6 @@ export default function App() {
     setCurrentTime(s);
   }, [currentTime, repeatMode]);
 
-  // existing loops (kalsın)
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1750,7 +1842,7 @@ export default function App() {
                 onUpdateVerse={updateVerse}
                 onSeek={(t) => seekTo(t, false)}
                 onSeekVerse={(idx) => seekVerse(idx, true)}
-                onExportJson={() => {}}
+                onExportJson={exportJson}
                 onImportJson={importJsonFile}
                 onSaveDraft={saveDraft}
                 onRestoreDraft={restoreDraft}
