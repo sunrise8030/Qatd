@@ -689,3 +689,38 @@ html,body{
 @media (max-width:520px){
   .singlePlayerTrPanel{ font-size: 18px; }
 }
+
+/* =========================
+   FILE: src/styles.css
+   (EN SONA EKLE)
+   ========================= */
+
+/* Single Player bottom dock: fixed bottom, tek satır, yatay kaydır */
+.singlePlayerDockBottom{
+  position: fixed;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  z-index: 10001;
+
+  width: min(980px, calc(100% - 28px));
+  min-height: 92px;
+
+  padding: 10px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.16);
+
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  white-space: nowrap;
+}
+
+.singlePlayerDockRow{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
