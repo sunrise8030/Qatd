@@ -1,5 +1,10 @@
 // =========================================================
-// src/App.jsx  (TAM DOSYA)
+// src/App.jsx  (TAM DOSYA - KISALTMA YOK)
+// - Single Player: ORTADA sabit player bloğu (fixed center)
+// - Prev/Play/Next/Close sağ uca, Çark + r/rr sol uca
+// - ÇARK YÖNÜ TERS: diğer yönde artış
+// - Repeat: r=1 tekrar, rr=2 tekrar, bitince AYNI ayette durur (pause + başa al)
+// - Ses eklenmez. Taptik yalnız vibrate varsa.
 // =========================================================
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
@@ -41,7 +46,6 @@ function formatSec(sec) {
   return Number.isFinite(sec) ? `${sec.toFixed(2)}s` : "—";
 }
 
-// Only vibrate if available. No sound.
 function tactilePulse(ms = 8) {
   try {
     if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
@@ -348,9 +352,8 @@ function Timeline({
 }
 
 /**
- * DİKEY 3D RULMAN
- * - drag UP/DOWN + wheel + inertia
- * - step => onStep(+1/-1)
+ * DİKEY 3D RULMAN (TERS YÖN)
+ * - drag/wheel yönü terslendi: diğer yönde artış
  */
 function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const ref = useRef(null);
@@ -381,9 +384,10 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const tickSteps = () => {
     let did = false;
     while (Math.abs(accumPxRef.current) >= STEP_PX) {
-      const dir = accumPxRef.current > 0 ? +1 : -1; // down => next
+      // ✅ TERS: önce down => -1 (azalsın), up => +1 (artsın)
+      const dir = accumPxRef.current > 0 ? -1 : +1;
       onStep(dir);
-      accumPxRef.current -= dir * STEP_PX;
+      accumPxRef.current -= (dir === +1 ? -1 : +1) * STEP_PX; // ters denge
       did = true;
     }
     if (did) tactilePulse(8);
@@ -460,7 +464,8 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
 
     const dy = e.deltaY;
     const steps = clamp(Math.round(Math.abs(dy) / 35), 1, 10);
-    const dir = dy > 0 ? +1 : -1;
+    // ✅ TERS: scroll down => -1, scroll up => +1
+    const dir = dy > 0 ? -1 : +1;
 
     for (let i = 0; i < steps; i += 1) onStep(dir);
     tactilePulse(8);
@@ -526,12 +531,6 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   );
 }
 
-/**
- * Single Player overlay
- * - Dock is FIXED to viewport => no layout shift
- * - #ayet no removed
- * - Auto-reset removed
- */
 function SinglePlayerPanel({
   open,
   verse,
@@ -584,36 +583,37 @@ function SinglePlayerPanel({
         </div>
       </div>
 
-      {/* ✅ FIXED DOCK: never moves */}
-      <div className="spDockFixed" role="group" aria-label="Player">
-        <div className="spDockInner">
-          <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
-            ◀
-          </button>
-          <button className="spBtn spBtnPrimary" type="button" onClick={onPlayPause} aria-label="Play/Pause">
-            {isPlaying ? "⏸" : "▶"}
-          </button>
-          <button className="spBtn" type="button" onClick={onNext} aria-label="Next">
-            ▶
-          </button>
+      <div className="spDockFixed spDockCenter" role="group" aria-label="Player">
+        <div className="spDockInner spDockSplit">
+          <div className="spDockLeft">
+            <IOSPickerWheelVertical3D disabled={dialDisabled} value={ay} onStep={onDialStep} />
+            <button
+              className={`spRBtn ${repeatMode ? "on" : "off"}`}
+              type="button"
+              onClick={() => {
+                tactilePulse(10);
+                onToggleRepeat();
+              }}
+              aria-label="Repeat"
+            >
+              {repeatMode === 2 ? "rr" : "r"}
+            </button>
+          </div>
 
-          <IOSPickerWheelVertical3D disabled={dialDisabled} value={ay} onStep={onDialStep} />
-
-          <button
-            className={`spRBtn ${repeatMode ? "on" : "off"}`}
-            type="button"
-            onClick={() => {
-              tactilePulse(10);
-              onToggleRepeat();
-            }}
-            aria-label="Repeat"
-          >
-            {repeatMode === 2 ? "rr" : "r"}
-          </button>
-
-          <button className="spBtn spBtnClose" type="button" onClick={onClose} aria-label="Close">
-            ✕
-          </button>
+          <div className="spDockRight">
+            <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
+              ◀
+            </button>
+            <button className="spBtn spBtnPrimary" type="button" onClick={onPlayPause} aria-label="Play/Pause">
+              {isPlaying ? "⏸" : "▶"}
+            </button>
+            <button className="spBtn" type="button" onClick={onNext} aria-label="Next">
+              ▶
+            </button>
+            <button className="spBtn spBtnClose" type="button" onClick={onClose} aria-label="Close">
+              ✕
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -944,12 +944,22 @@ function SyncPanel({
             <div className="syncInputs">
               <label className="miniLabel">
                 start
-                <input className="miniInput" value={startInput} onChange={(e) => setStartInput(e.target.value)} inputMode="decimal" />
+                <input
+                  className="miniInput"
+                  value={startInput}
+                  onChange={(e) => setStartInput(e.target.value)}
+                  inputMode="decimal"
+                />
               </label>
 
               <label className="miniLabel">
                 end
-                <input className="miniInput" value={endInput} onChange={(e) => setEndInput(e.target.value)} inputMode="decimal" />
+                <input
+                  className="miniInput"
+                  value={endInput}
+                  onChange={(e) => setEndInput(e.target.value)}
+                  inputMode="decimal"
+                />
               </label>
 
               <div className="syncMetaInline">
@@ -998,7 +1008,12 @@ function SyncPanel({
           <div className="syncRow">
             <label className="miniLabel">
               Jump ayah
-              <input className="miniInput" value={jumpAyah} onChange={(e) => setJumpAyah(e.target.value)} inputMode="numeric" />
+              <input
+                className="miniInput"
+                value={jumpAyah}
+                onChange={(e) => setJumpAyah(e.target.value)}
+                inputMode="numeric"
+              />
             </label>
             <button className="btnSmall" type="button" onClick={jumpToAyah}>
               Go
@@ -1006,7 +1021,12 @@ function SyncPanel({
 
             <label className="miniLabel">
               Jump time (s)
-              <input className="miniInput" value={jumpTime} onChange={(e) => setJumpTime(e.target.value)} inputMode="decimal" />
+              <input
+                className="miniInput"
+                value={jumpTime}
+                onChange={(e) => setJumpTime(e.target.value)}
+                inputMode="decimal"
+              />
             </label>
             <button className="btnSmall" type="button" onClick={jumpToTime}>
               Seek
@@ -1075,31 +1095,57 @@ function SyncPanel({
               <div className="syncRow">
                 <label className="miniLabel">
                   Repo (owner/repo)
-                  <input className="miniInput" value={ghRepo} onChange={(e) => setGhRepo(e.target.value)} placeholder="yourname/yourrepo" />
+                  <input
+                    className="miniInput"
+                    value={ghRepo}
+                    onChange={(e) => setGhRepo(e.target.value)}
+                    placeholder="yourname/yourrepo"
+                  />
                 </label>
 
                 <label className="miniLabel">
                   Branch
-                  <input className="miniInput" value={ghBranch} onChange={(e) => setGhBranch(e.target.value)} placeholder="main" />
+                  <input
+                    className="miniInput"
+                    value={ghBranch}
+                    onChange={(e) => setGhBranch(e.target.value)}
+                    placeholder="main"
+                  />
                 </label>
               </div>
 
               <div className="syncRow">
                 <label className="miniLabel">
                   File path in repo
-                  <input className="miniInput" value={ghPath} onChange={(e) => setGhPath(e.target.value)} placeholder="public/data/yusuf.json" />
+                  <input
+                    className="miniInput"
+                    value={ghPath}
+                    onChange={(e) => setGhPath(e.target.value)}
+                    placeholder="public/data/yusuf.json"
+                  />
                 </label>
 
                 <label className="miniLabel">
                   Commit message
-                  <input className="miniInput" value={ghMsg} onChange={(e) => setGhMsg(e.target.value)} placeholder="optional" />
+                  <input
+                    className="miniInput"
+                    value={ghMsg}
+                    onChange={(e) => setGhMsg(e.target.value)}
+                    placeholder="optional"
+                  />
                 </label>
               </div>
 
               <div className="syncRow">
                 <label className="miniLabel" style={{ minWidth: 290 }}>
                   GitHub token (PAT)
-                  <input className="miniInput" value={ghToken} onChange={(e) => setGhToken(e.target.value)} placeholder="ghp_... / github_pat_..." type="password" />
+                  <input
+                    className="miniInput"
+                    value={ghToken}
+                    onChange={(e) => setGhToken(e.target.value)}
+                    placeholder="ghp_... / github_pat_..."
+                    type="password"
+                  />
                 </label>
 
                 <label className="chip" title="Store token in localStorage on this browser">
@@ -1186,8 +1232,7 @@ export default function App() {
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
   const [singleOn, setSingleOn] = useState(false);
 
-  // repeatMode: 0 off, 1 => 1 tekrar (2 play), 2 => 2 tekrar (3 play)
-  const [repeatMode, setRepeatMode] = useState(0);
+  const [repeatMode, setRepeatMode] = useState(0); // 0 off, 1 => 1 tekrar, 2 => 2 tekrar
   const repeatRef = useRef({ idx: -1, done: 0 });
   const edgeRef = useRef({ idx: -1, armed: true });
 
@@ -1493,7 +1538,7 @@ export default function App() {
     });
   }, [seekTo]);
 
-  // loop / repeat engine (B: repeat bitince aynı ayette DUR)
+  // repeat engine: bitince aynı ayette dur
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1507,12 +1552,8 @@ export default function App() {
     const e = Number(v?.end);
     if (!Number.isFinite(s) || !Number.isFinite(e) || e <= s) return;
 
-    // arm logic (single-fire at end)
-    if (edgeRef.current.idx !== idx) {
-      edgeRef.current = { idx, armed: true };
-    } else if (currentTime < e - 0.05) {
-      edgeRef.current.armed = true;
-    }
+    if (edgeRef.current.idx !== idx) edgeRef.current = { idx, armed: true };
+    else if (currentTime < e - 0.05) edgeRef.current.armed = true;
 
     if (loopAB && aPoint != null && bPoint != null) {
       const lo = Math.min(aPoint, bPoint);
@@ -1548,7 +1589,6 @@ export default function App() {
       return;
     }
 
-    // ✅ B: repeat bitti -> aynı ayette DUR (pause) + başa al
     repeatRef.current = { idx, done: 0 };
     edgeRef.current = { idx, armed: true };
     a.pause();
@@ -1702,6 +1742,7 @@ export default function App() {
           onClose={closeSingle}
           dialDisabled={dialDisabled}
           onDialStep={(dir) => {
+            // NOTE: dir artık component tarafından ters üretildi
             const cur = activeIndexRef.current;
             const base = cur >= 0 ? cur : 0;
             const next = clamp(base + dir, 0, Math.max(0, versesRef.current.length - 1));
