@@ -1,10 +1,11 @@
-// =========================================================
-// src/App.jsx  (TAM DOSYA - CSS DEĞİŞMEDEN)
-// - Single Player kontrol bloğu: De altında, Tr üstünde (resimdeki lokasyon)
-// - Kontrol bloğu: card içinde STICKY (inline style) => override/fixed yok
-// - Çark: Prev/Play/Next’ten hemen sonra
+﻿﻿// =========================================================
+// src/App.jsx  (TAM DOSYA)
+// - Single Player: FIXED player bloğu => ekranın %60'ında (3/5 altta) sabit
+// - Overlay gibi durmasın diye: yarı şeffaf + blur yok (backdropFilter yok)
+// - Sıra: Prev, Play, Next, Çark, r/rr, Close
 // - Çark: Yukarı kaydırınca ARTAR, STEP_PX=22, wheel hassas
 // - Repeat: r=1, rr=2, bitince aynı ayette durur (pause + başa al)
+// - Diğer fonksiyonlar (Timeline/Sync/GitHub/Import-Export/Draft) bozulmaz
 // =========================================================
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
@@ -539,10 +540,9 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
 }
 
 /**
- * Single Player
- * - Kontrol bloğu: De altında, Tr üstünde
- * - Card içinde sticky (inline style) => override yok, CSS değiştirmeden sabit
- * - Çark: Prev/Play/Next hemen sonrası
+ * Single Player (FIXED DOCK)
+ * - Dock: top 60% (3/5 altta), translate(-50%,-50%)
+ * - CSS’e dokunmadan inline style ile
  */
 function SinglePlayerPanel({
   open,
@@ -592,64 +592,71 @@ function SinglePlayerPanel({
 
           <div className="singlePlayerLine singlePlayerLineDe">{(verse?.de || "—").trim()}</div>
 
-          <div
-            className="singlePlayerControls"
-            style={{
-              position: "sticky",
-              bottom: 10,
-              zIndex: 50,
-              background: "rgba(0,0,0,0.16)",
-              border: "1px solid rgba(255,255,255,0.10)",
-              borderRadius: 18,
-              padding: 10,
-              minHeight: 92,
-              backdropFilter: "none",
-              WebkitBackdropFilter: "none",
-            }}
-          >
-            <div
-              className="singlePlayerBtns"
-              style={{
-                display: "flex",
-                gap: 10,
-                alignItems: "center",
-                flexWrap: "wrap",
-                justifyContent: "center",
-              }}
-            >
-              <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
-                ◀
-              </button>
-
-              <button className="spBtn spBtnPrimary" type="button" onClick={onPlayPause} aria-label="Play/Pause">
-                {isPlaying ? "⏸" : "▶"}
-              </button>
-
-              <button className="spBtn" type="button" onClick={onNext} aria-label="Next">
-                ▶
-              </button>
-
-              <IOSPickerWheelVertical3D disabled={dialDisabled} value={ay} onStep={onDialStep} />
-
-              <button
-                className={`spRBtn ${repeatMode ? "on" : "off"}`}
-                type="button"
-                onClick={() => {
-                  tactilePulse(10);
-                  onToggleRepeat();
-                }}
-                aria-label="Repeat"
-              >
-                {repeatMode === 2 ? "rr" : "r"}
-              </button>
-
-              <button className="spBtn spBtnClose" type="button" onClick={onClose} aria-label="Close">
-                ✕
-              </button>
-            </div>
-          </div>
-
           <div className="singlePlayerLine singlePlayerLineTr">{(verse?.tr || "—").trim()}</div>
+        </div>
+      </div>
+
+      {/* ✅ FIXED PLAYER BLOĞU (3/5 altta) */}
+      <div
+        className="singlePlayerControls"
+        style={{
+          position: "fixed",
+          left: "50%",
+          top: "60%",
+          transform: "translate(-50%, -50%)",
+          zIndex: 10001,
+          width: "min(1100px, calc(100% - 28px))",
+          minHeight: 92,
+          padding: 10,
+          borderRadius: 18,
+          border: "1px solid rgba(255,255,255,0.10)",
+          background: "rgba(0,0,0,0.16)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          pointerEvents: "auto",
+        }}
+      >
+        <div
+          className="singlePlayerBtns"
+          style={{
+            display: "flex",
+            gap: 10,
+            alignItems: "center",
+            flexWrap: "wrap",
+            justifyContent: "center",
+          }}
+        >
+          <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
+            ◀
+          </button>
+
+          <button className="spBtn spBtnPrimary" type="button" onClick={onPlayPause} aria-label="Play/Pause">
+            {isPlaying ? "⏸" : "▶"}
+          </button>
+
+          <button className="spBtn" type="button" onClick={onNext} aria-label="Next">
+            ▶
+          </button>
+
+          {/* ✅ ÇARK: prev/play/next hemen sonrası */}
+          <IOSPickerWheelVertical3D disabled={dialDisabled} value={ay} onStep={onDialStep} />
+
+          <button
+            className={`spRBtn ${repeatMode ? "on" : "off"}`}
+            type="button"
+            onClick={() => {
+              tactilePulse(10);
+              onToggleRepeat();
+            }}
+            aria-label="Repeat"
+          >
+            {repeatMode === 2 ? "rr" : "r"}
+          </button>
+
+          <button className="spBtn spBtnClose" type="button" onClick={onClose} aria-label="Close">
+            ✕
+          </button>
         </div>
       </div>
     </div>
@@ -1268,6 +1275,7 @@ export default function App() {
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
   const [singleOn, setSingleOn] = useState(false);
 
+  // 0 off, 1 => 1 tekrar, 2 => 2 tekrar
   const [repeatMode, setRepeatMode] = useState(0);
   const repeatRef = useRef({ idx: -1, done: 0 });
   const edgeRef = useRef({ idx: -1, armed: true });
