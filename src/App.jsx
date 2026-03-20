@@ -1,15 +1,6 @@
-// =========================================================
-// src/App.jsx (TAM DOSYA)
-// - Single Player UI:
-//   - Arabic + German: üstte (card içinde)
-//   - Player dock: fixed, SAĞA yaslı
-//   - Turkish: player dock'un ALTINDA ayrı fixed panel
-// - Repeat (R): r=1, rr=2
-//   - ayet segmenti (start/end) bittiğinde tekrar play eder
-//   - tekrarlar bitince pause + ayet başına döner
-// - Çark: Yukarı kaydırınca ayet ARTAR, STEP_PX=22
-// - Diğer fonksiyonlar bozulmaz: Timeline/Sync/GitHub/Import-Export/Draft vs.
-// =========================================================
+// =========================
+// FILE: src/App.jsx
+// =========================
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
 
@@ -358,8 +349,7 @@ function Timeline({
 /**
  * DİKEY 3D RULMAN
  * - Yukarı kaydırınca ARTAR
- * - STEP_PX=22 (hassas)
- * - wheel daha hassas
+ * - STEP_PX=22
  */
 function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const ref = useRef(null);
@@ -390,14 +380,12 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const tickSteps = () => {
     let did = false;
 
-    // up => +1
     while (accumPxRef.current <= -STEP_PX) {
       onStep(+1);
       accumPxRef.current += STEP_PX;
       did = true;
     }
 
-    // down => -1
     while (accumPxRef.current >= STEP_PX) {
       onStep(-1);
       accumPxRef.current -= STEP_PX;
@@ -415,7 +403,7 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
     }
 
     const DECAY = 0.006;
-    const MAX_MS = 1200;
+    const MAX_MS = 1100;
     const startTs = performance.now();
     let last = performance.now();
 
@@ -477,7 +465,7 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
     stop();
 
     const dy = e.deltaY;
-    const steps = clamp(Math.round(Math.abs(dy) / 28), 1, 12);
+    const steps = clamp(Math.round(Math.abs(dy) / 28), 1, 10);
     const dir = dy < 0 ? +1 : -1;
 
     for (let i = 0; i < steps; i += 1) onStep(dir);
@@ -546,9 +534,9 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
 
 /**
  * Single Player:
- * - Arabic + German üstte (card)
- * - Dock: fixed sağda
- * - Turkish: dock altında ayrı panel
+ * - Arapça + Almanca üstte
+ * - Dock: fixed sağ (tek satır; wrap yok; overflowX auto)
+ * - Türkçe: dock altında ayrı panel
  */
 function SinglePlayerPanel({
   open,
@@ -588,14 +576,17 @@ function SinglePlayerPanel({
 
   const ay = Number(verse?.ayah || 0);
 
-  // Dock sağda, ekranın 3/5 aşağısı
+  const DOCK_TOP = "60%";
+  const RIGHT = 14;
+  const DOCK_W = "min(560px, calc(100% - 28px))";
+
   const dock = {
     position: "fixed",
-    right: 14,
-    top: "60%",
+    right: RIGHT,
+    top: DOCK_TOP,
     transform: "translateY(-50%)",
     zIndex: 10001,
-    width: "min(520px, calc(100% - 28px))",
+    width: DOCK_W,
     minHeight: 92,
     padding: 10,
     borderRadius: 18,
@@ -603,7 +594,10 @@ function SinglePlayerPanel({
     background: "rgba(0,0,0,0.16)",
     display: "flex",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-end",
+    overflowX: "auto", // ✅ tek satır garantisi
+    overflowY: "hidden",
+    WebkitOverflowScrolling: "touch",
     pointerEvents: "auto",
   };
 
@@ -611,17 +605,20 @@ function SinglePlayerPanel({
     display: "flex",
     gap: 10,
     alignItems: "center",
-    flexWrap: "wrap",
-    justifyContent: "center",
+    flexWrap: "nowrap", // ✅ wrap kapalı
+    whiteSpace: "nowrap",
+    justifyContent: "flex-end",
   };
 
+  // Türkçe panel: dock'un hemen altına hizalı
   const trPanel = {
     position: "fixed",
-    right: 14,
-    top: "calc(60% + 92px)",
+    right: RIGHT,
+    top: `calc(${DOCK_TOP} + 92px)`,
+    transform: "translateY(-50%)",
     zIndex: 10001,
-    width: "min(520px, calc(100% - 28px))",
-    maxHeight: "30vh",
+    width: DOCK_W,
+    maxHeight: "32vh",
     overflow: "auto",
     padding: 12,
     borderRadius: 16,
@@ -634,7 +631,6 @@ function SinglePlayerPanel({
 
   return (
     <div className="singlePlayerBackdrop" role="dialog" aria-modal="true" aria-label="Single Player">
-      {/* Üst içerik: Arapça + Almanca */}
       <div className="singlePlayerCard">
         <div className="singlePlayerLines">
           <div className="singlePlayerLine singlePlayerLineAr" dir="rtl">
@@ -642,12 +638,9 @@ function SinglePlayerPanel({
           </div>
 
           <div className="singlePlayerLine singlePlayerLineDe">{(verse?.de || "—").trim()}</div>
-
-          {/* Türkçe burada artık yok */}
         </div>
       </div>
 
-      {/* ✅ FIXED DOCK (sağa yaslı) */}
       <div className="singlePlayerControls" style={dock}>
         <div className="singlePlayerBtns" style={dockRow}>
           <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
@@ -662,7 +655,10 @@ function SinglePlayerPanel({
             ▶
           </button>
 
-          <IOSPickerWheelVertical3D disabled={dialDisabled} value={ay} onStep={onDialStep} />
+          {/* çark biraz kompakt: tek satır için */}
+          <div style={{ transform: "scale(0.90)", transformOrigin: "center right" }}>
+            <IOSPickerWheelVertical3D disabled={dialDisabled} value={ay} onStep={onDialStep} />
+          </div>
 
           <button
             className={`spRBtn ${repeatMode ? "on" : "off"}`}
@@ -682,7 +678,6 @@ function SinglePlayerPanel({
         </div>
       </div>
 
-      {/* ✅ Türkçe panel dock'un altında */}
       <div style={trPanel} aria-label="Turkish">
         {(verse?.tr || "—").trim()}
       </div>
@@ -722,12 +717,8 @@ function PlayerControls({
       <div className="liveTimeBar">
         <div className="liveTime">
           <span className="liveLabel">LIVE</span>
-          <span className="liveSec">
-            {Number.isFinite(currentTime) ? currentTime.toFixed(2) : "0.00"}s
-          </span>
-          <span className="liveDur muted">
-            / {Number.isFinite(duration) ? duration.toFixed(2) : "0.00"}s
-          </span>
+          <span className="liveSec">{Number.isFinite(currentTime) ? currentTime.toFixed(2) : "0.00"}s</span>
+          <span className="liveDur muted">/ {Number.isFinite(duration) ? duration.toFixed(2) : "0.00"}s</span>
         </div>
 
         <div className="liveActions">
@@ -741,11 +732,7 @@ function PlayerControls({
             ▶
           </button>
 
-          <button
-            className={`btnSinglePlayer ${singleOn ? "on" : ""}`}
-            type="button"
-            onClick={onToggleSingle}
-          >
+          <button className={`btnSinglePlayer ${singleOn ? "on" : ""}`} type="button" onClick={onToggleSingle}>
             {singleOn ? "Single Player: ON" : "Single Player"}
           </button>
 
@@ -1022,22 +1009,12 @@ function SyncPanel({
             <div className="syncInputs">
               <label className="miniLabel">
                 start
-                <input
-                  className="miniInput"
-                  value={startInput}
-                  onChange={(e) => setStartInput(e.target.value)}
-                  inputMode="decimal"
-                />
+                <input className="miniInput" value={startInput} onChange={(e) => setStartInput(e.target.value)} inputMode="decimal" />
               </label>
 
               <label className="miniLabel">
                 end
-                <input
-                  className="miniInput"
-                  value={endInput}
-                  onChange={(e) => setEndInput(e.target.value)}
-                  inputMode="decimal"
-                />
+                <input className="miniInput" value={endInput} onChange={(e) => setEndInput(e.target.value)} inputMode="decimal" />
               </label>
 
               <div className="syncMetaInline">
@@ -1050,34 +1027,18 @@ function SyncPanel({
           <div className="syncRow">
             <div className="syncNudgeGroup">
               <span className="muted">Start:</span>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.1)} disabled={!active}>
-                -0.1
-              </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.1)} disabled={!active}>
-                +0.1
-              </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.5)} disabled={!active}>
-                -0.5
-              </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.5)} disabled={!active}>
-                +0.5
-              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.1)} disabled={!active}>-0.1</button>
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.1)} disabled={!active}>+0.1</button>
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.5)} disabled={!active}>-0.5</button>
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.5)} disabled={!active}>+0.5</button>
             </div>
 
             <div className="syncNudgeGroup">
               <span className="muted">End:</span>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.1)} disabled={!active}>
-                -0.1
-              </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.1)} disabled={!active}>
-                +0.1
-              </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.5)} disabled={!active}>
-                -0.5
-              </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.5)} disabled={!active}>
-                +0.5
-              </button>
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.1)} disabled={!active}>-0.1</button>
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.1)} disabled={!active}>+0.1</button>
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.5)} disabled={!active}>-0.5</button>
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.5)} disabled={!active}>+0.5</button>
             </div>
           </div>
         </div>
@@ -1086,54 +1047,28 @@ function SyncPanel({
           <div className="syncRow">
             <label className="miniLabel">
               Jump ayah
-              <input
-                className="miniInput"
-                value={jumpAyah}
-                onChange={(e) => setJumpAyah(e.target.value)}
-                inputMode="numeric"
-              />
+              <input className="miniInput" value={jumpAyah} onChange={(e) => setJumpAyah(e.target.value)} inputMode="numeric" />
             </label>
-            <button className="btnSmall" type="button" onClick={jumpToAyah}>
-              Go
-            </button>
+            <button className="btnSmall" type="button" onClick={jumpToAyah}>Go</button>
 
             <label className="miniLabel">
               Jump time (s)
-              <input
-                className="miniInput"
-                value={jumpTime}
-                onChange={(e) => setJumpTime(e.target.value)}
-                inputMode="decimal"
-              />
+              <input className="miniInput" value={jumpTime} onChange={(e) => setJumpTime(e.target.value)} inputMode="decimal" />
             </label>
-            <button className="btnSmall" type="button" onClick={jumpToTime}>
-              Seek
-            </button>
+            <button className="btnSmall" type="button" onClick={jumpToTime}>Seek</button>
           </div>
 
           <div className="syncRow">
-            <button className="btnSmall" type="button" onClick={onJumpFirstUntimed}>
-              First untimed
-            </button>
+            <button className="btnSmall" type="button" onClick={onJumpFirstUntimed}>First untimed</button>
             <div className="divider" />
-            <button className="btnSmall" type="button" onClick={onSaveDraft}>
-              Save draft
-            </button>
-            <button className="btnSmall" type="button" onClick={onRestoreDraft}>
-              Restore draft
-            </button>
-            <button className="btnSmall" type="button" onClick={onClearDraft}>
-              Clear draft
-            </button>
+            <button className="btnSmall" type="button" onClick={onSaveDraft}>Save draft</button>
+            <button className="btnSmall" type="button" onClick={onRestoreDraft}>Restore draft</button>
+            <button className="btnSmall" type="button" onClick={onClearDraft}>Clear draft</button>
           </div>
 
           <div className="syncRow">
-            <button className="btnSmall" type="button" onClick={onExportJson}>
-              Export JSON
-            </button>
-            <button className="btnSmall" type="button" onClick={() => fileRef.current?.click()}>
-              Import JSON
-            </button>
+            <button className="btnSmall" type="button" onClick={onExportJson}>Export JSON</button>
+            <button className="btnSmall" type="button" onClick={() => fileRef.current?.click()}>Import JSON</button>
             <input
               ref={fileRef}
               type="file"
@@ -1173,57 +1108,31 @@ function SyncPanel({
               <div className="syncRow">
                 <label className="miniLabel">
                   Repo (owner/repo)
-                  <input
-                    className="miniInput"
-                    value={ghRepo}
-                    onChange={(e) => setGhRepo(e.target.value)}
-                    placeholder="yourname/yourrepo"
-                  />
+                  <input className="miniInput" value={ghRepo} onChange={(e) => setGhRepo(e.target.value)} placeholder="yourname/yourrepo" />
                 </label>
 
                 <label className="miniLabel">
                   Branch
-                  <input
-                    className="miniInput"
-                    value={ghBranch}
-                    onChange={(e) => setGhBranch(e.target.value)}
-                    placeholder="main"
-                  />
+                  <input className="miniInput" value={ghBranch} onChange={(e) => setGhBranch(e.target.value)} placeholder="main" />
                 </label>
               </div>
 
               <div className="syncRow">
                 <label className="miniLabel">
                   File path in repo
-                  <input
-                    className="miniInput"
-                    value={ghPath}
-                    onChange={(e) => setGhPath(e.target.value)}
-                    placeholder="public/data/yusuf.json"
-                  />
+                  <input className="miniInput" value={ghPath} onChange={(e) => setGhPath(e.target.value)} placeholder="public/data/yusuf.json" />
                 </label>
 
                 <label className="miniLabel">
                   Commit message
-                  <input
-                    className="miniInput"
-                    value={ghMsg}
-                    onChange={(e) => setGhMsg(e.target.value)}
-                    placeholder="optional"
-                  />
+                  <input className="miniInput" value={ghMsg} onChange={(e) => setGhMsg(e.target.value)} placeholder="optional" />
                 </label>
               </div>
 
               <div className="syncRow">
                 <label className="miniLabel" style={{ minWidth: 290 }}>
                   GitHub token (PAT)
-                  <input
-                    className="miniInput"
-                    value={ghToken}
-                    onChange={(e) => setGhToken(e.target.value)}
-                    placeholder="ghp_... / github_pat_..."
-                    type="password"
-                  />
+                  <input className="miniInput" value={ghToken} onChange={(e) => setGhToken(e.target.value)} placeholder="ghp_... / github_pat_..." type="password" />
                 </label>
 
                 <label className="chip" title="Store token in localStorage on this browser">
@@ -1310,9 +1219,9 @@ export default function App() {
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
   const [singleOn, setSingleOn] = useState(false);
 
-  // 0 off, 1 => 1 tekrar, 2 => 2 tekrar
+  // repeat: 0 off, 1 => 1 tekrar, 2 => 2 tekrar
   const [repeatMode, setRepeatMode] = useState(0);
-  const repeatStateRef = useRef({ idx: -1, done: 0, armed: true });
+  const repeatStateRef = useRef({ idx: -1, done: 0, armed: true, lastFire: 0 });
 
   useEffect(() => {
     document.title = "Türkçe-Almanca Kur’an Player";
@@ -1373,7 +1282,7 @@ export default function App() {
     setSingleOn(false);
 
     setRepeatMode(0);
-    repeatStateRef.current = { idx: -1, done: 0, armed: true };
+    repeatStateRef.current = { idx: -1, done: 0, armed: true, lastFire: 0 };
 
     const a = audioRef.current;
     if (a) {
@@ -1460,7 +1369,7 @@ export default function App() {
       const start = Number(v.start);
       if (!Number.isFinite(start)) return;
 
-      repeatStateRef.current = { idx, done: 0, armed: true };
+      repeatStateRef.current = { idx, done: 0, armed: true, lastFire: 0 };
       seekTo(start, autoPlay);
     },
     [seekTo]
@@ -1587,17 +1496,16 @@ export default function App() {
     if (idx >= 0) seekVerse(idx, true);
   }, [seekVerse]);
 
-  // ✅ Repeat toggle: off -> 1 -> 2 -> off
+  // repeat toggle: off -> 1 -> 2 -> off
   const toggleRepeat = useCallback(() => {
     setRepeatMode((m) => {
       const next = m === 0 ? 1 : m === 1 ? 2 : 0;
 
       if (next <= 0) {
-        repeatStateRef.current = { idx: -1, done: 0, armed: true };
+        repeatStateRef.current = { idx: -1, done: 0, armed: true, lastFire: 0 };
         return next;
       }
 
-      // repeat ON => aktif ayeti yakala ve baştan oynat
       const vs = versesRef.current;
       if (!vs.length) return next;
 
@@ -1608,24 +1516,21 @@ export default function App() {
       const v = vs[idx];
       const s = Number(v?.start);
       if (Number.isFinite(s)) {
-        repeatStateRef.current = { idx, done: 0, armed: true };
+        repeatStateRef.current = { idx, done: 0, armed: true, lastFire: 0 };
         tactilePulse(10);
         seekTo(s, true);
       }
-
       return next;
     });
   }, [seekTo]);
 
-  // ✅ Repeat engine (asıl düzeltme)
+  // ✅ Repeat engine (çalışan)
   useEffect(() => {
     const a = audioRef.current;
-    if (!a) return;
     const vs = versesRef.current;
-    if (!vs.length) return;
+    if (!a || !vs.length) return;
     if (repeatMode <= 0) return;
 
-    // aktif ayet index
     let idx = activeIndexRef.current;
     if (idx < 0 || !vs[idx]) idx = findActiveVerseIndex(vs, currentTime);
     if (idx < 0 || !vs[idx]) return;
@@ -1635,24 +1540,30 @@ export default function App() {
     const e = Number(v?.end);
     if (!Number.isFinite(s) || !Number.isFinite(e) || e <= s) return;
 
-    // state reset on verse change
     const st = repeatStateRef.current;
-    if (st.idx !== idx) repeatStateRef.current = { idx, done: 0, armed: true };
 
-    // re-arm while well before end
+    if (st.idx !== idx) {
+      repeatStateRef.current = { idx, done: 0, armed: true, lastFire: 0 };
+      return;
+    }
+
+    // re-arm
     if (currentTime < e - 0.12) {
       repeatStateRef.current.armed = true;
       return;
     }
 
-    // trigger once near end
     const nearEnd = currentTime >= e - 0.02;
     if (!nearEnd || !repeatStateRef.current.armed) return;
+
+    // spam koruma
+    const now = performance.now();
+    if (now - (repeatStateRef.current.lastFire || 0) < 350) return;
+    repeatStateRef.current.lastFire = now;
 
     repeatStateRef.current.armed = false;
 
     const done = repeatStateRef.current.done || 0;
-
     if (done < repeatMode) {
       repeatStateRef.current.done = done + 1;
       a.currentTime = s;
@@ -1660,14 +1571,13 @@ export default function App() {
       return;
     }
 
-    // repeats finished
     repeatStateRef.current.done = 0;
     a.pause();
     a.currentTime = s;
     setCurrentTime(s);
   }, [currentTime, repeatMode]);
 
-  // existing loop features
+  // existing loops (kalsın)
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1928,3 +1838,8 @@ export default function App() {
     </div>
   );
 }
+
+// =========================
+// FILE: src/styles.css
+// (Senin son gönderdiğin CSS’i kullan. Ekstra bir şeye gerek yok.)
+// =========================
