@@ -8,7 +8,6 @@
   --accent:rgba(99,179,237,1);
   --danger:rgba(255,120,120,0.18);
 
-  /* column widths for gradient background */
   --w-no: 70px;
   --w-ar: 1.1fr;
   --w-de: 1fr;
@@ -328,7 +327,6 @@ html,body{
   overflow:auto;
 }
 
-/* keep wide but clean */
 .tableHeader, .row{ min-width:980px; }
 
 .tableHeader{
@@ -368,7 +366,6 @@ html,body{
     );
 }
 
-/* zebra */
 .tableBody .row:nth-child(odd){ background-color: rgba(255,255,255,0.05); }
 .tableBody .row:nth-child(even){ background-color: rgba(0,0,0,0.18); }
 
@@ -417,56 +414,63 @@ html,body{
   .colDe{ display:none; }
 }
 
-/* ---------- Popup blocked -> Modal fallback styles ---------- */
-.verseModalBackdrop{
+/* Popup modal */
+.versePopupBackdrop{
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.55);
-  backdrop-filter: blur(6px);
   z-index: 9999;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(8px);
   display: grid;
   place-items: center;
   padding: 14px;
 }
 
-.verseModalCard{
+.versePopupCard{
   width: min(980px, 100%);
   border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(15,21,32,0.82);
+  background: rgba(15,21,32,0.86);
   border-radius: 18px;
-  padding: 18px;
+  padding: 16px;
   box-shadow: 0 30px 80px rgba(0,0,0,0.45);
 }
 
-.verseModalTop{
-  display: flex;
+.versePopupTop{
+  display:flex;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
-.verseModalAr{
+.versePopupActions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.versePopupAr{
   direction: rtl;
   unicode-bidi: isolate-override;
   text-align: right;
   font-family: "Noto Naskh Arabic","Amiri","Scheherazade New","Noto Sans Arabic", serif;
-  font-size: clamp(26px, 4.5vw, 46px);
+  font-size: clamp(26px, 4.8vw, 46px);
   line-height: 1.65;
   margin-top: 8px;
   white-space: pre-wrap;
 }
 
-.verseModalTr{
-  font-size: clamp(16px, 2.7vw, 24px);
+.versePopupTr{
+  font-size: clamp(16px, 2.9vw, 24px);
   line-height: 1.55;
   margin-top: 14px;
   white-space: pre-wrap;
 }
 
-.verseModalDe{
-  font-size: clamp(14px, 2.4vw, 20px);
+.versePopupDe{
+  font-size: clamp(14px, 2.6vw, 20px);
   line-height: 1.5;
   margin-top: 10px;
   color: var(--muted);
