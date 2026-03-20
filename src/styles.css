@@ -757,3 +757,12 @@ html,body{
 @media (max-width:520px){
   .spDockSplit{ justify-content:center; }
 }
+/* ===== Single Player inline player bar (EN SONA EKLE) ===== */
+.spDockInline { margin: 10px 0; }
+.spDockInlineRow{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content:center;
+}
