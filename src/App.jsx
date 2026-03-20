@@ -94,18 +94,9 @@ function ensureRowVisible(el, padding = 10) {
   const above = r.top < viewportTop;
   const below = r.bottom > effectiveBottom;
 
-  if (above || below) {
-    el.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
+  if (above || below) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
-/**
- * Tolerant JSON parsing:
- * - strips BOM
- * - rejects HTML
- * - removes trailing commas before } or ]
- * - if parse fails, includes position + context
- */
 function parseJsonTolerant(text, urlForMsg = "") {
   const raw = String(text ?? "");
   let s = raw.replace(/^\uFEFF/, "").trim();
@@ -186,12 +177,7 @@ async function githubPutFile({ owner, repo, path, token, branch, message, conten
     "/"
   )}`;
 
-  const body = {
-    message,
-    content: contentBase64,
-    branch,
-    ...(sha ? { sha } : {}),
-  };
+  const body = { message, content: contentBase64, branch, ...(sha ? { sha } : {}) };
 
   const res = await ghFetch(url, {
     method: "PUT",
@@ -350,9 +336,9 @@ function Timeline({
 }
 
 /**
- * Single Player panel:
- * AR -> DE -> (PLAYER BLOCK) -> TR
+ * Single Player (centered overlay, blur BACK)
  * Close => pause
+ * No close-on-backdrop-click
  */
 function SinglePlayerPanel({ open, verse, isPlaying, onPlayPause, onPrev, onNext, onClose }) {
   useEffect(() => {
@@ -381,7 +367,7 @@ function SinglePlayerPanel({ open, verse, isPlaying, onPlayPause, onPrev, onNext
   const ay = verse?.ayah != null ? String(verse.ayah) : "—";
 
   return (
-    <div className="singlePlayerWrap" aria-label="Single Player">
+    <div className="singlePlayerBackdrop" role="dialog" aria-modal="true" aria-label="Single Player">
       <div className="singlePlayerCard">
         <div className="singlePlayerLines">
           <div className="singlePlayerLine singlePlayerLineAr" dir="rtl">
@@ -396,7 +382,12 @@ function SinglePlayerPanel({ open, verse, isPlaying, onPlayPause, onPrev, onNext
               <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
                 ◀
               </button>
-              <button className="spBtn spBtnPrimary" type="button" onClick={onPlayPause} aria-label="Play/Pause">
+              <button
+                className="spBtn spBtnPrimary"
+                type="button"
+                onClick={onPlayPause}
+                aria-label="Play/Pause"
+              >
                 {isPlaying ? "⏸" : "▶"}
               </button>
               <button className="spBtn" type="button" onClick={onNext} aria-label="Next">
@@ -586,9 +577,7 @@ function SyncPanel({
       if (cfg?.path) setGhPath(cfg.path);
       if (cfg?.token) setGhToken(cfg.token);
       if (cfg?.remember === false) setGhRemember(false);
-    } catch {
-      // ignore
-    }
+    } catch {}
   }, []);
 
   useEffect(() => {
@@ -607,9 +596,7 @@ function SyncPanel({
           remember: true,
         })
       );
-    } catch {
-      // ignore
-    }
+    } catch {}
   }, [ghRepo, ghBranch, ghPath, ghToken, ghRemember]);
 
   const active = activeIndex >= 0 ? verses[activeIndex] : null;
@@ -807,7 +794,12 @@ function SyncPanel({
           <div className="syncRow">
             <label className="miniLabel">
               Jump ayah
-              <input className="miniInput" value={jumpAyah} onChange={(e) => setJumpAyah(e.target.value)} inputMode="numeric" />
+              <input
+                className="miniInput"
+                value={jumpAyah}
+                onChange={(e) => setJumpAyah(e.target.value)}
+                inputMode="numeric"
+              />
             </label>
             <button className="btnSmall" type="button" onClick={jumpToAyah}>
               Go
@@ -815,7 +807,12 @@ function SyncPanel({
 
             <label className="miniLabel">
               Jump time (s)
-              <input className="miniInput" value={jumpTime} onChange={(e) => setJumpTime(e.target.value)} inputMode="decimal" />
+              <input
+                className="miniInput"
+                value={jumpTime}
+                onChange={(e) => setJumpTime(e.target.value)}
+                inputMode="decimal"
+              />
             </label>
             <button className="btnSmall" type="button" onClick={jumpToTime}>
               Seek
@@ -884,24 +881,44 @@ function SyncPanel({
               <div className="syncRow">
                 <label className="miniLabel">
                   Repo (owner/repo)
-                  <input className="miniInput" value={ghRepo} onChange={(e) => setGhRepo(e.target.value)} placeholder="yourname/yourrepo" />
+                  <input
+                    className="miniInput"
+                    value={ghRepo}
+                    onChange={(e) => setGhRepo(e.target.value)}
+                    placeholder="yourname/yourrepo"
+                  />
                 </label>
 
                 <label className="miniLabel">
                   Branch
-                  <input className="miniInput" value={ghBranch} onChange={(e) => setGhBranch(e.target.value)} placeholder="main" />
+                  <input
+                    className="miniInput"
+                    value={ghBranch}
+                    onChange={(e) => setGhBranch(e.target.value)}
+                    placeholder="main"
+                  />
                 </label>
               </div>
 
               <div className="syncRow">
                 <label className="miniLabel">
                   File path in repo
-                  <input className="miniInput" value={ghPath} onChange={(e) => setGhPath(e.target.value)} placeholder="public/data/yusuf.json" />
+                  <input
+                    className="miniInput"
+                    value={ghPath}
+                    onChange={(e) => setGhPath(e.target.value)}
+                    placeholder="public/data/yusuf.json"
+                  />
                 </label>
 
                 <label className="miniLabel">
                   Commit message
-                  <input className="miniInput" value={ghMsg} onChange={(e) => setGhMsg(e.target.value)} placeholder="optional" />
+                  <input
+                    className="miniInput"
+                    value={ghMsg}
+                    onChange={(e) => setGhMsg(e.target.value)}
+                    placeholder="optional"
+                  />
                 </label>
               </div>
 
@@ -918,7 +935,11 @@ function SyncPanel({
                 </label>
 
                 <label className="chip" title="Store token in localStorage on this browser">
-                  <input type="checkbox" checked={ghRemember} onChange={(e) => setGhRemember(e.target.checked)} />
+                  <input
+                    type="checkbox"
+                    checked={ghRemember}
+                    onChange={(e) => setGhRemember(e.target.checked)}
+                  />
                   Remember token
                 </label>
 
@@ -1009,17 +1030,13 @@ export default function App() {
     try {
       const raw = localStorage.getItem("qatd:toolsCollapsed");
       if (raw === "0") setToolsCollapsed(false);
-    } catch {
-      // ignore
-    }
+    } catch {}
   }, []);
 
   useEffect(() => {
     try {
       localStorage.setItem("qatd:toolsCollapsed", toolsCollapsed ? "1" : "0");
-    } catch {
-      // ignore
-    }
+    } catch {}
   }, [toolsCollapsed]);
 
   const versesRef = useRef(verses);
@@ -1049,14 +1066,8 @@ export default function App() {
     });
   }, [query]);
 
-  const audioSrc = useMemo(
-    () => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""),
-    [selectedSurah]
-  );
-  const versesSrc = useMemo(
-    () => (selectedSurah ? resolvePublicUrl(selectedSurah.versesUrl) : ""),
-    [selectedSurah]
-  );
+  const audioSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""), [selectedSurah]);
+  const versesSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.versesUrl) : ""), [selectedSurah]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1207,9 +1218,7 @@ export default function App() {
 
       if (Number.isFinite(s)) v.start = Math.max(0, s);
       if (Number.isFinite(e)) v.end = Math.max(0, e);
-      if (Number.isFinite(v.start) && Number.isFinite(v.end) && v.end <= v.start) {
-        v.end = v.start + 0.01;
-      }
+      if (Number.isFinite(v.start) && Number.isFinite(v.end) && v.end <= v.start) v.end = v.start + 0.01;
 
       next[idx] = v;
       return next;
@@ -1220,9 +1229,7 @@ export default function App() {
     const t = setTimeout(() => {
       try {
         localStorage.setItem(draftKey, JSON.stringify(versesRef.current));
-      } catch {
-        // ignore
-      }
+      } catch {}
     }, 500);
     return () => clearTimeout(t);
   }, [draftKey, verses]);
@@ -1257,9 +1264,7 @@ export default function App() {
   const saveDraft = useCallback(() => {
     try {
       localStorage.setItem(draftKey, JSON.stringify(versesRef.current));
-    } catch {
-      // ignore
-    }
+    } catch {}
   }, [draftKey]);
 
   const restoreDraft = useCallback(() => {
@@ -1269,17 +1274,13 @@ export default function App() {
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed)) return;
       setVerses(parsed);
-    } catch {
-      // ignore
-    }
+    } catch {}
   }, [draftKey]);
 
   const clearDraft = useCallback(() => {
     try {
       localStorage.removeItem(draftKey);
-    } catch {
-      // ignore
-    }
+    } catch {}
   }, [draftKey]);
 
   const jumpFirstUntimed = useCallback(() => {
@@ -1368,14 +1369,8 @@ export default function App() {
         else setLoopAyah((x) => !x);
         return;
       }
-      if (k === "a") {
-        setA();
-        return;
-      }
-      if (k === "b") {
-        setB();
-        return;
-      }
+      if (k === "a") setA();
+      if (k === "b") setB();
 
       const idx = activeIndexRef.current;
       const vs = versesRef.current;
@@ -1530,7 +1525,12 @@ export default function App() {
           )}
         </div>
 
-        <VersesTable verses={verses} activeIndex={activeIndex} onRowClick={(idx) => seekVerse(idx, true)} rowRefs={rowRefs} />
+        <VersesTable
+          verses={verses}
+          activeIndex={activeIndex}
+          onRowClick={(idx) => seekVerse(idx, true)}
+          rowRefs={rowRefs}
+        />
       </main>
     </div>
   );
