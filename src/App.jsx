@@ -1,10 +1,5 @@
 // =========================================================
 // src/App.jsx  (TAM DOSYA)
-// - Single Player bar: sabit (sticky-bottom) aynı lokasyonda
-// - Rulman: DİKEY 3D (yüz kullanıcıya bakar) + step'te “tactile” (Android vibrate + iOS click)
-// - R (repeat): r = 1 tekrar, rr = 2 tekrar, off = kapalı
-//   Açılınca AKTİF ayeti hemen baştan SEEK+PLAY eder
-// - Diğer tüm fonksiyonlar korunur (Timeline/SyncPanel/GitHub commit vs.)
 // =========================================================
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
@@ -46,45 +41,14 @@ function formatSec(sec) {
   return Number.isFinite(sec) ? `${sec.toFixed(2)}s` : "—";
 }
 
-// Android/Chrome -> vibrate, iOS/Safari -> tiny click (WebAudio)
-function createTactile() {
-  let ctx = null;
-  return {
-    pulse(ms = 10) {
-      try {
-        if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
-          navigator.vibrate(ms);
-        }
-      } catch {}
-
-      try {
-        const AC = window.AudioContext || window.webkitAudioContext;
-        if (!AC) return;
-        if (!ctx) ctx = new AC();
-        if (ctx.state === "suspended") ctx.resume().catch(() => {});
-
-        const o = ctx.createOscillator();
-        const g = ctx.createGain();
-        o.type = "square";
-        o.frequency.value = 140;
-        g.gain.value = 0.0001;
-
-        o.connect(g);
-        g.connect(ctx.destination);
-
-        const t0 = ctx.currentTime;
-        g.gain.setValueAtTime(0.0001, t0);
-        g.gain.linearRampToValueAtTime(0.05, t0 + 0.003);
-        g.gain.linearRampToValueAtTime(0.0001, t0 + 0.018);
-
-        o.start(t0);
-        o.stop(t0 + 0.02);
-      } catch {}
-    },
-  };
+// Only vibrate if available. No sound.
+function tactilePulse(ms = 8) {
+  try {
+    if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+      navigator.vibrate(ms);
+    }
+  } catch {}
 }
-
-const tactile = createTactile();
 
 // Overlap-safe
 function findActiveVerseIndex(verses, t) {
@@ -362,7 +326,7 @@ function Timeline({
             title={`Ayah ${m.ayah}`}
             onClick={(ev) => {
               ev.stopPropagation();
-              tactile.pulse(8);
+              tactilePulse(8);
               onSeekVerse(m.idx);
             }}
           />
@@ -422,7 +386,7 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
       accumPxRef.current -= dir * STEP_PX;
       did = true;
     }
-    if (did) tactile.pulse(8);
+    if (did) tactilePulse(8);
   };
 
   const startInertia = () => {
@@ -499,7 +463,7 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
     const dir = dy > 0 ? +1 : -1;
 
     for (let i = 0; i < steps; i += 1) onStep(dir);
-    tactile.pulse(8);
+    tactilePulse(8);
 
     velRef.current = clamp(dy / 820, -1.0, 1.0);
     startInertia();
@@ -563,8 +527,10 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
 }
 
 /**
- * Single Player (dock: sabit lokasyon)
- * - NO close-on-backdrop-click
+ * Single Player overlay
+ * - Dock is FIXED to viewport => no layout shift
+ * - #ayet no removed
+ * - Auto-reset removed
  */
 function SinglePlayerPanel({
   open,
@@ -578,8 +544,6 @@ function SinglePlayerPanel({
   onDialStep,
   repeatMode,
   onToggleRepeat,
-  repeatAutoReset,
-  onToggleRepeatAutoReset,
 }) {
   useEffect(() => {
     if (!open) return;
@@ -604,7 +568,7 @@ function SinglePlayerPanel({
 
   if (!open) return null;
 
-  const ay = verse?.ayah != null ? String(verse.ayah) : "—";
+  const ay = Number(verse?.ayah || 0);
 
   return (
     <div className="singlePlayerBackdrop" role="dialog" aria-modal="true" aria-label="Single Player">
@@ -616,47 +580,40 @@ function SinglePlayerPanel({
 
           <div className="singlePlayerLine singlePlayerLineDe">{(verse?.de || "—").trim()}</div>
 
-          {/* ✅ SABİT DOK: burası hep aynı yerde */}
-          <div className="singlePlayerControls singlePlayerControlsDock">
-            <div className="singlePlayerAyahNo">#{ay}</div>
-            <div className="singlePlayerBtns">
-              <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
-                ◀
-              </button>
-              <button className="spBtn spBtnPrimary" type="button" onClick={onPlayPause} aria-label="Play/Pause">
-                {isPlaying ? "⏸" : "▶"}
-              </button>
-              <button className="spBtn" type="button" onClick={onNext} aria-label="Next">
-                ▶
-              </button>
-
-              <IOSPickerWheelVertical3D disabled={dialDisabled} value={Number(verse?.ayah || 0)} onStep={onDialStep} />
-
-              <button
-                className={`spRBtn ${repeatMode ? "on" : "off"}`}
-                type="button"
-                onClick={() => {
-                  tactile.pulse(10);
-                  onToggleRepeat();
-                }}
-                aria-label="Repeat"
-                title="Repeat"
-              >
-                {repeatMode === 2 ? "rr" : "r"}
-              </button>
-
-              <label className="chip" title="Auto-reset">
-                <input type="checkbox" checked={repeatAutoReset} onChange={onToggleRepeatAutoReset} />
-                Auto-reset
-              </label>
-
-              <button className="spBtn spBtnClose" type="button" onClick={onClose} aria-label="Close">
-                ✕
-              </button>
-            </div>
-          </div>
-
           <div className="singlePlayerLine singlePlayerLineTr">{(verse?.tr || "—").trim()}</div>
+        </div>
+      </div>
+
+      {/* ✅ FIXED DOCK: never moves */}
+      <div className="spDockFixed" role="group" aria-label="Player">
+        <div className="spDockInner">
+          <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
+            ◀
+          </button>
+          <button className="spBtn spBtnPrimary" type="button" onClick={onPlayPause} aria-label="Play/Pause">
+            {isPlaying ? "⏸" : "▶"}
+          </button>
+          <button className="spBtn" type="button" onClick={onNext} aria-label="Next">
+            ▶
+          </button>
+
+          <IOSPickerWheelVertical3D disabled={dialDisabled} value={ay} onStep={onDialStep} />
+
+          <button
+            className={`spRBtn ${repeatMode ? "on" : "off"}`}
+            type="button"
+            onClick={() => {
+              tactilePulse(10);
+              onToggleRepeat();
+            }}
+            aria-label="Repeat"
+          >
+            {repeatMode === 2 ? "rr" : "r"}
+          </button>
+
+          <button className="spBtn spBtnClose" type="button" onClick={onClose} aria-label="Close">
+            ✕
+          </button>
         </div>
       </div>
     </div>
@@ -987,22 +944,12 @@ function SyncPanel({
             <div className="syncInputs">
               <label className="miniLabel">
                 start
-                <input
-                  className="miniInput"
-                  value={startInput}
-                  onChange={(e) => setStartInput(e.target.value)}
-                  inputMode="decimal"
-                />
+                <input className="miniInput" value={startInput} onChange={(e) => setStartInput(e.target.value)} inputMode="decimal" />
               </label>
 
               <label className="miniLabel">
                 end
-                <input
-                  className="miniInput"
-                  value={endInput}
-                  onChange={(e) => setEndInput(e.target.value)}
-                  inputMode="decimal"
-                />
+                <input className="miniInput" value={endInput} onChange={(e) => setEndInput(e.target.value)} inputMode="decimal" />
               </label>
 
               <div className="syncMetaInline">
@@ -1152,13 +1099,7 @@ function SyncPanel({
               <div className="syncRow">
                 <label className="miniLabel" style={{ minWidth: 290 }}>
                   GitHub token (PAT)
-                  <input
-                    className="miniInput"
-                    value={ghToken}
-                    onChange={(e) => setGhToken(e.target.value)}
-                    placeholder="ghp_... / github_pat_..."
-                    type="password"
-                  />
+                  <input className="miniInput" value={ghToken} onChange={(e) => setGhToken(e.target.value)} placeholder="ghp_... / github_pat_..." type="password" />
                 </label>
 
                 <label className="chip" title="Store token in localStorage on this browser">
@@ -1245,9 +1186,10 @@ export default function App() {
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
   const [singleOn, setSingleOn] = useState(false);
 
-  const [repeatMode, setRepeatMode] = useState(0); // 0 off, 1 r, 2 rr
-  const [repeatAutoReset, setRepeatAutoReset] = useState(true);
+  // repeatMode: 0 off, 1 => 1 tekrar (2 play), 2 => 2 tekrar (3 play)
+  const [repeatMode, setRepeatMode] = useState(0);
   const repeatRef = useRef({ idx: -1, done: 0 });
+  const edgeRef = useRef({ idx: -1, armed: true });
 
   useEffect(() => {
     document.title = "Türkçe-Almanca Kur’an Player";
@@ -1265,19 +1207,6 @@ export default function App() {
       localStorage.setItem("qatd:toolsCollapsed", toolsCollapsed ? "1" : "0");
     } catch {}
   }, [toolsCollapsed]);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem("qatd:repeatAutoReset");
-      if (raw === "0") setRepeatAutoReset(false);
-    } catch {}
-  }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("qatd:repeatAutoReset", repeatAutoReset ? "1" : "0");
-    } catch {}
-  }, [repeatAutoReset]);
 
   const versesRef = useRef(verses);
   const activeIndexRef = useRef(activeIndex);
@@ -1306,14 +1235,8 @@ export default function App() {
     });
   }, [query]);
 
-  const audioSrc = useMemo(
-    () => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""),
-    [selectedSurah]
-  );
-  const versesSrc = useMemo(
-    () => (selectedSurah ? resolvePublicUrl(selectedSurah.versesUrl) : ""),
-    [selectedSurah]
-  );
+  const audioSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""), [selectedSurah]);
+  const versesSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.versesUrl) : ""), [selectedSurah]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1328,6 +1251,7 @@ export default function App() {
 
     setRepeatMode(0);
     repeatRef.current = { idx: -1, done: 0 };
+    edgeRef.current = { idx: -1, armed: true };
 
     const a = audioRef.current;
     if (a) {
@@ -1414,10 +1338,12 @@ export default function App() {
       const start = Number(v.start);
       if (!Number.isFinite(start)) return;
 
-      if (repeatAutoReset) repeatRef.current = { idx, done: 0 };
+      repeatRef.current = { idx, done: 0 };
+      edgeRef.current = { idx, armed: true };
+
       seekTo(start, autoPlay);
     },
-    [seekTo, repeatAutoReset]
+    [seekTo]
   );
 
   const onPlayPause = useCallback(() => {
@@ -1540,7 +1466,6 @@ export default function App() {
     if (idx >= 0) seekVerse(idx, true);
   }, [seekVerse]);
 
-  // ✅ repeat toggle: açılınca aktif ayeti baştan PLAY
   const toggleRepeat = useCallback(() => {
     setRepeatMode((m) => {
       const next = m === 0 ? 1 : m === 1 ? 2 : 0;
@@ -1551,22 +1476,43 @@ export default function App() {
       }
 
       if (next > 0 && idx >= 0) {
-        repeatRef.current = { idx, done: 0 };
         const v = versesRef.current[idx];
         const s = Number(v?.start);
-        if (Number.isFinite(s)) seekTo(s, true);
+        if (Number.isFinite(s)) {
+          repeatRef.current = { idx, done: 0 };
+          edgeRef.current = { idx, armed: true };
+          tactilePulse(10);
+          seekTo(s, true);
+        }
       } else {
         repeatRef.current = { idx: -1, done: 0 };
+        edgeRef.current = { idx: -1, armed: true };
       }
 
       return next;
     });
   }, [seekTo]);
 
-  // loop / repeat engine
+  // loop / repeat engine (B: repeat bitince aynı ayette DUR)
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
+    if (!verses.length) return;
+
+    const idx = findActiveVerseIndex(verses, currentTime);
+    if (idx < 0) return;
+
+    const v = verses[idx];
+    const s = Number(v?.start);
+    const e = Number(v?.end);
+    if (!Number.isFinite(s) || !Number.isFinite(e) || e <= s) return;
+
+    // arm logic (single-fire at end)
+    if (edgeRef.current.idx !== idx) {
+      edgeRef.current = { idx, armed: true };
+    } else if (currentTime < e - 0.05) {
+      edgeRef.current.armed = true;
+    }
 
     if (loopAB && aPoint != null && bPoint != null) {
       const lo = Math.min(aPoint, bPoint);
@@ -1578,16 +1524,6 @@ export default function App() {
       return;
     }
 
-    if (!verses.length) return;
-
-    const idx = findActiveVerseIndex(verses, currentTime);
-    if (idx < 0) return;
-
-    const v = verses[idx];
-    const s = Number(v?.start);
-    const e = Number(v?.end);
-    if (!Number.isFinite(s) || !Number.isFinite(e) || e <= s) return;
-
     if (loopAyah) {
       if (currentTime >= e) {
         a.currentTime = s;
@@ -1596,25 +1532,30 @@ export default function App() {
       return;
     }
 
-    if (repeatMode > 0 && currentTime >= e) {
-      const st = repeatRef.current;
-      const same = st.idx === idx;
-      const done = same ? st.done : 0;
+    if (repeatMode <= 0) return;
 
-      if (done < repeatMode) {
-        repeatRef.current = { idx, done: done + 1 };
-        a.currentTime = s;
-        a.play().catch(() => {});
-        return;
-      }
+    const nearEnd = currentTime >= e - 0.005;
+    if (!nearEnd || !edgeRef.current.armed) return;
+    edgeRef.current.armed = false;
 
-      repeatRef.current = { idx: -1, done: 0 };
-      const nextIdx = Math.min(verses.length - 1, idx + 1);
-      seekVerse(nextIdx, true);
+    const st = repeatRef.current;
+    const done = st.idx === idx ? st.done : 0;
+
+    if (done < repeatMode) {
+      repeatRef.current = { idx, done: done + 1 };
+      a.currentTime = s;
+      a.play().catch(() => {});
+      return;
     }
-  }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint, repeatMode, seekVerse]);
 
-  // active row follow
+    // ✅ B: repeat bitti -> aynı ayette DUR (pause) + başa al
+    repeatRef.current = { idx, done: 0 };
+    edgeRef.current = { idx, armed: true };
+    a.pause();
+    a.currentTime = s;
+    setCurrentTime(s);
+  }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint, repeatMode]);
+
   useEffect(() => {
     if (!verses.length) return;
     const idx = findActiveVerseIndex(verses, currentTime);
@@ -1624,9 +1565,7 @@ export default function App() {
 
     const el = rowRefs.current[idx];
     if (el) ensureRowVisible(el, 10);
-
-    if (repeatAutoReset) repeatRef.current = { idx, done: 0 };
-  }, [currentTime, verses, activeIndex, repeatAutoReset]);
+  }, [currentTime, verses, activeIndex]);
 
   const setA = useCallback(() => setAPoint(currentTimeRef.current), []);
   const setB = useCallback(() => setBPoint(currentTimeRef.current), []);
@@ -1718,8 +1657,6 @@ export default function App() {
     });
   }, [pause]);
 
-  const dialDisabled = !verses.length;
-
   const header = selectedSurah ? (
     <div className="surahHeader">
       <div className="surahHeaderLeft">
@@ -1738,6 +1675,8 @@ export default function App() {
       </div>
     </div>
   ) : null;
+
+  const dialDisabled = !verses.length;
 
   return (
     <div className="appShell">
@@ -1766,13 +1705,11 @@ export default function App() {
             const cur = activeIndexRef.current;
             const base = cur >= 0 ? cur : 0;
             const next = clamp(base + dir, 0, Math.max(0, versesRef.current.length - 1));
-            tactile.pulse(8);
+            tactilePulse(8);
             seekVerse(next, true);
           }}
           repeatMode={repeatMode}
           onToggleRepeat={toggleRepeat}
-          repeatAutoReset={repeatAutoReset}
-          onToggleRepeatAutoReset={() => setRepeatAutoReset((x) => !x)}
         />
 
         <div className={`playerCard playerSticky ${toolsCollapsed ? "collapsed" : ""}`}>
