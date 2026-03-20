@@ -1,5 +1,10 @@
 // =========================================================
-// src/App.jsx
+// src/App.jsx  (TAM DOSYA)
+// - Single Player bar: sabit (sticky-bottom) aynı lokasyonda
+// - Rulman: DİKEY 3D (yüz kullanıcıya bakar) + step'te “tactile” (Android vibrate + iOS click)
+// - R (repeat): r = 1 tekrar, rr = 2 tekrar, off = kapalı
+//   Açılınca AKTİF ayeti hemen baştan SEEK+PLAY eder
+// - Diğer tüm fonksiyonlar korunur (Timeline/SyncPanel/GitHub commit vs.)
 // =========================================================
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
@@ -41,13 +46,45 @@ function formatSec(sec) {
   return Number.isFinite(sec) ? `${sec.toFixed(2)}s` : "—";
 }
 
-function hapticPulse(ms = 10) {
-  try {
-    if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
-      navigator.vibrate(ms);
-    }
-  } catch {}
+// Android/Chrome -> vibrate, iOS/Safari -> tiny click (WebAudio)
+function createTactile() {
+  let ctx = null;
+  return {
+    pulse(ms = 10) {
+      try {
+        if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+          navigator.vibrate(ms);
+        }
+      } catch {}
+
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        if (!ctx) ctx = new AC();
+        if (ctx.state === "suspended") ctx.resume().catch(() => {});
+
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = "square";
+        o.frequency.value = 140;
+        g.gain.value = 0.0001;
+
+        o.connect(g);
+        g.connect(ctx.destination);
+
+        const t0 = ctx.currentTime;
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.linearRampToValueAtTime(0.05, t0 + 0.003);
+        g.gain.linearRampToValueAtTime(0.0001, t0 + 0.018);
+
+        o.start(t0);
+        o.stop(t0 + 0.02);
+      } catch {}
+    },
+  };
 }
+
+const tactile = createTactile();
 
 // Overlap-safe
 function findActiveVerseIndex(verses, t) {
@@ -220,7 +257,7 @@ function SurahList({ surahs, selectedId, query, onQuery, onSelect }) {
           className="searchInput"
           value={query}
           onChange={(e) => onQuery(e.target.value)}
-          placeholder="e.g. yusuf, 12, Yusuf"
+          placeholder="e.g. yusuf, 12, يوسف"
           autoComplete="off"
         />
       </div>
@@ -325,6 +362,7 @@ function Timeline({
             title={`Ayah ${m.ayah}`}
             onClick={(ev) => {
               ev.stopPropagation();
+              tactile.pulse(8);
               onSeekVerse(m.idx);
             }}
           />
@@ -346,10 +384,9 @@ function Timeline({
 }
 
 /**
- * DİKEY 3D RULMAN (daha güçlü)
+ * DİKEY 3D RULMAN
  * - drag UP/DOWN + wheel + inertia
  * - step => onStep(+1/-1)
- * - step'te haptik
  */
 function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const ref = useRef(null);
@@ -358,11 +395,11 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const lastYRef = useRef(0);
   const lastTsRef = useRef(0);
 
-  const velRef = useRef(0); // px/ms
+  const velRef = useRef(0);
   const accumPxRef = useRef(0);
   const rafRef = useRef(0);
 
-  const STEP_PX = 30;
+  const STEP_PX = 28;
 
   useEffect(() => {
     return () => {
@@ -378,14 +415,14 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   };
 
   const tickSteps = () => {
-    let stepped = false;
+    let did = false;
     while (Math.abs(accumPxRef.current) >= STEP_PX) {
       const dir = accumPxRef.current > 0 ? +1 : -1; // down => next
       onStep(dir);
       accumPxRef.current -= dir * STEP_PX;
-      stepped = true;
+      did = true;
     }
-    if (stepped) hapticPulse(8);
+    if (did) tactile.pulse(8);
   };
 
   const startInertia = () => {
@@ -395,7 +432,7 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
       return;
     }
 
-    const DECAY = 0.0062;
+    const DECAY = 0.006;
     const MAX_MS = 1200;
     const startTs = performance.now();
     let last = performance.now();
@@ -458,13 +495,13 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
     stop();
 
     const dy = e.deltaY;
-    const steps = clamp(Math.round(Math.abs(dy) / 35), 1, 8);
+    const steps = clamp(Math.round(Math.abs(dy) / 35), 1, 10);
     const dir = dy > 0 ? +1 : -1;
 
     for (let i = 0; i < steps; i += 1) onStep(dir);
-    hapticPulse(8);
+    tactile.pulse(8);
 
-    velRef.current = clamp(dy / 850, -1.0, 1.0);
+    velRef.current = clamp(dy / 820, -1.0, 1.0);
     startInertia();
   };
 
@@ -473,9 +510,8 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
     return [v - 3, v - 2, v - 1, v, v + 1, v + 2, v + 3].map((n) => n);
   }, [value]);
 
-  // stronger cylinder
-  const angles = [-78, -52, -26, 0, 26, 52, 78];
-  const radius = 86;
+  const angles = [-82, -54, -28, 0, 28, 54, 82];
+  const radius = 90;
 
   return (
     <div className={`spPicker3D ${disabled ? "disabled" : ""}`}>
@@ -495,28 +531,16 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
         onWheel={onWheel}
-        onKeyDown={(e) => {
-          if (disabled) return;
-          if (e.key === "ArrowUp") {
-            e.preventDefault();
-            onStep(-1);
-            hapticPulse(6);
-          }
-          if (e.key === "ArrowDown") {
-            e.preventDefault();
-            onStep(+1);
-            hapticPulse(6);
-          }
-        }}
       >
         <div className="spPickerItems3D">
           {items.map((n, i) => {
             const ang = angles[i] ?? 0;
             const active = n === Number(value);
+
             const abs = Math.abs(ang);
-            const opacity = clamp(1 - abs / 95, 0.15, 1);
-            const blur = clamp(abs / 60, 0, 1.35);
-            const scale = clamp(1 - abs / 220, 0.88, 1);
+            const opacity = clamp(1 - abs / 92, 0.12, 1);
+            const blur = clamp(abs / 55, 0, 1.4);
+            const scale = clamp(1 - abs / 220, 0.86, 1);
 
             return (
               <div
@@ -539,9 +563,8 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
 }
 
 /**
- * Single Player overlay
- * - player bloğu sticky
- * - rulman + r/rr burada
+ * Single Player (dock: sabit lokasyon)
+ * - NO close-on-backdrop-click
  */
 function SinglePlayerPanel({
   open,
@@ -581,7 +604,7 @@ function SinglePlayerPanel({
 
   if (!open) return null;
 
-  const ay = verse?.ayah != null ? Number(verse.ayah) : 0;
+  const ay = verse?.ayah != null ? String(verse.ayah) : "—";
 
   return (
     <div className="singlePlayerBackdrop" role="dialog" aria-modal="true" aria-label="Single Player">
@@ -593,10 +616,9 @@ function SinglePlayerPanel({
 
           <div className="singlePlayerLine singlePlayerLineDe">{(verse?.de || "—").trim()}</div>
 
-          {/* ✅ sticky controls */}
-          <div className="singlePlayerControls singlePlayerTopBar singlePlayerControlsSticky">
-            <div className="singlePlayerAyahNo">#{ay || "—"}</div>
-
+          {/* ✅ SABİT DOK: burası hep aynı yerde */}
+          <div className="singlePlayerControls singlePlayerControlsDock">
+            <div className="singlePlayerAyahNo">#{ay}</div>
             <div className="singlePlayerBtns">
               <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
                 ◀
@@ -608,13 +630,13 @@ function SinglePlayerPanel({
                 ▶
               </button>
 
-              <IOSPickerWheelVertical3D disabled={dialDisabled} value={ay} onStep={onDialStep} />
+              <IOSPickerWheelVertical3D disabled={dialDisabled} value={Number(verse?.ayah || 0)} onStep={onDialStep} />
 
               <button
                 className={`spRBtn ${repeatMode ? "on" : "off"}`}
                 type="button"
                 onClick={() => {
-                  hapticPulse(8);
+                  tactile.pulse(10);
                   onToggleRepeat();
                 }}
                 aria-label="Repeat"
@@ -623,7 +645,7 @@ function SinglePlayerPanel({
                 {repeatMode === 2 ? "rr" : "r"}
               </button>
 
-              <label className="spAutoReset chip" title="Auto-reset">
+              <label className="chip" title="Auto-reset">
                 <input type="checkbox" checked={repeatAutoReset} onChange={onToggleRepeatAutoReset} />
                 Auto-reset
               </label>
@@ -965,12 +987,22 @@ function SyncPanel({
             <div className="syncInputs">
               <label className="miniLabel">
                 start
-                <input className="miniInput" value={startInput} onChange={(e) => setStartInput(e.target.value)} inputMode="decimal" />
+                <input
+                  className="miniInput"
+                  value={startInput}
+                  onChange={(e) => setStartInput(e.target.value)}
+                  inputMode="decimal"
+                />
               </label>
 
               <label className="miniLabel">
                 end
-                <input className="miniInput" value={endInput} onChange={(e) => setEndInput(e.target.value)} inputMode="decimal" />
+                <input
+                  className="miniInput"
+                  value={endInput}
+                  onChange={(e) => setEndInput(e.target.value)}
+                  inputMode="decimal"
+                />
               </label>
 
               <div className="syncMetaInline">
@@ -1213,8 +1245,7 @@ export default function App() {
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
   const [singleOn, setSingleOn] = useState(false);
 
-  // repeat: 0 off, 1 => 1 tekrar, 2 => 2 tekrar
-  const [repeatMode, setRepeatMode] = useState(0);
+  const [repeatMode, setRepeatMode] = useState(0); // 0 off, 1 r, 2 rr
   const [repeatAutoReset, setRepeatAutoReset] = useState(true);
   const repeatRef = useRef({ idx: -1, done: 0 });
 
@@ -1275,8 +1306,14 @@ export default function App() {
     });
   }, [query]);
 
-  const audioSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""), [selectedSurah]);
-  const versesSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.versesUrl) : ""), [selectedSurah]);
+  const audioSrc = useMemo(
+    () => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""),
+    [selectedSurah]
+  );
+  const versesSrc = useMemo(
+    () => (selectedSurah ? resolvePublicUrl(selectedSurah.versesUrl) : ""),
+    [selectedSurah]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -1421,18 +1458,6 @@ export default function App() {
     seekVerse(idx, true);
   }, [seekVerse]);
 
-  const dialStep = useCallback(
-    (dir) => {
-      const vs = versesRef.current;
-      if (!vs.length) return;
-      const cur = activeIndexRef.current;
-      const base = cur >= 0 ? cur : 0;
-      const next = clamp(base + dir, 0, vs.length - 1);
-      seekVerse(next, true);
-    },
-    [seekVerse]
-  );
-
   const updateVerse = useCallback((idx, patch) => {
     setVerses((prev) => {
       if (!prev[idx]) return prev;
@@ -1515,7 +1540,30 @@ export default function App() {
     if (idx >= 0) seekVerse(idx, true);
   }, [seekVerse]);
 
-  // loop / repeat
+  // ✅ repeat toggle: açılınca aktif ayeti baştan PLAY
+  const toggleRepeat = useCallback(() => {
+    setRepeatMode((m) => {
+      const next = m === 0 ? 1 : m === 1 ? 2 : 0;
+
+      let idx = activeIndexRef.current;
+      if (idx < 0 && versesRef.current.length) {
+        idx = findActiveVerseIndex(versesRef.current, currentTimeRef.current);
+      }
+
+      if (next > 0 && idx >= 0) {
+        repeatRef.current = { idx, done: 0 };
+        const v = versesRef.current[idx];
+        const s = Number(v?.start);
+        if (Number.isFinite(s)) seekTo(s, true);
+      } else {
+        repeatRef.current = { idx: -1, done: 0 };
+      }
+
+      return next;
+    });
+  }, [seekTo]);
+
+  // loop / repeat engine
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1530,46 +1578,43 @@ export default function App() {
       return;
     }
 
-    if (loopAyah && verses.length) {
-      const idx = findActiveVerseIndex(verses, currentTime);
-      if (idx >= 0) {
-        const v = verses[idx];
-        const s = Number(v?.start);
-        const e = Number(v?.end);
-        if (Number.isFinite(s) && Number.isFinite(e) && e > s && currentTime >= e) {
-          a.currentTime = s;
-          a.play().catch(() => {});
-        }
+    if (!verses.length) return;
+
+    const idx = findActiveVerseIndex(verses, currentTime);
+    if (idx < 0) return;
+
+    const v = verses[idx];
+    const s = Number(v?.start);
+    const e = Number(v?.end);
+    if (!Number.isFinite(s) || !Number.isFinite(e) || e <= s) return;
+
+    if (loopAyah) {
+      if (currentTime >= e) {
+        a.currentTime = s;
+        a.play().catch(() => {});
       }
       return;
     }
 
-    if (repeatMode > 0 && verses.length) {
-      const idx = findActiveVerseIndex(verses, currentTime);
-      if (idx >= 0) {
-        const v = verses[idx];
-        const s = Number(v?.start);
-        const e = Number(v?.end);
-        if (Number.isFinite(s) && Number.isFinite(e) && e > s && currentTime >= e) {
-          const st = repeatRef.current;
-          const sameIdx = st.idx === idx;
-          const done = sameIdx ? st.done : 0;
+    if (repeatMode > 0 && currentTime >= e) {
+      const st = repeatRef.current;
+      const same = st.idx === idx;
+      const done = same ? st.done : 0;
 
-          if (done < repeatMode) {
-            repeatRef.current = { idx, done: done + 1 };
-            a.currentTime = s;
-            a.play().catch(() => {});
-            return;
-          }
-
-          repeatRef.current = { idx: -1, done: 0 };
-          const nextIdx = Math.min(verses.length - 1, idx + 1);
-          seekVerse(nextIdx, true);
-        }
+      if (done < repeatMode) {
+        repeatRef.current = { idx, done: done + 1 };
+        a.currentTime = s;
+        a.play().catch(() => {});
+        return;
       }
+
+      repeatRef.current = { idx: -1, done: 0 };
+      const nextIdx = Math.min(verses.length - 1, idx + 1);
+      seekVerse(nextIdx, true);
     }
   }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint, repeatMode, seekVerse]);
 
+  // active row follow
   useEffect(() => {
     if (!verses.length) return;
     const idx = findActiveVerseIndex(verses, currentTime);
@@ -1673,27 +1718,7 @@ export default function App() {
     });
   }, [pause]);
 
-  // ✅ FIX: R açılınca AKTİF AYETİ HEMEN BAŞTAN PLAY
-  const toggleRepeat = useCallback(() => {
-    setRepeatMode((m) => {
-      const next = m === 0 ? 1 : m === 1 ? 2 : 0;
-
-      const idx = activeIndexRef.current;
-      if (next > 0 && idx >= 0) {
-        repeatRef.current = { idx, done: 0 };
-        const v = versesRef.current[idx];
-        const s = Number(v?.start);
-        if (Number.isFinite(s)) {
-          seekTo(s, true);
-          hapticPulse(10);
-        }
-      } else {
-        repeatRef.current = { idx: -1, done: 0 };
-      }
-
-      return next;
-    });
-  }, [seekTo]);
+  const dialDisabled = !verses.length;
 
   const header = selectedSurah ? (
     <div className="surahHeader">
@@ -1713,8 +1738,6 @@ export default function App() {
       </div>
     </div>
   ) : null;
-
-  const dialDisabled = !verses.length;
 
   return (
     <div className="appShell">
@@ -1739,7 +1762,13 @@ export default function App() {
           onNext={nextAyah}
           onClose={closeSingle}
           dialDisabled={dialDisabled}
-          onDialStep={dialStep}
+          onDialStep={(dir) => {
+            const cur = activeIndexRef.current;
+            const base = cur >= 0 ? cur : 0;
+            const next = clamp(base + dir, 0, Math.max(0, versesRef.current.length - 1));
+            tactile.pulse(8);
+            seekVerse(next, true);
+          }}
           repeatMode={repeatMode}
           onToggleRepeat={toggleRepeat}
           repeatAutoReset={repeatAutoReset}
