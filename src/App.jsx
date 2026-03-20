@@ -338,20 +338,21 @@ function Timeline({
 }
 
 /**
- * VerseDial: acceleration + inertia
- * - Drag: angle delta -> step
- * - Wheel: delta -> step
- * - Acceleration: hızlı input -> multiplier 1..5
- * - Inertia: bırakınca momentum ile azalarak devam
+ * VerticalWheel (single player overlay)
+ * - Drag up/down / wheel / arrow keys
+ * - Acceleration: hızlı input => 1..5 step
+ * - Inertia: bırakınca momentum
  */
-function VerseDial({ disabled, onStep }) {
-  const knobRef = useRef(null);
-  const draggingRef = useRef(false);
-  const lastAngleRef = useRef(null);
-  const lastMoveTsRef = useRef(0);
+function VerticalWheel({ disabled, onStep }) {
+  const wrapRef = useRef(null);
 
-  // click animation
+  // click anim
   const tickTimerRef = useRef(null);
+
+  // drag state
+  const draggingRef = useRef(false);
+  const lastYRef = useRef(0);
+  const lastMoveTsRef = useRef(0);
 
   // acceleration
   const lastStepTsRef = useRef(0);
@@ -359,8 +360,8 @@ function VerseDial({ disabled, onStep }) {
 
   // inertia
   const inertiaRafRef = useRef(0);
-  const inertiaVelRef = useRef(0); // degrees per ms (signed)
-  const inertiaAccumRef = useRef(0); // degrees accumulated
+  const inertiaVelRef = useRef(0); // px/ms
+  const inertiaAccumRef = useRef(0); // px accumulated
   const inertiaLastTsRef = useRef(0);
 
   useEffect(() => {
@@ -371,7 +372,7 @@ function VerseDial({ disabled, onStep }) {
   }, []);
 
   const doTick = () => {
-    const el = knobRef.current;
+    const el = wrapRef.current;
     if (!el) return;
 
     el.classList.remove("tick");
@@ -426,15 +427,14 @@ function VerseDial({ disabled, onStep }) {
 
   const startInertia = () => {
     const vel = inertiaVelRef.current;
-    if (!Number.isFinite(vel) || Math.abs(vel) < 0.05) {
+    if (!Number.isFinite(vel) || Math.abs(vel) < 0.04) {
       stopInertia();
       return;
     }
 
     inertiaLastTsRef.current = performance.now();
-
-    const TH_DEG = 18;
-    const DECAY_PER_MS = 0.0065; // bigger -> quicker stop
+    const TH_PX = 22;
+    const DECAY_PER_MS = 0.0068;
     const MAX_MS = 1200;
     const startTs = performance.now();
 
@@ -443,7 +443,6 @@ function VerseDial({ disabled, onStep }) {
       const dt = now - (inertiaLastTsRef.current || now);
       inertiaLastTsRef.current = now;
 
-      // exponential-ish decay
       const sign = Math.sign(inertiaVelRef.current || vel);
       const speed = Math.abs(inertiaVelRef.current || vel);
       const nextSpeed = Math.max(0, speed * (1 - DECAY_PER_MS * dt));
@@ -451,86 +450,55 @@ function VerseDial({ disabled, onStep }) {
 
       inertiaAccumRef.current += inertiaVelRef.current * dt;
 
-      // convert degrees to steps
-      while (Math.abs(inertiaAccumRef.current) >= TH_DEG) {
+      while (Math.abs(inertiaAccumRef.current) >= TH_PX) {
+        // px>0 => down => NEXT (+1), px<0 => up => PREV (-1)
         const dir = inertiaAccumRef.current > 0 ? +1 : -1;
-        const extra = nextSpeed > 0.45 ? 2 : nextSpeed > 0.30 ? 1 : 0; // mild accel inside inertia
+        const extra = nextSpeed > 0.55 ? 2 : nextSpeed > 0.35 ? 1 : 0;
         acceleratedStep(dir, extra);
-        inertiaAccumRef.current -= dir * TH_DEG;
+        inertiaAccumRef.current -= dir * TH_PX;
       }
 
       const elapsed = now - startTs;
-      if (nextSpeed < 0.05 || elapsed > MAX_MS) {
+      if (nextSpeed < 0.04 || elapsed > MAX_MS) {
         stopInertia();
         return;
       }
-
       inertiaRafRef.current = requestAnimationFrame(tick);
     };
 
     inertiaRafRef.current = requestAnimationFrame(tick);
   };
 
-  const getAngle = (clientX, clientY) => {
-    const el = knobRef.current;
-    if (!el) return 0;
-    const r = el.getBoundingClientRect();
-    const cx = r.left + r.width / 2;
-    const cy = r.top + r.height / 2;
-    const dx = clientX - cx;
-    const dy = clientY - cy;
-    return Math.atan2(dy, dx) * (180 / Math.PI);
-  };
-
-  const normDelta = (a, b) => {
-    let d = a - b;
-    while (d > 180) d -= 360;
-    while (d < -180) d += 360;
-    return d;
-  };
-
   const onPointerDown = (e) => {
     if (disabled) return;
     stopInertia();
     draggingRef.current = true;
-    lastAngleRef.current = getAngle(e.clientX, e.clientY);
+    lastYRef.current = e.clientY;
     lastMoveTsRef.current = performance.now();
-    knobRef.current?.setPointerCapture?.(e.pointerId);
+    wrapRef.current?.setPointerCapture?.(e.pointerId);
   };
 
   const onPointerMove = (e) => {
     if (disabled || !draggingRef.current) return;
 
-    const cur = getAngle(e.clientX, e.clientY);
-    const last = lastAngleRef.current;
     const now = performance.now();
-
-    if (last == null) {
-      lastAngleRef.current = cur;
-      lastMoveTsRef.current = now;
-      return;
-    }
-
-    const d = normDelta(cur, last);
+    const dy = e.clientY - lastYRef.current;
     const dt = Math.max(1, now - (lastMoveTsRef.current || now));
     lastMoveTsRef.current = now;
+    lastYRef.current = e.clientY;
 
-    // capture velocity for inertia (deg/ms)
-    inertiaVelRef.current = d / dt;
+    inertiaVelRef.current = dy / dt;
 
-    const TH = 18;
-    const abs = Math.abs(d);
-
-    if (abs >= TH) {
-      const extra = abs >= 70 ? 3 : abs >= 50 ? 2 : abs >= 35 ? 1 : 0;
-      acceleratedStep(d > 0 ? +1 : -1, extra);
-      lastAngleRef.current = cur;
+    const TH_PX = 22;
+    const abs = Math.abs(dy);
+    if (abs >= TH_PX) {
+      const extra = abs >= 90 ? 3 : abs >= 65 ? 2 : abs >= 40 ? 1 : 0;
+      acceleratedStep(dy > 0 ? +1 : -1, extra);
     }
   };
 
   const onPointerUp = () => {
     draggingRef.current = false;
-    lastAngleRef.current = null;
     burstRef.current = 0;
     startInertia();
   };
@@ -543,21 +511,19 @@ function VerseDial({ disabled, onStep }) {
     const abs = Math.abs(e.deltaY);
     const extra = abs >= 220 ? 3 : abs >= 140 ? 2 : abs >= 80 ? 1 : 0;
 
-    // wheel also seeds inertia slightly
-    inertiaVelRef.current = clamp((e.deltaY > 0 ? 1 : -1) * (abs / 1200), -0.9, 0.9);
-
+    inertiaVelRef.current = clamp((e.deltaY / 1200) * 0.9, -0.9, 0.9);
     acceleratedStep(e.deltaY > 0 ? +1 : -1, extra);
     startInertia();
   };
 
   return (
-    <div className={`dialWrap ${disabled ? "disabled" : ""}`}>
-      <div className="dialLabel muted">Çark</div>
+    <div className={`spWheelWrap ${disabled ? "disabled" : ""}`}>
+      <div className="spWheelLabel muted">Çark</div>
       <div
-        ref={knobRef}
-        className="dialKnob"
+        ref={wrapRef}
+        className="spWheel"
         role="slider"
-        aria-label="Ayet çarkı"
+        aria-label="Ayet çarkı (dikey)"
         tabIndex={disabled ? -1 : 0}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -567,29 +533,45 @@ function VerseDial({ disabled, onStep }) {
         onKeyDown={(e) => {
           if (disabled) return;
           stopInertia();
-          if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+          if (e.key === "ArrowUp") {
             e.preventDefault();
             acceleratedStep(-1, e.repeat ? 1 : 0);
           }
-          if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+          if (e.key === "ArrowDown") {
             e.preventDefault();
             acceleratedStep(+1, e.repeat ? 1 : 0);
           }
         }}
-        title="Sürükle / mouse wheel / ok tuşları • hızlı çevirince hızlanır • bırakınca momentum"
+        title="Yukarı/aşağı sürükle • mouse wheel • ↑/↓ • hızlıysa hızlanır • bırakınca momentum"
       >
-        <div className="dialDot" />
+        <div className="spWheelThumb" />
       </div>
+      <div className="spWheelHint muted">↑ prev • ↓ next</div>
     </div>
   );
 }
 
 /**
  * Single Player (centered overlay, blur BACK)
- * Close => pause
- * No close-on-backdrop-click
+ * - Çark + Repeat burada (dikey)
+ * - Close => pause
+ * - No close-on-backdrop-click
  */
-function SinglePlayerPanel({ open, verse, isPlaying, onPlayPause, onPrev, onNext, onClose }) {
+function SinglePlayerPanel({
+  open,
+  verse,
+  isPlaying,
+  onPlayPause,
+  onPrev,
+  onNext,
+  onClose,
+  dialDisabled,
+  onDialStep,
+  repeatMode,
+  onToggleRepeat,
+  repeatAutoReset,
+  onToggleRepeatAutoReset,
+}) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => {
@@ -614,41 +596,69 @@ function SinglePlayerPanel({ open, verse, isPlaying, onPlayPause, onPrev, onNext
   if (!open) return null;
 
   const ay = verse?.ayah != null ? String(verse.ayah) : "—";
+  const repeatTitle =
+    repeatMode === 0 ? "Tekrar: kapalı" : repeatMode === 1 ? "Tekrar: 1×" : "Tekrar: 2×";
 
   return (
     <div className="singlePlayerBackdrop" role="dialog" aria-modal="true" aria-label="Single Player">
       <div className="singlePlayerCard">
-        <div className="singlePlayerLines">
-          <div className="singlePlayerLine singlePlayerLineAr" dir="rtl">
-            {(verse?.ar || "—").trim()}
-          </div>
-
-          <div className="singlePlayerLine singlePlayerLineDe">{(verse?.de || "—").trim()}</div>
-
-          <div className="singlePlayerControls">
-            <div className="singlePlayerAyahNo">#{ay}</div>
-            <div className="singlePlayerBtns">
-              <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
-                ◀
-              </button>
-              <button
-                className="spBtn spBtnPrimary"
-                type="button"
-                onClick={onPlayPause}
-                aria-label="Play/Pause"
-              >
-                {isPlaying ? "⏸" : "▶"}
-              </button>
-              <button className="spBtn" type="button" onClick={onNext} aria-label="Next">
-                ▶
-              </button>
-              <button className="spBtn spBtnClose" type="button" onClick={onClose} aria-label="Close">
-                ✕
-              </button>
+        <div className="singlePlayerLayout">
+          <div className="singlePlayerLines">
+            <div className="singlePlayerLine singlePlayerLineAr" dir="rtl">
+              {(verse?.ar || "—").trim()}
             </div>
+
+            <div className="singlePlayerLine singlePlayerLineDe">{(verse?.de || "—").trim()}</div>
+
+            <div className="singlePlayerControls">
+              <div className="singlePlayerAyahNo">#{ay}</div>
+              <div className="singlePlayerBtns">
+                <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
+                  ◀
+                </button>
+                <button
+                  className="spBtn spBtnPrimary"
+                  type="button"
+                  onClick={onPlayPause}
+                  aria-label="Play/Pause"
+                >
+                  {isPlaying ? "⏸" : "▶"}
+                </button>
+                <button className="spBtn" type="button" onClick={onNext} aria-label="Next">
+                  ▶
+                </button>
+              </div>
+            </div>
+
+            <div className="singlePlayerLine singlePlayerLineTr">{(verse?.tr || "—").trim()}</div>
           </div>
 
-          <div className="singlePlayerLine singlePlayerLineTr">{(verse?.tr || "—").trim()}</div>
+          {/* ✅ RIGHT SIDE VERTICAL CONTROLS */}
+          <div className="spSideRail">
+            <VerticalWheel disabled={dialDisabled} onStep={onDialStep} />
+
+            <button
+              className={`btnRepeat spRepeatBtn ${repeatMode ? "on" : "off"}`}
+              type="button"
+              onClick={onToggleRepeat}
+              title={repeatTitle}
+              aria-label={repeatTitle}
+            >
+              <span className="repeatIcon" aria-hidden="true">
+                {repeatMode === 0 ? "r" : repeatMode === 1 ? "r" : "rr"}
+              </span>
+              <span className="repeatText">Tekrar</span>
+            </button>
+
+            <label className="chip spRepeatReset" title="Ayah değişince tekrar sayacı sıfırlansın">
+              <input type="checkbox" checked={repeatAutoReset} onChange={onToggleRepeatAutoReset} />
+              Auto-reset
+            </label>
+
+            <button className="spBtn spBtnClose spCloseBtn" type="button" onClick={onClose} aria-label="Close">
+              ✕
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -681,18 +691,7 @@ function PlayerControls({
   onSetB,
   singleOn,
   onToggleSingle,
-
-  // NEW
-  repeatMode,
-  onToggleRepeat,
-  repeatAutoReset,
-  onToggleRepeatAutoReset,
-  onDialStep,
-  dialDisabled,
 }) {
-  const repeatTitle =
-    repeatMode === 0 ? "Tekrar: kapalı" : repeatMode === 1 ? "Tekrar: 1×" : "Tekrar: 2×";
-
   return (
     <div className="playerControls">
       <div className="liveTimeBar">
@@ -711,21 +710,6 @@ function PlayerControls({
           </button>
           <button className="btnSmall" type="button" onClick={onNext} title="Next ayah">
             ▶
-          </button>
-
-          <VerseDial disabled={dialDisabled} onStep={onDialStep} />
-
-          <button
-            className={`btnRepeat ${repeatMode ? "on" : "off"}`}
-            type="button"
-            onClick={onToggleRepeat}
-            title={repeatTitle}
-            aria-label={repeatTitle}
-          >
-            <span className="repeatIcon" aria-hidden="true">
-              {repeatMode === 0 ? "r" : repeatMode === 1 ? "r" : "rr"}
-            </span>
-            <span className="repeatText">Tekrar</span>
           </button>
 
           <button className={`btnSinglePlayer ${singleOn ? "on" : ""}`} type="button" onClick={onToggleSingle}>
@@ -772,13 +756,6 @@ function PlayerControls({
             <button className="btnSmall" type="button" onClick={onSetB} title="Set B (B)">
               Set B {bPoint != null ? `(${formatTime(bPoint)})` : ""}
             </button>
-
-            <div className="divider" />
-
-            <label className="chip" title="Ayah değişince tekrar sayacı sıfırlansın">
-              <input type="checkbox" checked={repeatAutoReset} onChange={onToggleRepeatAutoReset} />
-              Repeat auto-reset
-            </label>
 
             <div className="divider" />
 
@@ -975,8 +952,7 @@ function SyncPanel({
     const jsonText = JSON.stringify(verses, null, 2);
     const content = base64EncodeUtf8(jsonText);
     const message =
-      ghMsg.trim() ||
-      `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
+      ghMsg.trim() || `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
 
     await onCommitGithub({ owner, repo, path, branch, token, message, content });
     setGhMsg("");
@@ -1033,9 +1009,7 @@ function SyncPanel({
 
               <div className="syncMetaInline">
                 <div className="autoSaved muted">Auto-save</div>
-                <div className={`deltaPill ${deltaOk ? "" : "muted"}`}>
-                  Δ {deltaOk ? `${delta.toFixed(2)}s` : "—"}
-                </div>
+                <div className={`deltaPill ${deltaOk ? "" : "muted"}`}>Δ {deltaOk ? `${delta.toFixed(2)}s` : "—"}</div>
               </div>
             </div>
           </div>
@@ -1220,11 +1194,7 @@ function SyncPanel({
                 </label>
 
                 <label className="chip" title="Store token in localStorage on this browser">
-                  <input
-                    type="checkbox"
-                    checked={ghRemember}
-                    onChange={(e) => setGhRemember(e.target.checked)}
-                  />
+                  <input type="checkbox" checked={ghRemember} onChange={(e) => setGhRemember(e.target.checked)} />
                   Remember token
                 </label>
 
@@ -1309,11 +1279,7 @@ export default function App() {
 
   // repeat: 0 off, 1 => 1 tekrar, 2 => 2 tekrar
   const [repeatMode, setRepeatMode] = useState(0);
-
-  // auto reset: ayah değişince tekrar sayacı sıfırlansın
   const [repeatAutoReset, setRepeatAutoReset] = useState(true);
-
-  // repeat counter
   const repeatRef = useRef({ idx: -1, done: 0 });
 
   const resetRepeatCounter = useCallback((idx = -1) => {
@@ -1825,6 +1791,12 @@ export default function App() {
           onPrev={prevAyah}
           onNext={nextAyah}
           onClose={closeSingle}
+          dialDisabled={dialDisabled}
+          onDialStep={dialStep}
+          repeatMode={repeatMode}
+          onToggleRepeat={toggleRepeat}
+          repeatAutoReset={repeatAutoReset}
+          onToggleRepeatAutoReset={() => setRepeatAutoReset((x) => !x)}
         />
 
         <div className={`playerCard playerSticky ${toolsCollapsed ? "collapsed" : ""}`}>
@@ -1856,12 +1828,6 @@ export default function App() {
             onSetB={setB}
             singleOn={singleOn}
             onToggleSingle={toggleSingle}
-            repeatMode={repeatMode}
-            onToggleRepeat={toggleRepeat}
-            repeatAutoReset={repeatAutoReset}
-            onToggleRepeatAutoReset={() => setRepeatAutoReset((x) => !x)}
-            onDialStep={dialStep}
-            dialDisabled={dialDisabled}
           />
 
           {toolsCollapsed ? null : (
