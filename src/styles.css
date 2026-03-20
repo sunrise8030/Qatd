@@ -679,10 +679,12 @@ html,body{
 /* === EK: Bottom dock (format bozmaz, sadece yeni class) === */
 .singlePlayerDockBottom{
   position: fixed;
-  left: 14px;
   right: 14px;
+  left: auto;
   bottom: calc(14px + env(safe-area-inset-bottom));
   z-index: 10001;
+
+  width: min(720px, calc(100% - 28px)); /* ✅ sağda sabit ama mobilde taşmaz */
 
   padding: 10px;
   border-radius: 18px;
