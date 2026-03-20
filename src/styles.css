@@ -1,488 +1,734 @@
-/**
- * File: Code.gs
- * Form submit -> GitHub repository_dispatch + logs + replay + append to TARGET sheet (auto-defaults).
- *
- * Script Properties (required for GitHub + Form):
- *   GITHUB_TOKEN = <GitHub PAT>
- *   GITHUB_REPO  = <owner>/<repo>
- *   FORM_ID      = <form id>
- *
- * Script Properties (optional; if empty, defaults below are used):
- *   TARGET_SPREADSHEET_ID
- *   TARGET_SHEET_GID
- */
+/* =========================
+   FILE: src/styles.css (FULL - ORIJINAL + EKLER)
+   ========================= */
+/* src/styles.css */
+:root{
+  --bg:#0b0f16;
+  --panel:#0f1520;
+  --border:rgba(255,255,255,0.08);
+  --text:rgba(255,255,255,0.92);
+  --muted:rgba(255,255,255,0.62);
+  --accent:rgba(99,179,237,1);
+  --danger:rgba(255,120,120,0.18);
 
-var CFG = {
-  eventType: "publish_recording",
-  logSpreadsheetName: "autoFSP Logs",
-  logSheet: "DispatchLog",
-  errSheet: "Errors",
-  formTitle: "FSP simulasyonu isimlendirme formu (Publish raw to Neu with eyalet) - WhatsApp",
-  githubRetries: 4,
-  githubRetryBaseMs: 500,
-
-  // ✅ Defaults (used if Script Properties are empty)
-  defaultTargetSpreadsheetId: "1UX-zdkcpaU4rn5C8BZ2Oh8Ocr3wBhxxYWM5mUBfAkY4",
-  defaultTargetSheetGid: 209058467
-};
-
-var KEYS = {
-  githubToken: "GITHUB_TOKEN",
-  githubRepo: "GITHUB_REPO",
-  formId: "FORM_ID",
-  logSheetId: "LOG_SHEET_ID",
-  targetSpreadsheetId: "TARGET_SPREADSHEET_ID",
-  targetSheetGid: "TARGET_SHEET_GID"
-};
-
-// ---------------------- ONE-TIME BOOTSTRAP ----------------------
-
-/**
- * Run manually once:
- * - Ensures logs spreadsheet exists
- * - Ensures onFormSubmit trigger exists for FORM_ID
- * - Validates target sheet access + gid
- */
-function bootstrap() {
-  ensureLogSheets_();
-  ensureOnSubmitTrigger_();
-  diagnoseTargetWrite();
-  Logger.log("OK: bootstrap completed");
+  --w-no: 70px;
+  --w-ar: 1.1fr;
+  --w-de: 1fr;
+  --w-tr: 1fr;
 }
 
-function ensureOnSubmitTrigger_() {
-  var formId = getProp_(KEYS.formId);
-  if (!formId) throw new Error("Missing FORM_ID in Script Properties.");
+*{ box-sizing:border-box; }
 
-  var triggers = ScriptApp.getProjectTriggers();
-  for (var i = 0; i < triggers.length; i++) {
-    var t = triggers[i];
-    try {
-      if (t.getHandlerFunction && t.getHandlerFunction() === "onFormSubmit") {
-        // If source id available, match it; otherwise accept existing handler
-        if (!t.getTriggerSourceId || t.getTriggerSourceId() === formId) {
-          Logger.log("OK: onFormSubmit trigger already exists");
-          return;
-        }
-      }
-    } catch (e) {}
+html,body{
+  height:100%;
+  margin:0;
+  background:
+    radial-gradient(1200px 800px at 30% 15%, rgba(120,120,255,0.12), transparent 55%),
+    radial-gradient(1200px 800px at 70% 35%, rgba(255,120,120,0.10), transparent 55%),
+    var(--bg);
+  color:var(--text);
+  font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji";
+}
+
+.appShell{ display:grid; grid-template-columns:360px 1fr; min-height:100vh; }
+
+@media (max-width:980px){
+  .appShell{ grid-template-columns:1fr; }
+  .sidebar{ position:sticky; top:0; z-index:5; }
+}
+
+.sidebar{
+  border-right:1px solid var(--border);
+  background:rgba(15,21,32,0.72);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  padding:16px;
+}
+
+.sidebarHeader{ margin-bottom:12px; }
+.appTitle{ margin:0 0 10px; font-size:18px; }
+.fieldLabel{ display:block; color:var(--muted); font-size:12px; margin:8px 0 6px; }
+
+.searchInput{
+  width:100%;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,0.25);
+  color:var(--text);
+  outline:none;
+}
+
+.surahList{ display:grid; gap:10px; margin-top:12px; }
+.surahCard{
+  text-align:left;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,0.18);
+  border-radius:14px;
+  padding:12px;
+  cursor:pointer;
+  color:inherit;
+}
+.surahCard:hover{ border-color:rgba(255,255,255,0.16); }
+.surahCard.active{
+  border-color:rgba(99,179,237,0.55);
+  box-shadow:0 0 0 2px rgba(99,179,237,0.15) inset;
+}
+.surahCardTop{ display:flex; justify-content:space-between; align-items:center; color:var(--muted); font-size:12px; }
+.surahNames{ margin-top:8px; }
+.surahNameStrong{ font-weight:650; font-size:16px; }
+.surahNameMuted{ color:var(--muted); font-size:13px; margin-top:2px; }
+.surahNameAr{ color:var(--text); font-size:16px; margin-top:6px; text-align:right; }
+.surahMeta{ margin-top:10px; color:var(--muted); font-size:12px; }
+
+.content{ padding:16px; }
+
+.surahHeader{
+  border:1px solid var(--border);
+  background:rgba(15,21,32,0.55);
+  border-radius:16px;
+  padding:14px 16px;
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:10px;
+}
+.surahTitle{ margin:0; font-size:20px; }
+.surahSub{ color:var(--muted); margin-top:3px; }
+.surahHeaderRight{ font-size:18px; align-self:start; }
+.surahBadges{ grid-column:1 / -1; display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+.badge{
+  font-size:12px;
+  color:var(--muted);
+  border:1px solid var(--border);
+  background:rgba(0,0,0,0.18);
+  padding:6px 10px;
+  border-radius:999px;
+}
+
+.errorBox{
+  margin-top:12px;
+  border:1px solid rgba(255,120,120,0.35);
+  background:var(--danger);
+  border-radius:12px;
+  padding:10px 12px;
+}
+
+/* Player */
+.playerCard{
+  margin-top:14px;
+  border:1px solid var(--border);
+  background:rgba(15,21,32,0.55);
+  border-radius:16px;
+  padding:12px;
+  position:relative;
+}
+.playerSticky{
+  position:sticky;
+  top:10px;
+  z-index:20;
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+}
+.playerControls{ display:grid; gap:10px; }
+
+.liveTimeBar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.liveTime{
+  display:flex;
+  align-items:baseline;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.liveActions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.liveLabel{
+  font-size:12px;
+  color:var(--muted);
+  border:1px solid var(--border);
+  background:rgba(0,0,0,0.18);
+  padding:4px 8px;
+  border-radius:999px;
+}
+.liveSec{
+  font-variant-numeric:tabular-nums;
+  font-size:26px;
+  font-weight:800;
+}
+.liveDur{
+  font-variant-numeric:tabular-nums;
+  font-size:12px;
+}
+
+.btnSmall,.btnTiny,.btnPrimary{
+  border:1px solid var(--border);
+  background:rgba(0,0,0,0.22);
+  color:var(--text);
+  cursor:pointer;
+  border-radius:10px;
+}
+.btnSmall{ padding:8px 10px; }
+.btnTiny{ padding:6px 8px; font-size:12px; }
+.btnPrimary{
+  padding:12px 18px;
+  border-radius:12px;
+  font-size:14px;
+  font-weight:800;
+  border-color: rgba(99,179,237,0.35);
+  box-shadow: 0 0 0 2px rgba(99,179,237,0.10) inset;
+}
+.btnToggle{ border-color:rgba(255,255,255,0.14); }
+.btnSmall:hover,.btnTiny:hover,.btnPrimary:hover{ border-color:rgba(255,255,255,0.16); }
+
+.btnRow{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.divider{ width:1px; height:28px; background:var(--border); margin:0 2px; }
+
+.chip{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,0.18);
+  padding:8px 10px;
+  border-radius:999px;
+  color:var(--muted);
+  font-size:12px;
+}
+
+.rate{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  color:var(--muted);
+  font-size:12px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,0.18);
+  padding:8px 10px;
+  border-radius:999px;
+}
+
+.rate select{
+  background:rgba(0,0,0,0.25);
+  color:var(--text);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:4px 8px;
+}
+
+.kbdHelp{ font-size:12px; }
+.mono{ font-variant-numeric:tabular-nums; }
+.muted{ color:var(--muted); }
+
+/* Single Player button (big, bright, 3D) */
+.btnSinglePlayer{
+  padding: 14px 16px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 950;
+  cursor: pointer;
+  color: rgba(10,14,22,0.98);
+  border: 1px solid rgba(255,255,255,0.18);
+  background: linear-gradient(180deg, rgba(170,220,255,1), rgba(99,179,237,1));
+  box-shadow:
+    0 10px 22px rgba(0,0,0,0.35),
+    0 3px 0 rgba(255,255,255,0.22) inset,
+    0 -6px 10px rgba(0,0,0,0.25) inset;
+  transform: translateY(0);
+}
+.btnSinglePlayer:hover{ filter: brightness(1.06); }
+.btnSinglePlayer:active{
+  transform: translateY(2px);
+  box-shadow:
+    0 6px 14px rgba(0,0,0,0.30),
+    0 2px 0 rgba(255,255,255,0.18) inset,
+    0 -4px 8px rgba(0,0,0,0.22) inset;
+}
+.btnSinglePlayer.on{
+  background: linear-gradient(180deg, rgba(195,255,215,1), rgba(90,210,150,1));
+}
+
+/* Timeline */
+.timeline{
+  margin-top:10px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,0.18);
+  border-radius:14px;
+  padding:10px;
+}
+.timelineTop{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:8px;
+}
+.timelineTrack{
+  position:relative;
+  height:10px;
+  border-radius:999px;
+  background:rgba(255,255,255,0.08);
+  overflow:hidden;
+  cursor:pointer;
+}
+.timelineProgress{ height:100%; background:rgba(99,179,237,0.65); width:0%; }
+.timelineMarker{
+  position:absolute;
+  top:-4px;
+  width:6px;
+  height:18px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,0.22);
+  background:rgba(255,255,255,0.08);
+  transform:translateX(-50%);
+  cursor:pointer;
+}
+.timelineMarker.active{ background:rgba(99,179,237,0.55); border-color:rgba(99,179,237,0.9); }
+.timelineSlider{ width:100%; margin-top:10px; }
+
+/* Sync panel */
+.syncPanel{
+  margin-top:10px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,0.18);
+  border-radius:14px;
+  padding:12px;
+}
+.syncHeader{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+.syncTitle{ font-weight:650; }
+.syncMeta{ font-size:12px; }
+.syncGrid{ display:grid; grid-template-columns:1.2fr 1fr; gap:10px; }
+@media (max-width:980px){ .syncGrid{ grid-template-columns:1fr; } }
+.syncBlock{
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:12px;
+  padding:10px;
+  background:rgba(255,255,255,0.02);
+}
+.syncRow{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:8px; }
+.syncInputs{ display:flex; gap:8px; flex-wrap:wrap; align-items:end; }
+.miniLabel{ display:grid; gap:6px; font-size:12px; color:var(--muted); }
+.miniInput{
+  width:140px;
+  padding:8px 10px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,0.25);
+  color:var(--text);
+  outline:none;
+}
+.syncMetaInline{ display:flex; align-items:end; gap:10px; padding:0 2px 2px; }
+.autoSaved{ align-self:end; font-size:12px; padding:8px 6px; }
+.deltaPill{
+  font-variant-numeric:tabular-nums;
+  font-size:12px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,0.18);
+  padding:6px 10px;
+  border-radius:999px;
+}
+.syncNudgeGroup{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:999px;
+  padding:6px 8px;
+  background:rgba(0,0,0,0.14);
+}
+.hiddenFile{ display:none; }
+
+/* Table */
+.tableWrap{
+  margin-top:14px;
+  border:1px solid var(--border);
+  background:rgba(15,21,32,0.55);
+  border-radius:16px;
+  overflow:auto;
+}
+.tableHeader, .row{ min-width:980px; }
+
+.tableHeader{
+  display:grid;
+  grid-template-columns: var(--w-no) var(--w-ar) var(--w-de) var(--w-tr);
+  padding:12px;
+  border-bottom:1px solid var(--border);
+  color:var(--muted);
+  font-size:13px;
+  position:sticky;
+  top:0;
+  background:rgba(15,21,32,0.90);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  z-index:2;
+}
+
+.row{
+  display:grid;
+  grid-template-columns: var(--w-no) var(--w-ar) var(--w-de) var(--w-tr);
+  border-bottom:1px solid rgba(255,255,255,0.06);
+  padding:10px 12px;
+  text-align:left;
+  color:inherit;
+  cursor:pointer;
+  align-items: stretch;
+
+  background:
+    linear-gradient(90deg,
+      rgba(0,0,0,0.00) 0%,
+      rgba(0,0,0,0.00) calc(var(--w-no)),
+      rgba(99,179,237,0.06) calc(var(--w-no)),
+      rgba(99,179,237,0.06) calc(var(--w-no) + 33.333%),
+      rgba(255,255,255,0.03) calc(var(--w-no) + 33.333%),
+      rgba(255,255,255,0.03) calc(var(--w-no) + 66.666%),
+      rgba(255,255,255,0.04) calc(var(--w-no) + 66.666%),
+      rgba(255,255,255,0.04) 100%
+    );
+}
+
+.tableBody .row:nth-child(odd){ background-color: rgba(255,255,255,0.05); }
+.tableBody .row:nth-child(even){ background-color: rgba(0,0,0,0.18); }
+
+.row:hover{ filter: brightness(1.08); }
+
+.row.active{
+  background-color: rgba(99,179,237,0.14) !important;
+  box-shadow: 0 0 0 1px rgba(99,179,237,0.35) inset;
+}
+
+.cell{
+  padding-right:10px;
+  border-right:1px solid rgba(255,255,255,0.06);
+  display:flex;
+  align-items:flex-start;
+  min-height: 100%;
+}
+.cell:last-child{ border-right:none; }
+
+.colNo{ color:var(--muted); font-variant-numeric:tabular-nums; }
+.colAr{
+  display: block !important;
+  direction: rtl;
+  unicode-bidi: isolate-override;
+  text-align: right;
+  font-size: 18px;
+  line-height: 1.55;
+  padding-left: 12px;
+  font-family: "Noto Naskh Arabic","Amiri","Scheherazade New","Noto Sans Arabic", serif;
+  white-space: normal;
+}
+.colDe, .colTr{ font-size:14px; line-height:1.5; }
+
+@media (max-width:700px){
+  :root{
+    --w-no: 60px;
+    --w-ar: 1.2fr;
+    --w-tr: 1fr;
+    --w-de: 0fr;
   }
 
-  var form = FormApp.openById(formId);
-  ScriptApp.newTrigger("onFormSubmit").forForm(form).onFormSubmit().create();
-  Logger.log("OK: onFormSubmit trigger created for FORM_ID=" + formId);
-}
-
-// ---------------------- MAIN: FORM -> GITHUB (+ TARGET SHEET) ----------------------
-
-function onFormSubmit(e) {
-  var lock = LockService.getScriptLock();
-  lock.waitLock(30000);
-
-  var runId = Utilities.getUuid();
-  try {
-    if (!e || !e.response) throw new Error("Missing event object; must run via form submit trigger.");
-
-    ensureLogSheets_();
-
-    var response = e.response;
-    var responseId = response.getId();
-    if (alreadyDispatched_(responseId)) return;
-
-    var map = responseToMap_(response);
-    var line = buildLineFromMap_(map);
-
-    dispatchToGithub_(line, responseId);
-
-    // Sheet write must not break GitHub dispatch
-    safeAppendToTargetSheet_(map, runId, responseId, line);
-
-    logSuccess_(runId, responseId, line);
-  } catch (err) {
-    var rid = "";
-    try {
-      if (e && e.response && typeof e.response.getId === "function") rid = e.response.getId();
-    } catch (x) {}
-    logError_(runId, rid, String(err), (err && err.stack) ? err.stack : "");
-    throw err;
-  } finally {
-    try {
-      lock.releaseLock();
-    } catch (e2) {}
+  .tableHeader, .row{
+    min-width:680px;
+    grid-template-columns: var(--w-no) var(--w-ar) var(--w-tr);
   }
+  .colDe{ display:none; }
 }
 
-function processMissing() {
-  var lock = LockService.getScriptLock();
-  lock.waitLock(30000);
-
-  try {
-    ensureLogSheets_();
-
-    var formId = getProp_(KEYS.formId);
-    if (!formId) throw new Error("Missing FORM_ID in Script Properties.");
-
-    var form = FormApp.openById(formId);
-    var responses = form.getResponses();
-
-    var processed = 0;
-
-    for (var i = 0; i < responses.length; i++) {
-      var r = responses[i];
-      var runId = Utilities.getUuid();
-      var responseId = r.getId();
-      if (alreadyDispatched_(responseId)) continue;
-
-      try {
-        var map = responseToMap_(r);
-        var line = buildLineFromMap_(map);
-
-        dispatchToGithub_(line, responseId);
-        safeAppendToTargetSheet_(map, runId, responseId, line);
-
-        logSuccess_(runId, responseId, line);
-        processed++;
-      } catch (err) {
-        logError_(runId, responseId, String(err), (err && err.stack) ? err.stack : "");
-      }
-    }
-
-    Logger.log("OK: processMissing processed=" + processed);
-  } finally {
-    try {
-      lock.releaseLock();
-    } catch (e2) {}
-  }
+/* -------- Single Player (CENTERED overlay + blur BACK) -------- */
+.singlePlayerBackdrop{
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: grid;
+  place-items: center;
+  padding: 14px;
 }
 
-// ---------------------- DEBUG ----------------------
-
-function diagnoseTargetWrite() {
-  ensureLogSheets_();
-
-  var props = PropertiesService.getScriptProperties();
-  Logger.log("FORM_ID=" + (props.getProperty(KEYS.formId) || ""));
-
-  var cfg = getTargetConfig_();
-  Logger.log("TARGET_SPREADSHEET_ID=" + cfg.spreadsheetId + (cfg.fromDefaults ? " (default)" : " (property)"));
-  Logger.log("TARGET_SHEET_GID=" + cfg.sheetGid + (cfg.fromDefaults ? " (default)" : " (property)"));
-
-  var formId = getProp_(KEYS.formId);
-  if (formId) {
-    var form = FormApp.openById(formId);
-    Logger.log("FORM_TITLE=" + form.getTitle());
-    try {
-      Logger.log("FORM_DEST_TYPE=" + form.getDestinationType());
-      Logger.log("FORM_DEST_ID=" + form.getDestinationId());
-    } catch (e) {
-      Logger.log("FORM_DEST_ERR=" + String(e));
-    }
-  }
-
-  var ss = SpreadsheetApp.openById(cfg.spreadsheetId);
-  Logger.log("TARGET_SHEET_NAME=" + ss.getName());
-
-  var sheets = ss.getSheets();
-  for (var i = 0; i < sheets.length; i++) {
-    Logger.log("SHEET[" + i + "] name=" + sheets[i].getName() + " gid=" + sheets[i].getSheetId());
-  }
-
-  var sh = getSheetByGid_(ss, cfg.sheetGid);
-  Logger.log("FOUND_TARGET_TAB=" + (sh ? sh.getName() : "NO (gid mismatch)"));
+.singlePlayerCard{
+  width: min(1100px, 100%);
+  background: rgba(15,21,32,0.74);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px;
+  box-shadow: 0 30px 90px rgba(0,0,0,0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 14px;
+  max-height: 86vh;
+  overflow: auto;
 }
 
-function testTargetAppend() {
-  ensureLogSheets_();
-  var runId = Utilities.getUuid();
-  var responseId = "manual_test_" + runId;
-
-  var map = {
-    "Eyalet?": "TEST",
-    "Tanı": "TEST",
-    "Oberarzt": "TEST",
-    "Assistenzarzt": "TEST",
-    "Tarih": "01.01.2030",
-    "Kaydın saati": "09:30"
-  };
-
-  var line = buildLineFromMap_(map);
-  appendToTargetSheet_(map, runId, responseId, line);
-  Logger.log("OK: testTargetAppend wrote 1 row");
+.singlePlayerLines{
+  display: grid;
+  gap: 10px;
 }
 
-// ---------------------- GITHUB ----------------------
-
-function dispatchToGithub_(line, dedupeKey) {
-  var token = getProp_(KEYS.githubToken);
-  var repo = getProp_(KEYS.githubRepo);
-
-  if (!token) throw new Error("Missing Script Property: GITHUB_TOKEN");
-  if (!repo) throw new Error("Missing Script Property: GITHUB_REPO (example: protokolFSP/autoFSP)");
-
-  var url = "https://api.github.com/repos/" + repo + "/dispatches";
-  var payload = {
-    event_type: CFG.eventType,
-    client_payload: { line: line, dedupeKey: String(dedupeKey || "") }
-  };
-
-  var headers = {
-    Authorization: "Bearer " + token,
-    Accept: "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2022-11-28",
-    "User-Agent": "autoFSP"
-  };
-
-  var lastErr = null;
-
-  for (var attempt = 0; attempt < CFG.githubRetries; attempt++) {
-    var res = UrlFetchApp.fetch(url, {
-      method: "post",
-      contentType: "application/json",
-      payload: JSON.stringify(payload),
-      headers: headers,
-      muteHttpExceptions: true
-    });
-
-    var code = res.getResponseCode();
-    if (code >= 200 && code < 300) return;
-
-    lastErr = new Error("GitHub dispatch failed: HTTP " + code + " - " + res.getContentText());
-    Utilities.sleep(CFG.githubRetryBaseMs * Math.pow(2, attempt));
-  }
-
-  throw lastErr || new Error("GitHub dispatch failed (unknown error).");
+.singlePlayerLine{
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: rgba(0,0,0,0.14);
+}
+.singlePlayerLines > :nth-child(odd){
+  background: rgba(255,255,255,0.06);
 }
 
-// ---------------------- LOGGING ----------------------
-
-function ensureLogSheets_() {
-  var ss = getOrCreateLogSS_();
-  ensureSheet_(ss, CFG.logSheet, ["ts", "runId", "responseId", "line"]);
-  ensureSheet_(ss, CFG.errSheet, ["ts", "runId", "responseId", "error", "stack"]);
+.singlePlayerLineAr{
+  direction: rtl;
+  unicode-bidi: isolate-override;
+  text-align: right;
+  font-family: "Noto Naskh Arabic","Amiri","Scheherazade New","Noto Sans Arabic", serif;
+  font-size: clamp(44px, 7.0vw, 78px);
+  line-height: 1.75;
+  white-space: pre-wrap;
 }
 
-function getOrCreateLogSS_() {
-  var props = PropertiesService.getScriptProperties();
-  var existingId = String(props.getProperty(KEYS.logSheetId) || "").trim();
-
-  if (existingId) {
-    try {
-      return SpreadsheetApp.openById(existingId);
-    } catch (e) {}
-  }
-
-  var ss = SpreadsheetApp.create(CFG.logSpreadsheetName);
-  props.setProperty(KEYS.logSheetId, ss.getId());
-  return ss;
+.singlePlayerLineDe{
+  font-size: clamp(26px, 4.0vw, 40px);
+  line-height: 1.55;
+  color: rgba(255,255,255,0.82);
+  white-space: pre-wrap;
 }
 
-function ensureSheet_(ss, name, headers) {
-  var sh = ss.getSheetByName(name);
-  if (!sh) sh = ss.insertSheet(name);
-
-  var lastCol = Math.max(sh.getLastColumn(), headers.length);
-  var firstRow = sh.getRange(1, 1, 1, lastCol).getValues()[0];
-  if (String(firstRow[0] || "") !== headers[0]) {
-    sh.clear();
-    sh.getRange(1, 1, 1, headers.length).setValues([headers]);
-    sh.setFrozenRows(1);
-  }
+.singlePlayerLineTr{
+  font-size: clamp(26px, 4.0vw, 40px);
+  line-height: 1.55;
+  white-space: pre-wrap;
 }
 
-function getLogSS_() {
-  var id = getProp_(KEYS.logSheetId);
-  if (!id) return getOrCreateLogSS_();
-  return SpreadsheetApp.openById(id);
+/* Buttons */
+.spBtn{
+  min-width: 66px;
+  height: 66px;
+  padding: 0 16px;
+  border-radius: 18px;
+  cursor:pointer;
+  font-weight: 950;
+  font-size: 26px;
+  color: rgba(10,14,22,0.98);
+  border: 1px solid rgba(255,255,255,0.22);
+  background: linear-gradient(180deg, rgba(210,235,255,1), rgba(145,205,250,1));
+  box-shadow:
+    0 10px 22px rgba(0,0,0,0.38),
+    0 3px 0 rgba(255,255,255,0.22) inset,
+    0 -6px 10px rgba(0,0,0,0.22) inset;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  touch-action: manipulation;
+}
+.spBtn:active{
+  transform: translateY(2px);
+  box-shadow:
+    0 6px 14px rgba(0,0,0,0.32),
+    0 2px 0 rgba(255,255,255,0.18) inset,
+    0 -4px 8px rgba(0,0,0,0.20) inset;
+}
+.spBtnPrimary{
+  min-width: 118px;
+  height: 74px;
+  font-size: 30px;
+  background: linear-gradient(180deg, rgba(200,255,220,1), rgba(110,230,165,1));
+}
+.spBtnClose{
+  background: linear-gradient(180deg, rgba(255,220,220,1), rgba(255,150,150,1));
 }
 
-function alreadyDispatched_(responseId) {
-  if (!responseId) return false;
-
-  var ss = getLogSS_();
-  var sh = ss.getSheetByName(CFG.logSheet);
-  var lastRow = sh.getLastRow();
-  if (lastRow <= 1) return false;
-
-  var range = sh.getRange(2, 3, lastRow - 1, 1);
-  var finder = range.createTextFinder(String(responseId)).matchEntireCell(true);
-  return !!finder.findNext();
+@media (max-width:520px){
+  .spBtn{ min-width: 70px; height: 70px; font-size: 28px; }
+  .spBtnPrimary{ min-width: 124px; height: 78px; font-size: 32px; }
 }
 
-function logSuccess_(runId, responseId, line) {
-  var ss = getLogSS_();
-  var sh = ss.getSheetByName(CFG.logSheet);
-  sh.appendRow([new Date(), runId, responseId, line]);
+/* Wheel */
+.spPicker3D{
+  width: 120px;
+  height: 160px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(0,0,0,0.18);
+  box-shadow:
+    0 14px 28px rgba(0,0,0,0.35),
+    0 3px 0 rgba(255,255,255,0.14) inset,
+    0 -10px 16px rgba(0,0,0,0.22) inset;
+  position: relative;
+  overflow: hidden;
+  touch-action: none;
+  flex: 0 0 auto;
+}
+.spPicker3D.disabled{ opacity: 0.55; pointer-events:none; }
+
+.spPickerViewport{
+  width: 100%;
+  height: 100%;
+  outline: none;
+  display:grid;
+  place-items:center;
+  perspective: 980px;
 }
 
-function logError_(runId, responseId, error, stack) {
-  var ss = getLogSS_();
-  var sh = ss.getSheetByName(CFG.errSheet);
-  sh.appendRow([new Date(), runId, responseId, error, stack]);
+.spPickerItems3D{
+  width: 100%;
+  height: 100%;
+  display:grid;
+  place-items:center;
+  transform-style: preserve-3d;
 }
 
-// ---------------------- TARGET SHEET APPEND ----------------------
-
-function getTargetConfig_() {
-  var spreadsheetId = String(getProp_(KEYS.targetSpreadsheetId) || "").trim();
-  var gidRaw = String(getProp_(KEYS.targetSheetGid) || "").trim();
-  var gidDigits = sanitizeGid_(gidRaw);
-
-  if (spreadsheetId && gidDigits) {
-    return { spreadsheetId: spreadsheetId, sheetGid: Number(gidDigits), fromDefaults: false };
-  }
-
-  return {
-    spreadsheetId: CFG.defaultTargetSpreadsheetId,
-    sheetGid: Number(CFG.defaultTargetSheetGid),
-    fromDefaults: true
-  };
+.spPickerItem3D{
+  position:absolute;
+  width: 100%;
+  text-align:center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 950;
+  font-size: 34px;
+  letter-spacing: 0.6px;
+  color: rgba(255,255,255,0.20);
+  transform-origin: center center;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.25);
+}
+.spPickerItem3D.active{
+  color: rgba(255,255,255,0.96);
+  text-shadow: 0 2px 14px rgba(0,0,0,0.38);
 }
 
-function safeAppendToTargetSheet_(responseMap, runId, responseId, line) {
-  try {
-    appendToTargetSheet_(responseMap, runId, responseId, line);
-  } catch (err) {
-    logError_(runId, responseId, "TARGET_APPEND_FAILED: " + String(err), (err && err.stack) ? err.stack : "");
-  }
+.spPickerShine{
+  position:absolute;
+  inset:-10px;
+  background:
+    radial-gradient(120px 220px at 30% 45%, rgba(255,255,255,0.10), transparent 60%),
+    radial-gradient(120px 220px at 70% 55%, rgba(99,179,237,0.10), transparent 60%);
+  pointer-events:none;
+  mix-blend-mode: screen;
+  opacity: 0.9;
 }
 
-function appendToTargetSheet_(responseMap, runId, responseId, line) {
-  var cfg = getTargetConfig_();
-  if (!cfg.spreadsheetId || !cfg.sheetGid) return;
-
-  var ss = SpreadsheetApp.openById(cfg.spreadsheetId);
-  var sh = getSheetByGid_(ss, cfg.sheetGid);
-  if (!sh) throw new Error("Sheet gid not found in target spreadsheet: " + cfg.sheetGid);
-
-  var headers = [
-    "Zeitstempel",
-    "Eyalet?",
-    "Tanı",
-    "Oberarzt",
-    "Assistenzarzt",
-    "Tarih",
-    "Kaydın saati",
-    "runId",
-    "responseId",
-    "line"
-  ];
-
-  ensureHeaders_(sh, headers);
-
-  var row = [
-    new Date(),
-    String(responseMap["Eyalet?"] || "").trim(),
-    String(responseMap["Tanı"] || "").trim(),
-    String(responseMap["Oberarzt"] || "").trim(),
-    String(responseMap["Assistenzarzt"] || "").trim(),
-    String(responseMap["Tarih"] || "").trim(),
-    String(responseMap["Kaydın saati"] || "").trim(),
-    runId,
-    responseId,
-    line
-  ];
-
-  sh.appendRow(row);
+.spPickerBar{
+  position:absolute;
+  left: 10px;
+  right: 10px;
+  top: 50%;
+  height: 46px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.14);
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.18) inset,
+    0 10px 24px rgba(0,0,0,0.22);
+  pointer-events:none;
 }
 
-function ensureHeaders_(sh, headers) {
-  var lastCol = Math.max(sh.getLastColumn(), headers.length, 1);
-  var firstRow = sh.getRange(1, 1, 1, lastCol).getValues()[0];
-  for (var i = 0; i < firstRow.length; i++) firstRow[i] = String(firstRow[i]);
-
-  var firstCell = String(firstRow[0] || "").trim();
-  if (!firstCell) {
-    sh.getRange(1, 1, 1, headers.length).setValues([headers]);
-    sh.setFrozenRows(1);
-    return;
-  }
-
-  var existing = {};
-  for (var j = 0; j < firstRow.length; j++) {
-    var x = String(firstRow[j] || "").trim();
-    if (x) existing[x] = true;
-  }
-
-  var missing = [];
-  for (var k = 0; k < headers.length; k++) {
-    if (!existing[headers[k]]) missing.push(headers[k]);
-  }
-  if (missing.length === 0) return;
-
-  var startCol = sh.getLastColumn() + 1;
-  sh.getRange(1, startCol, 1, missing.length).setValues([missing]);
+.spPickerFadeTop{
+  position:absolute;
+  left:0; right:0; top:0;
+  height: 46%;
+  background: linear-gradient(180deg, rgba(15,21,32,0.95), rgba(15,21,32,0.00));
+  pointer-events:none;
+}
+.spPickerFadeBottom{
+  position:absolute;
+  left:0; right:0; bottom:0;
+  height: 46%;
+  background: linear-gradient(0deg, rgba(15,21,32,0.95), rgba(15,21,32,0.00));
+  pointer-events:none;
 }
 
-function sanitizeGid_(s) {
-  s = String(s || "");
-  return s.replace(/[^\d]/g, "");
+/* Repeat */
+.spRBtn{
+  min-width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.18);
+  color: rgba(255,255,255,0.70);
+  font-weight: 950;
+  font-size: 18px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 10px 22px rgba(0,0,0,0.30),
+    0 3px 0 rgba(255,255,255,0.12) inset,
+    0 -6px 10px rgba(0,0,0,0.20) inset;
+}
+.spRBtn.off{ opacity: 0.55; }
+.spRBtn.on{
+  color: rgba(10,14,22,0.98);
+  background: linear-gradient(180deg, rgba(170,220,255,1), rgba(99,179,237,1));
+  border-color: rgba(255,255,255,0.22);
+}
+.spRBtn:active{ transform: translateY(1px); }
+
+/* === EK: Bottom dock (format bozmaz, sadece yeni class) === */
+.singlePlayerDockBottom{
+  position: fixed;
+  left: 14px;
+  right: 14px;
+  bottom: calc(14px + env(safe-area-inset-bottom));
+  z-index: 10001;
+
+  padding: 10px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.20);
+
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  white-space: nowrap;
+}
+.singlePlayerDockRow{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 
-// ---------------------- HELPERS ----------------------
-
-function pad2_(n) {
-  n = String(n);
-  return n.length === 1 ? ("0" + n) : n;
+/* === EK: Backdrop inertia (appShell’e dokunmaz) === */
+@keyframes spBackdropInertiaIn{
+  0%   { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0px); }
 }
-
-function buildLineFromMap_(map) {
-  var eyalet = req_(map, "Eyalet?");
-  var tani = req_(map, "Tanı");
-  var oberarzt = req_(map, "Oberarzt");
-  var assistenzarzt = req_(map, "Assistenzarzt");
-
-  var tarih = normalizeDate_(req_(map, "Tarih"));
-  var saat = normalizeTime_(req_(map, "Kaydın saati"));
-
-  return [eyalet, tani, oberarzt, assistenzarzt, tarih, saat].join("; ");
+.singlePlayerBackdrop{
+  animation: spBackdropInertiaIn 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  overflow: hidden;
 }
-
-function responseToMap_(response) {
-  var map = {};
-  var items = response.getItemResponses();
-  for (var i = 0; i < items.length; i++) {
-    var ir = items[i];
-    var title = ir.getItem().getTitle();
-    map[title] = (ir.getResponse() || "").toString().trim();
-  }
-  return map;
+.singlePlayerBackdrop::before{
+  content:"";
+  position:absolute;
+  inset:-60px;
+  pointer-events:none;
+  opacity: 0.22;
+  background:
+    radial-gradient(900px 650px at 30% 25%, rgba(120,120,255,0.14), transparent 60%),
+    radial-gradient(900px 650px at 70% 45%, rgba(255,120,120,0.12), transparent 60%);
+  filter: blur(10px);
+  animation: spBgFloat 7.5s ease-in-out infinite;
 }
-
-function req_(map, key) {
-  var v = (map[key] || "").toString().trim();
-  if (!v) throw new Error("Missing required field: " + key);
-  return v;
+@keyframes spBgFloat{
+  0%   { transform: translate3d(0,0,0) scale(1); }
+  50%  { transform: translate3d(10px,-8px,0) scale(1.02); }
+  100% { transform: translate3d(0,0,0) scale(1); }
 }
-
-function normalizeDate_(s) {
-  var m = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(String(s || "").trim());
-  if (!m) throw new Error("Invalid date. Use DD.MM.YYYY. Got: " + s);
-  return pad2_(m[1]) + "." + pad2_(m[2]) + "." + m[3];
-}
-
-function normalizeTime_(s) {
-  s = String(s || "").trim();
-  var m = /^(\d{1,2})(?:[:.](\d{2}))?$/.exec(s);
-  if (!m) throw new Error("Invalid time. Use HH, HH:MM or HH.MM. Got: " + s);
-
-  var hh = Number(m[1]);
-  var mm = m[2] ? Number(m[2]) : 0;
-
-  if (isNaN(hh) || hh < 0 || hh > 23) throw new Error("Hour out of range (0-23): " + m[1]);
-  if (isNaN(mm) || mm < 0 || mm > 59) throw new Error("Minute out of range (0-59): " + (m[2] || "00"));
-
-  return pad2_(hh) + ":" + pad2_(mm);
-}
-
-function getSheetByGid_(ss, gid) {
-  var sheets = ss.getSheets();
-  for (var i = 0; i < sheets.length; i++) {
-    var sh = sheets[i];
-    if (sh.getSheetId && sh.getSheetId() === gid) return sh;
-  }
-  return null;
-}
-
-function getProp_(key) {
-  return PropertiesService.getScriptProperties().getProperty(key) || "";
+@media (prefers-reduced-motion: reduce){
+  .singlePlayerBackdrop{ animation: none; }
+  .singlePlayerBackdrop::before{ animation: none; }
 }
