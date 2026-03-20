@@ -39,6 +39,7 @@ function formatSec(sec) {
   return Number.isFinite(sec) ? `${sec.toFixed(2)}s` : "—";
 }
 
+// Overlap-safe
 function findActiveVerseIndex(verses, t) {
   if (!Array.isArray(verses) || verses.length === 0 || !Number.isFinite(t)) return -1;
 
@@ -57,6 +58,7 @@ function findActiveVerseIndex(verses, t) {
   }
   if (bestIdx !== -1) return bestIdx;
 
+  // fallback: closest start
   let closest = -1;
   let bestDelta = Infinity;
   for (let i = 0; i < verses.length; i += 1) {
@@ -82,13 +84,13 @@ function getStickyOverlayTopPx() {
 
 function ensureRowVisible(el, padding = 10) {
   if (!el) return;
-
   const r = el.getBoundingClientRect();
   const overlayTop = getStickyOverlayTopPx();
 
   const viewportTop = padding;
   const viewportBottom = window.innerHeight - padding;
-  const effectiveBottom = overlayTop != null ? Math.min(viewportBottom, overlayTop - padding) : viewportBottom;
+  const effectiveBottom =
+    overlayTop != null ? Math.min(viewportBottom, overlayTop - padding) : viewportBottom;
 
   const above = r.top < viewportTop;
   const below = r.bottom > effectiveBottom;
@@ -400,8 +402,8 @@ function VersePopupModal({ open, verse, isPlaying, onPlayPause, onPrev, onNext, 
           <div className="versePopupLine versePopupLineAr" dir="rtl">
             {(verse?.ar || "—").trim()}
           </div>
-          <div className="versePopupLine versePopupLineTr">{(verse?.tr || "—").trim()}</div>
           <div className="versePopupLine versePopupLineDe">{(verse?.de || "—").trim()}</div>
+          <div className="versePopupLine versePopupLineTr">{(verse?.tr || "—").trim()}</div>
         </div>
       </div>
     </div>
@@ -699,8 +701,7 @@ function SyncPanel({
     const jsonText = JSON.stringify(verses, null, 2);
     const content = base64EncodeUtf8(jsonText);
     const message =
-      ghMsg.trim() ||
-      `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
+      ghMsg.trim() || `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
 
     await onCommitGithub({ owner, repo, path, branch, token, message, content });
     setGhMsg("");
