@@ -1,5 +1,5 @@
-// =========================
-// FILE: src/App.jsx  (FULL)
+ // =========================
+// FILE: src/App.jsx (FULL)
 // =========================
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
@@ -347,9 +347,10 @@ function Timeline({
 }
 
 /**
- * DİKEY 3D RULMAN
- * - Yukarı kaydırınca ARTAR
- * - STEP_PX=22
+ * iOS-like vertical wheel (3D)
+ * - up swipe => +1
+ * - down swipe => -1
+ * - inertia + haptic
  */
 function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const ref = useRef(null);
@@ -477,7 +478,7 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
 
   const items = useMemo(() => {
     const v = Number(value) || 0;
-    return [v - 3, v - 2, v - 1, v, v + 1, v + 2, v + 3].map((n) => n);
+    return [v - 3, v - 2, v - 1, v, v + 1, v + 2, v + 3];
   }, [value]);
 
   const angles = [-82, -54, -28, 0, 28, 54, 82];
@@ -494,7 +495,7 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
         ref={ref}
         className="spPickerViewport"
         role="slider"
-        aria-label="Ayet rulmanı"
+        aria-label="Ayet çarkı"
         tabIndex={disabled ? -1 : 0}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -533,7 +534,9 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
 }
 
 /**
- * Single Player (BOTTOM DOCK) + Background Inertia
+ * Single Player
+ * - Bottom dock (fixed)
+ * - No extra overlay panels
  */
 function SinglePlayerPanel({
   open,
@@ -550,9 +553,6 @@ function SinglePlayerPanel({
 }) {
   useEffect(() => {
     if (!open) return;
-
-    document.body.classList.add("spOpen");
-
     const onKey = (e) => {
       if (e.key === "Escape") onClose();
       if (e.code === "Space") {
@@ -568,12 +568,8 @@ function SinglePlayerPanel({
         onNext();
       }
     };
-
     window.addEventListener("keydown", onKey);
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.classList.remove("spOpen");
-    };
+    return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose, onPlayPause, onPrev, onNext]);
 
   if (!open) return null;
@@ -592,12 +588,12 @@ function SinglePlayerPanel({
 
           <div className="singlePlayerLine singlePlayerLineTr">{(verse?.tr || "—").trim()}</div>
 
-          {/* dock altta sabit olduğu için içerik altta kesilmesin */}
+          {/* dock altta sabit => içerik kesilmesin */}
           <div style={{ height: 140 }} />
         </div>
       </div>
 
-      {/* ✅ Dock: bottom fixed (tek satır, wrap yok) */}
+      {/* Dock: bottom fixed, tek satır */}
       <div className="singlePlayerDockBottom" aria-label="Player Dock">
         <div className="singlePlayerDockRow">
           <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
@@ -612,11 +608,19 @@ function SinglePlayerPanel({
             ▶
           </button>
 
-          <div style={{ transform: "scale(0.90)", transformOrigin: "center" }}>
+          <div style={{ transform: "scale(0.92)", transformOrigin: "center" }}>
             <IOSPickerWheelVertical3D disabled={dialDisabled} value={ay} onStep={onDialStep} />
           </div>
 
-          <button className={`spRBtn ${repeatMode ? "on" : "off"}`} type="button" onClick={onToggleRepeat} aria-label="Repeat">
+          <button
+            className={`spRBtn ${repeatMode ? "on" : "off"}`}
+            type="button"
+            onClick={() => {
+              tactilePulse(10);
+              onToggleRepeat();
+            }}
+            aria-label="Repeat"
+          >
             {repeatMode === 2 ? "rr" : "r"}
           </button>
 
@@ -661,8 +665,12 @@ function PlayerControls({
       <div className="liveTimeBar">
         <div className="liveTime">
           <span className="liveLabel">LIVE</span>
-          <span className="liveSec">{Number.isFinite(currentTime) ? currentTime.toFixed(2) : "0.00"}s</span>
-          <span className="liveDur muted">/ {Number.isFinite(duration) ? duration.toFixed(2) : "0.00"}s</span>
+          <span className="liveSec">
+            {Number.isFinite(currentTime) ? currentTime.toFixed(2) : "0.00"}s
+          </span>
+          <span className="liveDur muted">
+            / {Number.isFinite(duration) ? duration.toFixed(2) : "0.00"}s
+          </span>
         </div>
 
         <div className="liveActions">
@@ -676,11 +684,20 @@ function PlayerControls({
             ▶
           </button>
 
-          <button className={`btnSinglePlayer ${singleOn ? "on" : ""}`} type="button" onClick={onToggleSingle}>
+          <button
+            className={`btnSinglePlayer ${singleOn ? "on" : ""}`}
+            type="button"
+            onClick={onToggleSingle}
+          >
             {singleOn ? "Single Player: ON" : "Single Player"}
           </button>
 
-          <button className="btnSmall btnToggle" type="button" onClick={onToggleCollapsed} title="Toggle tools">
+          <button
+            className="btnSmall btnToggle"
+            type="button"
+            onClick={onToggleCollapsed}
+            title="Toggle tools"
+          >
             {collapsed ? "Open tools" : "Close tools"}
           </button>
         </div>
@@ -916,7 +933,8 @@ function SyncPanel({
     const jsonText = JSON.stringify(verses, null, 2);
     const content = base64EncodeUtf8(jsonText);
     const message =
-      ghMsg.trim() || `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
+      ghMsg.trim() ||
+      `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
 
     await onCommitGithub({ owner, repo, path, branch, token, message, content });
     setGhMsg("");
@@ -944,7 +962,12 @@ function SyncPanel({
             <button className="btnSmall" type="button" onClick={setEndToT} disabled={!active}>
               Set END = t (E)
             </button>
-            <button className="btnSmall" type="button" onClick={setEndToTAndNext} disabled={!active}>
+            <button
+              className="btnSmall"
+              type="button"
+              onClick={setEndToTAndNext}
+              disabled={!active}
+            >
               END=t + Next (N)
             </button>
           </div>
@@ -973,7 +996,9 @@ function SyncPanel({
 
               <div className="syncMetaInline">
                 <div className="autoSaved muted">Auto-save</div>
-                <div className={`deltaPill ${deltaOk ? "" : "muted"}`}>Δ {deltaOk ? `${delta.toFixed(2)}s` : "—"}</div>
+                <div className={`deltaPill ${deltaOk ? "" : "muted"}`}>
+                  Δ {deltaOk ? `${delta.toFixed(2)}s` : "—"}
+                </div>
               </div>
             </div>
           </div>
@@ -1463,6 +1488,7 @@ export default function App() {
     });
   }, []);
 
+  // Draft auto-save
   useEffect(() => {
     const t = setTimeout(() => {
       try {
@@ -1527,7 +1553,7 @@ export default function App() {
     if (idx >= 0) seekVerse(idx, true);
   }, [seekVerse]);
 
-  // repeat: off -> 1 -> 2 -> off
+  // repeat toggle: off -> 1 -> 2 -> off
   const toggleRepeat = useCallback(() => {
     setRepeatMode((m) => {
       const next = m === 0 ? 1 : m === 1 ? 2 : 0;
@@ -1555,7 +1581,7 @@ export default function App() {
     });
   }, [seekTo]);
 
-  // repeat engine
+  // Repeat engine
   useEffect(() => {
     const a = audioRef.current;
     const vs = versesRef.current;
@@ -1578,6 +1604,7 @@ export default function App() {
       return;
     }
 
+    // re-arm
     if (currentTime < e - 0.12) {
       repeatStateRef.current.armed = true;
       return;
@@ -1586,6 +1613,7 @@ export default function App() {
     const nearEnd = currentTime >= e - 0.02;
     if (!nearEnd || !repeatStateRef.current.armed) return;
 
+    // spam guard
     const now = performance.now();
     if (now - (repeatStateRef.current.lastFire || 0) < 350) return;
     repeatStateRef.current.lastFire = now;
@@ -1606,6 +1634,7 @@ export default function App() {
     setCurrentTime(s);
   }, [currentTime, repeatMode]);
 
+  // Existing loops (kalsın)
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1634,6 +1663,7 @@ export default function App() {
     }
   }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint]);
 
+  // Active row sync
   useEffect(() => {
     if (!verses.length) return;
     const idx = findActiveVerseIndex(verses, currentTime);
@@ -1648,6 +1678,7 @@ export default function App() {
   const setA = useCallback(() => setAPoint(currentTimeRef.current), []);
   const setB = useCallback(() => setBPoint(currentTimeRef.current), []);
 
+  // Keyboard
   useEffect(() => {
     const onKey = (e) => {
       const tag = document.activeElement?.tagName?.toLowerCase();
@@ -1780,10 +1811,11 @@ export default function App() {
           onClose={closeSingle}
           dialDisabled={dialDisabled}
           onDialStep={(dir) => {
+            const vs = versesRef.current;
+            if (!vs.length) return;
             const cur = activeIndexRef.current;
             const base = cur >= 0 ? cur : 0;
-            const next = clamp(base + dir, 0, Math.max(0, versesRef.current.length - 1));
-            tactilePulse(8);
+            const next = clamp(base + dir, 0, Math.max(0, vs.length - 1));
             seekVerse(next, true);
           }}
           repeatMode={repeatMode}
