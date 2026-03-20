@@ -49,7 +49,6 @@ function tactilePulse(ms = 8) {
   } catch {}
 }
 
-// Overlap-safe
 function findActiveVerseIndex(verses, t) {
   if (!Array.isArray(verses) || verses.length === 0 || !Number.isFinite(t)) return -1;
 
@@ -346,6 +345,11 @@ function Timeline({
   );
 }
 
+/**
+ * DİKEY 3D RULMAN
+ * - Yukarı kaydırınca ARTAR
+ * - STEP_PX=22
+ */
 function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const ref = useRef(null);
 
@@ -527,6 +531,11 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   );
 }
 
+/**
+ * Single Player (BOTTOM DOCK)
+ * - Card: Ar / De / Tr
+ * - Dock: fixed bottom, tek satır, sığmazsa yatay kayar
+ */
 function SinglePlayerPanel({
   open,
   verse,
@@ -565,53 +574,22 @@ function SinglePlayerPanel({
 
   const ay = Number(verse?.ayah || 0);
 
-  const DOCK_TOP = "60%";
-  const RIGHT = 14;
-  const DOCK_W = "min(680px, calc(100% - 28px))";
-
   return (
     <div className="singlePlayerBackdrop" role="dialog" aria-modal="true" aria-label="Single Player">
       <div className="singlePlayerCard">
-        <div className="singlePlayerLines">
+        <div className="singlePlayerLines" style={{ paddingBottom: 120 }}>
           <div className="singlePlayerLine singlePlayerLineAr" dir="rtl">
             {(verse?.ar || "—").trim()}
           </div>
 
           <div className="singlePlayerLine singlePlayerLineDe">{(verse?.de || "—").trim()}</div>
+
+          <div className="singlePlayerLine singlePlayerLineTr">{(verse?.tr || "—").trim()}</div>
         </div>
       </div>
 
-      <div
-        className="singlePlayerControls singlePlayerDockRight"
-        style={{
-          position: "fixed",
-          right: RIGHT,
-          top: DOCK_TOP,
-          transform: "translateY(-50%)",
-          zIndex: 10001,
-          width: DOCK_W,
-          minHeight: 92,
-          padding: 10,
-          borderRadius: 18,
-          border: "1px solid rgba(255,255,255,0.10)",
-          background: "rgba(0,0,0,0.16)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "flex-end",
-          pointerEvents: "auto",
-        }}
-      >
-        <div
-          className="singlePlayerBtns"
-          style={{
-            display: "flex",
-            gap: 10,
-            alignItems: "center",
-            flexWrap: "nowrap",
-            whiteSpace: "nowrap",
-            justifyContent: "flex-end",
-          }}
-        >
+      <div className="singlePlayerControls singlePlayerDockBottom" aria-label="Player Dock">
+        <div className="singlePlayerBtns singlePlayerDockRow">
           <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
             ◀
           </button>
@@ -624,7 +602,7 @@ function SinglePlayerPanel({
             ▶
           </button>
 
-          <div style={{ transform: "scale(0.90)", transformOrigin: "center right" }}>
+          <div style={{ transform: "scale(0.90)", transformOrigin: "center" }}>
             <IOSPickerWheelVertical3D disabled={dialDisabled} value={ay} onStep={onDialStep} />
           </div>
 
@@ -636,31 +614,6 @@ function SinglePlayerPanel({
             ✕
           </button>
         </div>
-      </div>
-
-      <div
-        className="singlePlayerTrPanel"
-        style={{
-          position: "fixed",
-          right: RIGHT,
-          top: `calc(${DOCK_TOP} + 92px)`,
-          transform: "translateY(-50%)",
-          zIndex: 10001,
-          width: DOCK_W,
-          maxHeight: "42vh",
-          overflow: "auto",
-          padding: 12,
-          borderRadius: 16,
-          border: "1px solid rgba(255,255,255,0.10)",
-          background: "rgba(0,0,0,0.14)",
-          color: "rgba(255,255,255,0.92)",
-          lineHeight: 1.65,
-          fontSize: 18,
-          pointerEvents: "auto",
-        }}
-        aria-label="Turkish"
-      >
-        {(verse?.tr || "—").trim()}
       </div>
     </div>
   );
@@ -1200,6 +1153,7 @@ export default function App() {
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
   const [singleOn, setSingleOn] = useState(false);
 
+  // repeat: 0 off, 1 => 1 tekrar, 2 => 2 tekrar
   const [repeatMode, setRepeatMode] = useState(0);
   const repeatStateRef = useRef({ idx: -1, done: 0, armed: true, lastFire: 0 });
 
@@ -1247,8 +1201,14 @@ export default function App() {
     });
   }, [query]);
 
-  const audioSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""), [selectedSurah]);
-  const versesSrc = useMemo(() => (selectedSurah ? resolvePublicUrl(selectedSurah.versesUrl) : ""), [selectedSurah]);
+  const audioSrc = useMemo(
+    () => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""),
+    [selectedSurah]
+  );
+  const versesSrc = useMemo(
+    () => (selectedSurah ? resolvePublicUrl(selectedSurah.versesUrl) : ""),
+    [selectedSurah]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -1502,6 +1462,7 @@ export default function App() {
     });
   }, [seekTo]);
 
+  // repeat engine
   useEffect(() => {
     const a = audioRef.current;
     const vs = versesRef.current;
@@ -1552,6 +1513,7 @@ export default function App() {
     setCurrentTime(s);
   }, [currentTime, repeatMode]);
 
+  // existing loops (kalsın)
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1788,7 +1750,7 @@ export default function App() {
                 onUpdateVerse={updateVerse}
                 onSeek={(t) => seekTo(t, false)}
                 onSeekVerse={(idx) => seekVerse(idx, true)}
-                onExportJson={exportJson}
+                onExportJson={() => {}}
                 onImportJson={importJsonFile}
                 onSaveDraft={saveDraft}
                 onRestoreDraft={restoreDraft}
