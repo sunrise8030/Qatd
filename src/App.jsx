@@ -1,4 +1,4 @@
-// src/App.jsx
+﻿﻿// src/App.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
 
@@ -39,6 +39,7 @@ function formatSec(sec) {
   return Number.isFinite(sec) ? `${sec.toFixed(2)}s` : "—";
 }
 
+// Overlap-safe
 function findActiveVerseIndex(verses, t) {
   if (!Array.isArray(verses) || verses.length === 0 || !Number.isFinite(t)) return -1;
 
@@ -57,6 +58,7 @@ function findActiveVerseIndex(verses, t) {
   }
   if (bestIdx !== -1) return bestIdx;
 
+  // fallback: closest start
   let closest = -1;
   let bestDelta = Infinity;
   for (let i = 0; i < verses.length; i += 1) {
@@ -98,6 +100,13 @@ function ensureRowVisible(el, padding = 10) {
   }
 }
 
+/**
+ * Tolerant JSON parsing:
+ * - strips BOM
+ * - rejects HTML
+ * - removes trailing commas before } or ]
+ * - if parse fails, includes position + context
+ */
 function parseJsonTolerant(text, urlForMsg = "") {
   const raw = String(text ?? "");
   let s = raw.replace(/^\uFEFF/, "").trim();
@@ -341,6 +350,10 @@ function Timeline({
   );
 }
 
+/**
+ * Popup: AR -> DE -> (PLAYER BLOCK) -> TR
+ * Close => pause
+ */
 function VersePopupModal({ open, verse, isPlaying, onPlayPause, onPrev, onNext, onClose }) {
   useEffect(() => {
     if (!open) return;
@@ -370,30 +383,41 @@ function VersePopupModal({ open, verse, isPlaying, onPlayPause, onPrev, onNext, 
   return (
     <div className="versePopupBackdrop" role="dialog" aria-modal="true" aria-label="Aktif ayet">
       <div className="versePopupCard">
-        <div className="versePopupHud">
-          <div className="versePopupAyahNo">#{ay}</div>
-
-          <div className="versePopupHudBtns">
-            <button className="versePopupBtn" type="button" onClick={onPrev} aria-label="Prev">
-              ◀
-            </button>
-            <button className="versePopupBtn versePopupBtnPrimary" type="button" onClick={onPlayPause} aria-label="Play/Pause">
-              {isPlaying ? "⏸" : "▶"}
-            </button>
-            <button className="versePopupBtn" type="button" onClick={onNext} aria-label="Next">
-              ▶
-            </button>
-            <button className="versePopupBtn versePopupBtnClose" type="button" onClick={onClose} aria-label="Close">
-              ✕
-            </button>
-          </div>
-        </div>
-
         <div className="versePopupLines">
           <div className="versePopupLine versePopupLineAr" dir="rtl">
             {(verse?.ar || "—").trim()}
           </div>
+
           <div className="versePopupLine versePopupLineDe">{(verse?.de || "—").trim()}</div>
+
+          <div className="versePopupPlayerBlock">
+            <div className="versePopupAyahNo">#{ay}</div>
+            <div className="versePopupBtns">
+              <button className="versePopupBtn" type="button" onClick={onPrev} aria-label="Prev">
+                ◀
+              </button>
+              <button
+                className="versePopupBtn versePopupBtnPrimary"
+                type="button"
+                onClick={onPlayPause}
+                aria-label="Play/Pause"
+              >
+                {isPlaying ? "⏸" : "▶"}
+              </button>
+              <button className="versePopupBtn" type="button" onClick={onNext} aria-label="Next">
+                ▶
+              </button>
+              <button
+                className="versePopupBtn versePopupBtnClose"
+                type="button"
+                onClick={onClose}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+
           <div className="versePopupLine versePopupLineTr">{(verse?.tr || "—").trim()}</div>
         </div>
       </div>
@@ -1205,6 +1229,7 @@ export default function App() {
     });
   }, []);
 
+  // autosave draft (debounced)
   useEffect(() => {
     const t = setTimeout(() => {
       try {
@@ -1277,6 +1302,7 @@ export default function App() {
     if (idx >= 0) seekVerse(idx, true);
   }, [seekVerse]);
 
+  // loop behavior
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1305,6 +1331,7 @@ export default function App() {
     }
   }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint]);
 
+  // active index update + ensure visible
   useEffect(() => {
     if (!verses.length) return;
     const idx = findActiveVerseIndex(verses, currentTime);
@@ -1319,6 +1346,7 @@ export default function App() {
   const setA = useCallback(() => setAPoint(currentTimeRef.current), []);
   const setB = useCallback(() => setBPoint(currentTimeRef.current), []);
 
+  // keyboard shortcuts
   useEffect(() => {
     const onKey = (e) => {
       const tag = document.activeElement?.tagName?.toLowerCase();
@@ -1519,12 +1547,7 @@ export default function App() {
           )}
         </div>
 
-        <VersesTable
-          verses={verses}
-          activeIndex={activeIndex}
-          onRowClick={(idx) => seekVerse(idx, true)}
-          rowRefs={rowRefs}
-        />
+        <VersesTable verses={verses} activeIndex={activeIndex} onRowClick={(idx) => seekVerse(idx, true)} rowRefs={rowRefs} />
       </main>
     </div>
   );
