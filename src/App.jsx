@@ -1,6 +1,5 @@
 // =========================================================
 // src/App.jsx
-// (iOS picker wheel mantığı + r/rr görünür + diğer her şey korunur)
 // =========================================================
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
@@ -339,11 +338,11 @@ function Timeline({
 }
 
 /**
- * iOS picker wheel (alarm UI mantığı)
- * - drag up/down + wheel + inertia
- * - step => onStep(+1/-1)
+ * DİKEY 3D RULMAN (yüz kullanıcıya bakar)
+ * - drag UP/DOWN + wheel + inertia
+ * - her step => onStep(+1/-1)
  */
-function IOSPickerWheel({ disabled, value, onStep }) {
+function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const ref = useRef(null);
 
   const draggingRef = useRef(false);
@@ -461,16 +460,20 @@ function IOSPickerWheel({ disabled, value, onStep }) {
     return [v - 2, v - 1, v, v + 1, v + 2].map((n) => n);
   }, [value]);
 
+  const angles = [-60, -30, 0, 30, 60];
+  const radius = 72;
+
   return (
-    <div className={`spPicker ${disabled ? "disabled" : ""}`}>
+    <div className={`spPicker3D ${disabled ? "disabled" : ""}`}>
       <div className="spPickerFadeTop" />
       <div className="spPickerFadeBottom" />
       <div className="spPickerBar" />
+
       <div
         ref={ref}
         className="spPickerViewport"
         role="slider"
-        aria-label="Ayet çarkı"
+        aria-label="Ayet rulmanı"
         tabIndex={disabled ? -1 : 0}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -489,12 +492,20 @@ function IOSPickerWheel({ disabled, value, onStep }) {
           }
         }}
       >
-        <div className="spPickerItems">
-          {items.map((n) => (
-            <div key={n} className={`spPickerItem ${n === Number(value) ? "active" : ""}`}>
-              {n <= 0 ? "—" : String(n).padStart(2, "0")}
-            </div>
-          ))}
+        <div className="spPickerItems3D">
+          {items.map((n, i) => {
+            const ang = angles[i] ?? 0;
+            const active = n === Number(value);
+            return (
+              <div
+                key={n}
+                className={`spPickerItem3D ${active ? "active" : ""}`}
+                style={{ transform: `rotateX(${ang}deg) translateZ(${radius}px)` }}
+              >
+                {n <= 0 ? "—" : String(n).padStart(2, "0")}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -502,8 +513,9 @@ function IOSPickerWheel({ disabled, value, onStep }) {
 }
 
 /**
- * Single Player (iOS picker wheel + r/rr)
- * - r için açıklama yok (sadece r/rr)
+ * Single Player overlay
+ * - DİKEY 3D rulman + r/rr burada
+ * - r için açıklama yok
  */
 function SinglePlayerPanel({
   open,
@@ -562,14 +574,19 @@ function SinglePlayerPanel({
               <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
                 ◀
               </button>
-              <button className="spBtn spBtnPrimary" type="button" onClick={onPlayPause} aria-label="Play/Pause">
+              <button
+                className="spBtn spBtnPrimary"
+                type="button"
+                onClick={onPlayPause}
+                aria-label="Play/Pause"
+              >
                 {isPlaying ? "⏸" : "▶"}
               </button>
               <button className="spBtn" type="button" onClick={onNext} aria-label="Next">
                 ▶
               </button>
 
-              <IOSPickerWheel disabled={dialDisabled} value={ay} onStep={onDialStep} />
+              <IOSPickerWheelVertical3D disabled={dialDisabled} value={ay} onStep={onDialStep} />
 
               <button
                 className={`spRBtn ${repeatMode ? "on" : "off"}`}
@@ -582,7 +599,11 @@ function SinglePlayerPanel({
               </button>
 
               <label className="spAutoReset chip" title="Auto-reset">
-                <input type="checkbox" checked={repeatAutoReset} onChange={onToggleRepeatAutoReset} />
+                <input
+                  type="checkbox"
+                  checked={repeatAutoReset}
+                  onChange={onToggleRepeatAutoReset}
+                />
                 Auto-reset
               </label>
 
@@ -631,8 +652,12 @@ function PlayerControls({
       <div className="liveTimeBar">
         <div className="liveTime">
           <span className="liveLabel">LIVE</span>
-          <span className="liveSec">{Number.isFinite(currentTime) ? currentTime.toFixed(2) : "0.00"}s</span>
-          <span className="liveDur muted">/ {Number.isFinite(duration) ? duration.toFixed(2) : "0.00"}s</span>
+          <span className="liveSec">
+            {Number.isFinite(currentTime) ? currentTime.toFixed(2) : "0.00"}s
+          </span>
+          <span className="liveDur muted">
+            / {Number.isFinite(duration) ? duration.toFixed(2) : "0.00"}s
+          </span>
         </div>
 
         <div className="liveActions">
@@ -646,11 +671,20 @@ function PlayerControls({
             ▶
           </button>
 
-          <button className={`btnSinglePlayer ${singleOn ? "on" : ""}`} type="button" onClick={onToggleSingle}>
+          <button
+            className={`btnSinglePlayer ${singleOn ? "on" : ""}`}
+            type="button"
+            onClick={onToggleSingle}
+          >
             {singleOn ? "Single Player: ON" : "Single Player"}
           </button>
 
-          <button className="btnSmall btnToggle" type="button" onClick={onToggleCollapsed} title="Toggle tools">
+          <button
+            className="btnSmall btnToggle"
+            type="button"
+            onClick={onToggleCollapsed}
+            title="Toggle tools"
+          >
             {collapsed ? "Open tools" : "Close tools"}
           </button>
         </div>
@@ -721,8 +755,8 @@ function PlayerControls({
           </div>
 
           <div className="kbdHelp muted">
-            Space play/pause • ↑/↓ prev/next • ←/→ ±1s • Shift+←/→ ±0.1s • S start • E end • N end+next • L loop ayah •
-            Shift+L loop AB • A/B set points
+            Space play/pause • ↑/↓ prev/next • ←/→ ±1s • Shift+←/→ ±0.1s • S start • E end • N end+next • L
+            loop ayah • Shift+L loop AB • A/B set points
           </div>
         </>
       )}
@@ -886,7 +920,8 @@ function SyncPanel({
     const jsonText = JSON.stringify(verses, null, 2);
     const content = base64EncodeUtf8(jsonText);
     const message =
-      ghMsg.trim() || `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
+      ghMsg.trim() ||
+      `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
 
     await onCommitGithub({ owner, repo, path, branch, token, message, content });
     setGhMsg("");
@@ -923,17 +958,29 @@ function SyncPanel({
             <div className="syncInputs">
               <label className="miniLabel">
                 start
-                <input className="miniInput" value={startInput} onChange={(e) => setStartInput(e.target.value)} inputMode="decimal" />
+                <input
+                  className="miniInput"
+                  value={startInput}
+                  onChange={(e) => setStartInput(e.target.value)}
+                  inputMode="decimal"
+                />
               </label>
 
               <label className="miniLabel">
                 end
-                <input className="miniInput" value={endInput} onChange={(e) => setEndInput(e.target.value)} inputMode="decimal" />
+                <input
+                  className="miniInput"
+                  value={endInput}
+                  onChange={(e) => setEndInput(e.target.value)}
+                  inputMode="decimal"
+                />
               </label>
 
               <div className="syncMetaInline">
                 <div className="autoSaved muted">Auto-save</div>
-                <div className={`deltaPill ${deltaOk ? "" : "muted"}`}>Δ {deltaOk ? `${delta.toFixed(2)}s` : "—"}</div>
+                <div className={`deltaPill ${deltaOk ? "" : "muted"}`}>
+                  Δ {deltaOk ? `${delta.toFixed(2)}s` : "—"}
+                </div>
               </div>
             </div>
           </div>
@@ -977,7 +1024,12 @@ function SyncPanel({
           <div className="syncRow">
             <label className="miniLabel">
               Jump ayah
-              <input className="miniInput" value={jumpAyah} onChange={(e) => setJumpAyah(e.target.value)} inputMode="numeric" />
+              <input
+                className="miniInput"
+                value={jumpAyah}
+                onChange={(e) => setJumpAyah(e.target.value)}
+                inputMode="numeric"
+              />
             </label>
             <button className="btnSmall" type="button" onClick={jumpToAyah}>
               Go
@@ -985,7 +1037,12 @@ function SyncPanel({
 
             <label className="miniLabel">
               Jump time (s)
-              <input className="miniInput" value={jumpTime} onChange={(e) => setJumpTime(e.target.value)} inputMode="decimal" />
+              <input
+                className="miniInput"
+                value={jumpTime}
+                onChange={(e) => setJumpTime(e.target.value)}
+                inputMode="decimal"
+              />
             </label>
             <button className="btnSmall" type="button" onClick={jumpToTime}>
               Seek
@@ -1054,24 +1111,44 @@ function SyncPanel({
               <div className="syncRow">
                 <label className="miniLabel">
                   Repo (owner/repo)
-                  <input className="miniInput" value={ghRepo} onChange={(e) => setGhRepo(e.target.value)} placeholder="yourname/yourrepo" />
+                  <input
+                    className="miniInput"
+                    value={ghRepo}
+                    onChange={(e) => setGhRepo(e.target.value)}
+                    placeholder="yourname/yourrepo"
+                  />
                 </label>
 
                 <label className="miniLabel">
                   Branch
-                  <input className="miniInput" value={ghBranch} onChange={(e) => setGhBranch(e.target.value)} placeholder="main" />
+                  <input
+                    className="miniInput"
+                    value={ghBranch}
+                    onChange={(e) => setGhBranch(e.target.value)}
+                    placeholder="main"
+                  />
                 </label>
               </div>
 
               <div className="syncRow">
                 <label className="miniLabel">
                   File path in repo
-                  <input className="miniInput" value={ghPath} onChange={(e) => setGhPath(e.target.value)} placeholder="public/data/yusuf.json" />
+                  <input
+                    className="miniInput"
+                    value={ghPath}
+                    onChange={(e) => setGhPath(e.target.value)}
+                    placeholder="public/data/yusuf.json"
+                  />
                 </label>
 
                 <label className="miniLabel">
                   Commit message
-                  <input className="miniInput" value={ghMsg} onChange={(e) => setGhMsg(e.target.value)} placeholder="optional" />
+                  <input
+                    className="miniInput"
+                    value={ghMsg}
+                    onChange={(e) => setGhMsg(e.target.value)}
+                    placeholder="optional"
+                  />
                 </label>
               </div>
 
@@ -1171,14 +1248,9 @@ export default function App() {
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
   const [singleOn, setSingleOn] = useState(false);
 
-  // repeat: 0 off, 1 => 1 tekrar, 2 => 2 tekrar
   const [repeatMode, setRepeatMode] = useState(0);
   const [repeatAutoReset, setRepeatAutoReset] = useState(true);
   const repeatRef = useRef({ idx: -1, done: 0 });
-
-  const resetRepeatCounter = useCallback((idx = -1) => {
-    repeatRef.current = { idx, done: 0 };
-  }, []);
 
   useEffect(() => {
     document.title = "Türkçe-Almanca Kur’an Player";
@@ -1251,7 +1323,7 @@ export default function App() {
     setIsPlaying(false);
     setSingleOn(false);
     setRepeatMode(0);
-    resetRepeatCounter(-1);
+    repeatRef.current = { idx: -1, done: 0 };
 
     const a = audioRef.current;
     if (a) {
@@ -1286,7 +1358,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [versesSrc, resetRepeatCounter]);
+  }, [versesSrc]);
 
   useEffect(() => {
     const a = audioRef.current;
@@ -1338,10 +1410,10 @@ export default function App() {
       const start = Number(v.start);
       if (!Number.isFinite(start)) return;
 
-      if (repeatAutoReset) resetRepeatCounter(idx);
+      if (repeatAutoReset) repeatRef.current = { idx, done: 0 };
       seekTo(start, autoPlay);
     },
-    [seekTo, resetRepeatCounter, repeatAutoReset]
+    [seekTo, repeatAutoReset]
   );
 
   const onPlayPause = useCallback(() => {
@@ -1382,7 +1454,6 @@ export default function App() {
     seekVerse(idx, true);
   }, [seekVerse]);
 
-  // used by picker wheel
   const dialStep = useCallback(
     (dir) => {
       const vs = versesRef.current;
@@ -1477,7 +1548,6 @@ export default function App() {
     if (idx >= 0) seekVerse(idx, true);
   }, [seekVerse]);
 
-  // loop/repeat
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1492,40 +1562,43 @@ export default function App() {
       return;
     }
 
-    if (!verses.length) return;
-
-    const idx = findActiveVerseIndex(verses, currentTime);
-    if (idx < 0) return;
-    const v = verses[idx];
-    const s = Number(v?.start);
-    const e = Number(v?.end);
-    if (!Number.isFinite(s) || !Number.isFinite(e) || e <= s) return;
-
-    if (loopAyah) {
-      if (currentTime >= e) {
-        a.currentTime = s;
-        a.play().catch(() => {});
+    if (loopAyah && verses.length) {
+      const idx = findActiveVerseIndex(verses, currentTime);
+      if (idx >= 0) {
+        const v = verses[idx];
+        const s = Number(v?.start);
+        const e = Number(v?.end);
+        if (Number.isFinite(s) && Number.isFinite(e) && e > s && currentTime >= e) {
+          a.currentTime = s;
+          a.play().catch(() => {});
+        }
       }
       return;
     }
 
-    if (repeatMode > 0 && currentTime >= e) {
-      const st = repeatRef.current;
-      const sameIdx = st.idx === idx;
+    if (repeatMode > 0 && verses.length) {
+      const idx = findActiveVerseIndex(verses, currentTime);
+      if (idx >= 0) {
+        const v = verses[idx];
+        const s = Number(v?.start);
+        const e = Number(v?.end);
+        if (Number.isFinite(s) && Number.isFinite(e) && e > s && currentTime >= e) {
+          const st = repeatRef.current;
+          const sameIdx = st.idx === idx;
+          const done = sameIdx ? st.done : 0;
 
-      const done = sameIdx ? st.done : 0;
-      const target = repeatMode;
+          if (done < repeatMode) {
+            repeatRef.current = { idx, done: done + 1 };
+            a.currentTime = s;
+            a.play().catch(() => {});
+            return;
+          }
 
-      if (done < target) {
-        repeatRef.current = { idx, done: done + 1 };
-        a.currentTime = s;
-        a.play().catch(() => {});
-        return;
+          repeatRef.current = { idx: -1, done: 0 };
+          const nextIdx = Math.min(verses.length - 1, idx + 1);
+          seekVerse(nextIdx, true);
+        }
       }
-
-      repeatRef.current = { idx: -1, done: 0 };
-      const nextIdx = Math.min(verses.length - 1, idx + 1);
-      seekVerse(nextIdx, true);
     }
   }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint, repeatMode, seekVerse]);
 
@@ -1539,8 +1612,8 @@ export default function App() {
     const el = rowRefs.current[idx];
     if (el) ensureRowVisible(el, 10);
 
-    if (repeatAutoReset) resetRepeatCounter(idx);
-  }, [currentTime, verses, activeIndex, resetRepeatCounter, repeatAutoReset]);
+    if (repeatAutoReset) repeatRef.current = { idx, done: 0 };
+  }, [currentTime, verses, activeIndex, repeatAutoReset]);
 
   const setA = useCallback(() => setAPoint(currentTimeRef.current), []);
   const setB = useCallback(() => setBPoint(currentTimeRef.current), []);
@@ -1585,11 +1658,25 @@ export default function App() {
       }
       if (k === "a") setA();
       if (k === "b") setB();
+
+      const idx = activeIndexRef.current;
+      const vs = versesRef.current;
+      const t = currentTimeRef.current;
+
+      if (idx >= 0 && vs[idx]) {
+        if (k === "s") updateVerse(idx, { start: t });
+        else if (k === "e") updateVerse(idx, { end: t });
+        else if (k === "n") {
+          updateVerse(idx, { end: t });
+          const nextIdx = Math.min(vs.length - 1, idx + 1);
+          seekVerse(nextIdx, true);
+        }
+      }
     };
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onPlayPause, nudge, prevAyah, nextAyah, setA, setB]);
+  }, [onPlayPause, nudge, prevAyah, nextAyah, updateVerse, seekVerse, setA, setB]);
 
   const commitGithub = useCallback(async ({ owner, repo, path, branch, token, message, content }) => {
     try {
@@ -1620,8 +1707,8 @@ export default function App() {
 
   const toggleRepeat = useCallback(() => {
     setRepeatMode((m) => (m === 0 ? 1 : m === 1 ? 2 : 0));
-    if (repeatAutoReset) resetRepeatCounter(activeIndexRef.current);
-  }, [resetRepeatCounter, repeatAutoReset]);
+    if (repeatAutoReset) repeatRef.current = { idx: activeIndexRef.current, done: 0 };
+  }, [repeatAutoReset]);
 
   const header = selectedSurah ? (
     <div className="surahHeader">
