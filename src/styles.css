@@ -1,6 +1,6 @@
 /* =========================================================
-   src/styles.css
-   (SENİN DOSYANIN TAMAMI + EN SONA EKLER)
+   src/styles.css  (TEK PARÇA)
+   Senin verdiğin styles.css'in tamamı + en altta ekler
    ========================================================= */
 
 /* src/styles.css */
@@ -585,152 +585,19 @@ html,body{
 }
 
 /* =========================================================
-   EKLER: DİKEY 3D RULMAN + r/rr
+   EK: Single Player player bloğu sabit (dock)
    ========================================================= */
-
-.singlePlayerTopBar{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-/* DİKEY 3D CYLINDER PICKER */
-.spPicker3D{
-  width: 120px;
-  height: 160px;
-  border-radius: 18px;
-  border: 1px solid rgba(255,255,255,0.16);
-  background: rgba(0,0,0,0.18);
-  box-shadow:
-    0 14px 28px rgba(0,0,0,0.35),
-    0 3px 0 rgba(255,255,255,0.14) inset,
-    0 -10px 16px rgba(0,0,0,0.22) inset;
-  position: relative;
-  overflow: hidden;
-  touch-action: none;
-}
-.spPicker3D.disabled{ opacity: 0.55; pointer-events:none; }
-
-.spPickerViewport{
-  width: 100%;
-  height: 100%;
-  outline: none;
-  display:grid;
-  place-items:center;
-  perspective: 800px;
-}
-
-.spPickerItems3D{
-  width: 100%;
-  height: 100%;
-  display:grid;
-  place-items:center;
-  transform-style: preserve-3d;
-}
-
-.spPickerItem3D{
-  position:absolute;
-  width: 100%;
-  text-align:center;
-  font-variant-numeric: tabular-nums;
-  font-weight: 900;
-  font-size: 32px;
-  letter-spacing: 0.5px;
-  color: rgba(255,255,255,0.22);
-  transform-origin: center center;
-  filter: blur(0.2px);
-}
-.spPickerItem3D.active{
-  color: rgba(255,255,255,0.95);
-  text-shadow: 0 2px 12px rgba(0,0,0,0.35);
-}
-
-/* center horizontal highlight bar */
-.spPickerBar{
-  position:absolute;
-  left: 10px;
-  right: 10px;
-  top: 50%;
-  height: 46px;
-  transform: translateY(-50%);
-  border-radius: 999px;
-  background: rgba(255,255,255,0.10);
-  border: 1px solid rgba(255,255,255,0.12);
-  box-shadow: 0 0 0 1px rgba(0,0,0,0.18) inset;
-  pointer-events:none;
-}
-
-/* fades top/bottom */
-.spPickerFadeTop{
-  position:absolute;
-  left:0; right:0; top:0;
-  height: 46%;
-  background: linear-gradient(180deg, rgba(15,21,32,0.92), rgba(15,21,32,0.00));
-  pointer-events:none;
-}
-.spPickerFadeBottom{
-  position:absolute;
-  left:0; right:0; bottom:0;
-  height: 46%;
-  background: linear-gradient(0deg, rgba(15,21,32,0.92), rgba(15,21,32,0.00));
-  pointer-events:none;
-}
-
-/* r/rr görünür garanti */
-.spRBtn{
-  min-width: 56px !important;
-  height: 56px !important;
-  border-radius: 16px !important;
-  border: 1px solid rgba(255,255,255,0.18) !important;
-  background: rgba(0,0,0,0.18) !important;
-  color: rgba(255,255,255,0.70) !important;
-  font-weight: 950 !important;
-  font-size: 18px !important;
-  letter-spacing: 0.5px !important;
-  cursor: pointer !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  box-shadow:
-    0 10px 22px rgba(0,0,0,0.30),
-    0 3px 0 rgba(255,255,255,0.12) inset,
-    0 -6px 10px rgba(0,0,0,0.20) inset;
-}
-.spRBtn.off{ opacity: 0.55; }
-.spRBtn.on{
-  color: rgba(10,14,22,0.98) !important;
-  background: linear-gradient(180deg, rgba(170,220,255,1), rgba(99,179,237,1)) !important;
-  border-color: rgba(255,255,255,0.22) !important;
-}
-.spRBtn:active{ transform: translateY(1px); }
-
-.spAutoReset{
-  height: 56px;
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  padding: 0 12px;
-  border-radius: 16px;
-}
-/* =========================================================
-   src/styles.css
-   (mevcut dosyanın SONUNA ekle)
-   - SinglePlayer controls sticky
-   - Rulman 3D güçlendirme
-   ========================================================= */
-
-/* Single Player controls stick to that good location */
-.singlePlayerControlsSticky{
+.singlePlayerControlsDock{
   position: sticky;
-  top: 10px;
-  z-index: 50;
+  bottom: 10px;
+  z-index: 60;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
 
-/* 3D picker: stronger cylinder + shine */
+/* =========================================================
+   EK: 3D Rulman + shine
+   ========================================================= */
 .spPicker3D{
   width: 120px;
   height: 160px;
@@ -753,7 +620,7 @@ html,body{
   outline: none;
   display:grid;
   place-items:center;
-  perspective: 980px; /* stronger */
+  perspective: 980px;
 }
 
 .spPickerItems3D{
@@ -792,7 +659,7 @@ html,body{
   opacity: 0.9;
 }
 
-/* center horizontal highlight bar */
+/* center highlight bar */
 .spPickerBar{
   position:absolute;
   left: 10px;
@@ -809,7 +676,6 @@ html,body{
   pointer-events:none;
 }
 
-/* fades top/bottom */
 .spPickerFadeTop{
   position:absolute;
   left:0; right:0; top:0;
@@ -824,3 +690,33 @@ html,body{
   background: linear-gradient(0deg, rgba(15,21,32,0.95), rgba(15,21,32,0.00));
   pointer-events:none;
 }
+
+/* =========================================================
+   EK: r/rr (görünür ve net)
+   ========================================================= */
+.spRBtn{
+  min-width: 56px !important;
+  height: 56px !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  background: rgba(0,0,0,0.18) !important;
+  color: rgba(255,255,255,0.70) !important;
+  font-weight: 950 !important;
+  font-size: 18px !important;
+  letter-spacing: 0.5px !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow:
+    0 10px 22px rgba(0,0,0,0.30),
+    0 3px 0 rgba(255,255,255,0.12) inset,
+    0 -6px 10px rgba(0,0,0,0.20) inset;
+}
+.spRBtn.off{ opacity: 0.55; }
+.spRBtn.on{
+  color: rgba(10,14,22,0.98) !important;
+  background: linear-gradient(180deg, rgba(170,220,255,1), rgba(99,179,237,1)) !important;
+  border-color: rgba(255,255,255,0.22) !important;
+}
+.spRBtn:active{ transform: translateY(1px); }
