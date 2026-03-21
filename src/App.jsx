@@ -18,9 +18,9 @@ const SURAHES = [
 ];
 
 /**
- * SEGMENTS: only the parts you provided are colored.
- * - ar: highlight + color
- * - tr/de: color only
+ * Segments (only these parts are colored)
+ * - ar: highlight + colored font
+ * - tr/de: colored font only (no highlight)
  */
 const SEGMENTS = {
   6: {
@@ -83,6 +83,12 @@ const SEGMENTS = {
     de: "Allah ist besser als Behütender, und Er ist der Barmherzigste der Barmherzigen.",
     tr: "“Ama Allah’tır gerçek hayırlı koruyucu ve O, bütün merhamet edenlerin üstünde mutlak merhamet sahibidir.”",
   },
+  66: {
+    color: "green",
+    ar: "قَالَ ٱللَّهُ عَلَىٰ مَا نَقُولُ وَكِيلٌۭ",
+    de: "Allah ist Sachwalter über das, was wir (hier) sagen.",
+    tr: "“Allah konuştuklarımıza şahit ve gözeticidir; verilen sözlerin yerine gelip gelmemesi nihayette yine O’nun iznine ve kudretine bağlıdır.”",
+  },
   67: {
     color: "green",
     ar: "إِنِ ٱلْحُكْمُ إِلَّا لِلَّهِ ۖ عَلَيْهِ تَوَكَّلْتُ ۖ وَعَلَيْهِ فَلْيَتَوَكَّلِ ٱلْمُتَوَكِّلُونَ",
@@ -95,6 +101,12 @@ const SEGMENTS = {
     de: "außer daß Allah es wollte. Wir erhöhen, wen Wir wollen, um Rangstufen. Und über jedem, der Wissen besitzt, steht einer, der (noch mehr) weiß.",
     tr: "“fakat Allah ne dilerse o olur (ve Allah, bir şeyi dileyince onun sebeplerini de hazırlar). Biz, kimi dilersek onu böyle mertebe mertebe yükseltiriz. Ve her bir bilgi sahibinin üstünde daha iyi bir bilen (ve hepsinin üstünde her şeyi bilen olarak Allah) vardır.”",
   },
+  80: {
+    color: "green",
+    ar: "وَهُوَ خَيْرُ ٱلْحَٰكِمِينَ",
+    de: "Er ist der Beste derer, die Urteile fällen.",
+    tr: "“Allah, her zaman en hayırlı hükmü verendir.”",
+  },
   86: {
     color: "red",
     ar: "إِنَّمَآ أَشْكُوا۟ بَثِّى وَحُزْنِىٓ إِلَى ٱللَّهِ",
@@ -103,21 +115,39 @@ const SEGMENTS = {
   },
   87: {
     color: "green",
-    ar: "وَلَا تَا۟يْـَٔسُوا۟ مِن رَّوْحِ ٱلْلَّهِ ۖ إِنَّهُۥ لَا يَا۟يْـَٔسُ مِن رَّوْحِ ٱلْلَّهِ إِلَّا ٱلْقَوْمُ ٱلْكَٰفِرُونَ",
+    ar: "وَلَا تَا۟يْـَٔسُوا۟ مِن رَّوْحِ ٱللَّهِ ۖ إِنَّهُۥ لَا يَا۟يْـَٔسُ مِن رَّوْحِ ٱللَّهِ إِلَّا ٱلْقَوْمُ ٱلْكَٰفِرُونَ",
     de: "Und gebt nicht die Hoffnung auf das Erbarmen Allahs auf. Es gibt die Hoffnung auf das Erbarmen Allahs nur das ungläubige Volk auf.",
     tr: "“Allah’ın rahmetinden asla ümidinizi kesmeyin. Şurası bir gerçek ki, O’na inanmayan kâfirler güruhu dışında hiç kimse Allah’ın rahmetinden ümit kesmez.”",
   },
+  88: {
+    color: "green",
+    ar: "إِنَّ ٱللَّهَ يَجْزِى ٱلْمُتَصَدِّقِينَ",
+    de: "Allah vergilt denjenigen, die Almosen geben.",
+    tr: "“Hiç kuşkusuz Allah, fazladan iyilikte bulunanları bol bol mükâfatlandırır.”",
+  },
+  90: {
+    color: "green",
+    ar: "إِنَّ ٱللَّهَ لَا يُضِيعُ أَجْرَ ٱلْمُحْسِنِينَ",
+    de: "Gewiß, Allah läßt den Lohn der Gutes Tuenden nicht verlorengehen.",
+    tr: "“Doğrusu şu ki, kim O’na karşı derin saygı duyar, O’na karşı gelmekten sakınır ve O’na itaatla birlikte başına gelenlere de sabrederse, hiç şüphesiz Allah, böyle iyiliğe adanmış ve O’nu görürcesine davranan kimselerin mükâfatını asla zayi etmez.”",
+  },
   91: {
     color: "green",
-    ar: "تَٱللَّهِ لَقَدْ ءَاثَرَكَ ٱلْلَّهُ عَلَيْنَا وَإِن كُنَّا لَخَٰطِـِٔينَ",
+    ar: "تَٱللَّهِ لَقَدْ ءَاثَرَكَ ٱللَّهُ عَلَيْنَا وَإِن كُنَّا لَخَٰطِـِٔينَ",
     de: "Bei Allah, Allah hat dich uns vorgezogen. Und wir haben wahrlich Verfehlungen begangen.",
     tr: "“Allah’a yemin olsun ki, gerçekten Allah seni bize tercih etti; biz, başka değil, ancak bir yanlış içinde idik.”",
   },
   92: {
     color: "green",
-    ar: "لَا تَثْرِيبَ عَلَيْكُمُ ٱلْيَوْمَ ۖ يَغْفِرُ ٱلْلَّهُ لَكُمْ ۖ وَهُوَ أَرْحَمُ ٱلرَّٰحِمِينَ",
+    ar: "لَا تَثْرِيبَ عَلَيْكُمُ ٱلْيَوْمَ ۖ يَغْفِرُ ٱللَّهُ لَكُمْ ۖ وَهُوَ أَرْحَمُ ٱلرَّٰحِمِينَ",
     de: "Keine Schelte soll heute über euch kommen. Allah vergibt euch, Er ist ja der Barmherzigste der Barmherzigen.",
     tr: "“Hayır! Bugün size hiçbir kınama yok! (Ben hakkımı çoktan helâl ettim;) Allah da sizi affetsin. Çünkü O, bütün merhamet edenlerin üstünde mutlak merhamet sahibidir.”",
+  },
+  98: {
+    color: "green",
+    ar: "إِنَّهُۥ هُوَ ٱلْغَفُورُ ٱلرَّحِيمُ",
+    de: "Er ist ja der Allvergebende und Barmherzige.",
+    tr: "“Hiç şüphesiz O, Ğafûr (günahları çok bağışlayan)dır; Rahîm (bilhassa tevbe ile Kendisine yönelen mü’ min kullarına karşı hususî rahmeti pek bol olan)dır.”",
   },
   100: {
     color: "green",
@@ -133,7 +163,7 @@ const SEGMENTS = {
   },
   108: {
     color: "green",
-    ar: "قُلْ هَٰذِهِۦ سَبِيلِىٓ أَدْعُوٓا۟ إِلَى ٱلْلَّهِ ۚ عَلَىٰ بَصِيرَةٍ أَنَا۠ وَمَنِ ٱتَّبَعَنِى ۖ وَسُبْحَٰنَ ٱلْلَّهِ وَمَآ أَنَا۠ مِنَ ٱلْمُشْرِكِينَ",
+    ar: "قُلْ هَٰذِهِۦ سَبِيلِىٓ أَدْعُوٓا۟ إِلَى ٱللَّهِ ۚ عَلَىٰ بَصِيرَةٍ أَنَا۠ وَمَنِ ٱتَّبَعَنِى ۖ وَسُبْحَٰنَ ٱللَّهِ وَمَآ أَنَا۠ مِنَ ٱلْمُشْرِكِينَ",
     de: "Sag: Das ist mein Weg: Ich rufe zu Allah aufgrund eines sichtbaren Hinweises, ich und diejenigen, die mir folgen. Preis sei Allah! Und ich gehöre nicht zu den Götzendienern.",
     tr: "“İşte benim (iman, ihlâs ve Tevhid) yolum: Ben, (körü körüne ve taklide dayalı olarak değil,) görerek, delile dayanarak ve insanların idrakine hitap ederek Allah’a çağırıyorum: ben ve bana tâbi olanlar. Ve Allah’ı şirkin her türlüsünden tenzih ederim, asla O’na ortak tanıyanlardan değilim ben.”",
   },
@@ -260,6 +290,123 @@ function parseJsonTolerant(text, urlForMsg = "") {
   }
 }
 
+/* ===== Segment marking helpers ===== */
+function stripOuterQuotes(s) {
+  const t = String(s ?? "").trim();
+  return t.replace(/^["“”]+/, "").replace(/["“”]+$/, "").trim();
+}
+
+function normalizeCommon(s) {
+  return String(s ?? "")
+    .replaceAll("\u00A0", " ")
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function escapeRegexLiteral(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function normalizeArabicCore(s) {
+  return String(s ?? "")
+    .replace(/[\u064B-\u065F\u0670\u0610-\u061A\u06D6-\u06ED]/g, "")
+    .replace(/\u0640/g, "")
+    .replace(/[ۖۗۘۙۚۛۜ۝۞]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildArabicSuperLooseRegex(snippet) {
+  const base = normalizeArabicCore(snippet);
+  if (!base) return null;
+
+  const DIACR = "[\\u064B-\\u065F\\u0670\\u0610-\\u061A\\u06D6-\\u06ED]*";
+  const BETWEEN =
+    "[\\s\\u0640\\u064B-\\u065F\\u0670\\u0610-\\u061A\\u06D6-\\u06ED\\u060C\\u061B\\u061F\\u06D4\\u06D5ۖۗۘۙۚۛۜ۝۞]*";
+
+  const chars = Array.from(base).filter((ch) => !/\s/.test(ch));
+  if (!chars.length) return null;
+
+  const parts = chars.map((ch) => `${escapeRegexLiteral(ch)}${DIACR}`);
+  return new RegExp(parts.join(BETWEEN), "g");
+}
+
+function applyRegexMarkFirst(text, regex, className) {
+  const s = String(text ?? "");
+  if (!s || !regex) return s;
+
+  regex.lastIndex = 0;
+  const m = regex.exec(s);
+  if (!m) return s;
+
+  const start = m.index;
+  const matchText = m[0] ?? "";
+  const end = start + matchText.length;
+
+  return (
+    <>
+      {s.slice(0, start)}
+      <span className={className}>{matchText}</span>
+      {s.slice(end)}
+    </>
+  );
+}
+
+function splitAndMarkFirst(text, needle, className) {
+  const s = String(text ?? "");
+  const n = String(needle ?? "");
+  if (!s || !n) return s;
+
+  const idx = s.indexOf(n);
+  if (idx < 0) return s;
+
+  return (
+    <>
+      {s.slice(0, idx)}
+      <span className={className}>{n}</span>
+      {s.slice(idx + n.length)}
+    </>
+  );
+}
+
+function markSegment(text, ayah, lang) {
+  const s = String(text ?? "");
+  const a = Number(ayah);
+  const seg = SEGMENTS[a];
+  if (!seg) return s;
+
+  const color = seg.color === "green" ? "green" : "red";
+  const rawNeedle = seg[lang];
+  if (!rawNeedle) return s;
+
+  if (lang === "ar") {
+    const cls = color === "green" ? "mark markGreen" : "mark markRed";
+    const rx = buildArabicSuperLooseRegex(rawNeedle);
+    const hit = applyRegexMarkFirst(s, rx, cls);
+    if (hit !== s) return hit;
+
+    const sCore = normalizeArabicCore(s);
+    const nCore = normalizeArabicCore(rawNeedle);
+    if (sCore && nCore && sCore.includes(nCore)) return <span className={cls}>{s}</span>;
+
+    return s;
+  }
+
+  const cls = color === "green" ? "fontGreen" : "fontRed";
+  const needle = stripOuterQuotes(rawNeedle);
+
+  const direct = splitAndMarkFirst(s, needle, cls);
+  if (direct !== s) return direct;
+
+  const sN = normalizeCommon(s);
+  const nN = normalizeCommon(needle);
+  if (sN && nN && sN.includes(nN)) return <span className={cls}>{s}</span>;
+
+  return s;
+}
+
 function base64EncodeUtf8(text) {
   const bytes = new TextEncoder().encode(String(text ?? ""));
   let bin = "";
@@ -327,142 +474,6 @@ async function githubPutFile({ owner, repo, path, token, branch, message, conten
     throw new Error(`GitHub PUT failed: ${res.status} ${res.statusText} :: ${t}`);
   }
   return res.json();
-}
-
-/* =========================
-   Segment marking (robust)
-   ========================= */
-
-function stripOuterQuotes(s) {
-  const t = String(s ?? "").trim();
-  return t.replace(/^["“”]+/, "").replace(/["“”]+$/, "").trim();
-}
-
-function normalizeCommon(s) {
-  return String(s ?? "")
-    .replaceAll("\u00A0", " ")
-    .replace(/[“”]/g, '"')
-    .replace(/[‘’]/g, "'")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function escapeRegexLiteral(s) {
-  return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function normalizeArabicCore(s) {
-  const raw = String(s ?? "");
-  const noDiacr = raw
-    .replace(/[\u064B-\u065F\u0670\u0610-\u061A\u06D6-\u06ED]/g, "")
-    .replace(/\u0640/g, "");
-  const noStops = noDiacr.replace(/[ۖۗۘۙۚۛۜ۝۞]/g, "");
-  return noStops.trim();
-}
-
-/**
- * Arabic tolerant regex:
- * - ignores diacritics + Quran marks + tatweel
- * - allows Quran stop signs / punctuation / whitespace between letters
- */
-function buildArabicSuperLooseRegex(snippet) {
-  const base = normalizeArabicCore(snippet);
-  if (!base) return null;
-
-  const DIACR = "[\\u064B-\\u065F\\u0670\\u0610-\\u061A\\u06D6-\\u06ED]*";
-  const TAT = "\\u0640*";
-  const BETWEEN =
-    "[\\s\\u0640\\u064B-\\u065F\\u0670\\u0610-\\u061A\\u06D6-\\u06ED\\u060C\\u061B\\u061F\\u06D4\\u06D5ۖۗۘۙۚۛۜ۝۞]*";
-
-  const chars = Array.from(base).filter((ch) => !/\s/.test(ch) && ch !== "ۚ" && ch !== "ۖ");
-
-  if (!chars.length) return null;
-
-  const parts = [];
-  for (const ch of chars) {
-    const esc = escapeRegexLiteral(ch);
-    parts.push(`${TAT}${esc}${DIACR}`);
-  }
-
-  return new RegExp(parts.join(BETWEEN), "g");
-}
-
-function applyRegexMarkFirst(text, regex, className) {
-  const s = String(text ?? "");
-  if (!s || !regex) return s;
-
-  regex.lastIndex = 0;
-  const m = regex.exec(s);
-  if (!m) return s;
-
-  const start = m.index;
-  const matchText = m[0] ?? "";
-  const end = start + matchText.length;
-
-  return (
-    <>
-      {s.slice(0, start)}
-      <span className={className}>{matchText}</span>
-      {s.slice(end)}
-    </>
-  );
-}
-
-function splitAndMarkFirst(text, needle, className) {
-  const s = String(text ?? "");
-  const n = String(needle ?? "");
-  if (!s || !n) return s;
-
-  const idx = s.indexOf(n);
-  if (idx < 0) return s;
-
-  return (
-    <>
-      {s.slice(0, idx)}
-      <span className={className}>{n}</span>
-      {s.slice(idx + n.length)}
-    </>
-  );
-}
-
-function markSegment(text, ayah, lang) {
-  const s = String(text ?? "");
-  const a = Number(ayah);
-  const seg = SEGMENTS[a];
-  if (!seg) return s;
-
-  const color = seg.color === "green" ? "green" : "red";
-  const rawNeedle = seg[lang];
-  if (!rawNeedle) return s;
-
-  if (lang === "ar") {
-    const cls = color === "green" ? "mark markGreen" : "mark markRed";
-
-    // Try strict-ish (super loose) regex
-    const rx = buildArabicSuperLooseRegex(rawNeedle);
-    const hit = applyRegexMarkFirst(s, rx, cls);
-    if (hit !== s) return hit;
-
-    // If still not found (rare), try core-normalized contains => color whole line (only for Arabic)
-    const sCore = normalizeArabicCore(s);
-    const nCore = normalizeArabicCore(rawNeedle);
-    if (sCore && nCore && sCore.includes(nCore)) return <span className={cls}>{s}</span>;
-
-    return s;
-  }
-
-  const cls = color === "green" ? "fontGreen" : "fontRed";
-  const needle = stripOuterQuotes(rawNeedle);
-
-  const direct = splitAndMarkFirst(s, needle, cls);
-  if (direct !== s) return direct;
-
-  const sN = normalizeCommon(s);
-  const nN = normalizeCommon(needle);
-  if (!sN || !nN) return s;
-
-  if (sN.includes(nN)) return <span className={cls}>{s}</span>;
-  return s;
 }
 
 function SurahList({ surahs, selectedId, query, onQuery, onSelect }) {
@@ -606,7 +617,8 @@ function Timeline({
 
 /**
  * iOS-like vertical wheel (3D)
- * - sensitivity increased
+ * - up swipe => +1
+ * - down swipe => -1
  * - inertia + haptic
  */
 function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
@@ -620,6 +632,7 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const accumPxRef = useRef(0);
   const rafRef = useRef(0);
 
+  // increased sensitivity
   const STEP_PX = 12;
 
   useEffect(() => {
@@ -790,6 +803,11 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   );
 }
 
+/**
+ * Single Player
+ * - Bottom dock (fixed)
+ * - No extra overlay panels
+ */
 function SinglePlayerPanel({
   open,
   verse,
@@ -802,6 +820,8 @@ function SinglePlayerPanel({
   onDialStep,
   repeatMode,
   onToggleRepeat,
+  loading,
+  errorText,
 }) {
   useEffect(() => {
     if (!open) return;
@@ -831,38 +851,50 @@ function SinglePlayerPanel({
   return (
     <div className="singlePlayerBackdrop" role="dialog" aria-modal="true" aria-label="Single Player">
       <div className="singlePlayerCard">
+        {errorText ? <div className="spInlineError">{errorText}</div> : null}
+
         <div className="singlePlayerLines">
           <div className="singlePlayerLine singlePlayerLineAr" dir="rtl">
-            {markSegment((verse?.ar || "—").trim(), ay, "ar")}
+            {loading ? "Loading…" : markSegment((verse?.ar || "—").trim(), ay, "ar")}
           </div>
 
           <div className="singlePlayerLine singlePlayerLineDe">
-            {markSegment((verse?.de || "—").trim(), ay, "de")}
+            {loading ? "Loading…" : markSegment((verse?.de || "—").trim(), ay, "de")}
           </div>
 
           <div className="singlePlayerLine singlePlayerLineTr">
-            {markSegment((verse?.tr || "—").trim(), ay, "tr")}
+            {loading ? "Loading…" : markSegment((verse?.tr || "—").trim(), ay, "tr")}
           </div>
 
+          {/* dock altta sabit => içerik kesilmesin */}
           <div style={{ height: 140 }} />
         </div>
       </div>
 
+      {/* Dock: bottom fixed, tek satır */}
       <div className="singlePlayerDockBottom" aria-label="Player Dock">
         <div className="singlePlayerDockRow">
-          <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
+          <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev" disabled={loading}>
             ◀
           </button>
 
-          <button className="spBtn spBtnPrimary" type="button" onClick={onPlayPause} aria-label="Play/Pause">
+          <button
+            className="spBtn spBtnPrimary"
+            type="button"
+            onClick={onPlayPause}
+            aria-label="Play/Pause"
+            disabled={loading}
+          >
             {isPlaying ? "⏸" : "▶"}
           </button>
 
-          <button className="spBtn" type="button" onClick={onNext} aria-label="Next">
+          <button className="spBtn" type="button" onClick={onNext} aria-label="Next" disabled={loading}>
             ▶
           </button>
 
-          <IOSPickerWheelVertical3D disabled={dialDisabled} value={ay} onStep={onDialStep} />
+          <div style={{ transform: "scale(0.92)", transformOrigin: "center" }}>
+            <IOSPickerWheelVertical3D disabled={dialDisabled || loading} value={ay} onStep={onDialStep} />
+          </div>
 
           <button
             className={`spRBtn ${repeatMode ? "on" : "off"}`}
@@ -872,6 +904,7 @@ function SinglePlayerPanel({
               onToggleRepeat();
             }}
             aria-label="Repeat"
+            disabled={loading}
           >
             {repeatMode === 2 ? "rr" : "r"}
           </button>
@@ -1214,7 +1247,12 @@ function SyncPanel({
             <button className="btnSmall" type="button" onClick={setEndToT} disabled={!active}>
               Set END = t (E)
             </button>
-            <button className="btnSmall" type="button" onClick={setEndToTAndNext} disabled={!active}>
+            <button
+              className="btnSmall"
+              type="button"
+              onClick={setEndToTAndNext}
+              disabled={!active}
+            >
               END=t + Next (N)
             </button>
           </div>
@@ -1496,6 +1534,7 @@ export default function App() {
   const [selectedSurah, setSelectedSurah] = useState(SURAHES[0]);
   const [verses, setVerses] = useState([]);
   const [error, setError] = useState("");
+  const [loadingVerses, setLoadingVerses] = useState(false);
 
   const audioRef = useRef(null);
   const rowRefs = useRef([]);
@@ -1515,8 +1554,10 @@ export default function App() {
   const [bPoint, setBPoint] = useState(null);
 
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
+  // open single by default, but will be toggled OFF during loading and ON after successful load
   const [singleOn, setSingleOn] = useState(true);
 
+  // repeat: 0 off, 1 => 1 tekrar, 2 => 2 tekrar
   const [repeatMode, setRepeatMode] = useState(0);
   const repeatStateRef = useRef({ idx: -1, done: 0, armed: true, lastFire: 0 });
 
@@ -1579,12 +1620,15 @@ export default function App() {
     let cancelled = false;
 
     setError("");
+    setLoadingVerses(true);
     setVerses([]);
     setActiveIndex(-1);
     setCurrentTime(0);
     setDuration(0);
     setIsPlaying(false);
-    setSingleOn(true);
+
+    // IMPORTANT: prevent "— — — frozen overlay": close while loading; reopen on success.
+    setSingleOn(false);
 
     setRepeatMode(0);
     repeatStateRef.current = { idx: -1, done: 0, armed: true, lastFire: 0 };
@@ -1612,10 +1656,16 @@ export default function App() {
         if (!cancelled) {
           rowRefs.current = [];
           setVerses(data);
+          setLoadingVerses(false);
+          setSingleOn(true); // auto open after load
         }
       } catch (e) {
         console.error("[verses] load failed:", e);
-        if (!cancelled) setError(`Verses could not be loaded: ${e.message}`);
+        if (!cancelled) {
+          setLoadingVerses(false);
+          setSingleOn(false);
+          setError(`Verses could not be loaded: ${e.message}`);
+        }
       }
     })();
 
@@ -1680,6 +1730,7 @@ export default function App() {
     [seekTo]
   );
 
+  // when single opens first time, position to first verse without forcing play
   useEffect(() => {
     if (!singleOn) return;
     if (!verses.length) return;
@@ -1743,6 +1794,7 @@ export default function App() {
     });
   }, []);
 
+  // Draft auto-save
   useEffect(() => {
     const t = setTimeout(() => {
       try {
@@ -1807,83 +1859,12 @@ export default function App() {
     if (idx >= 0) seekVerse(idx, true);
   }, [seekVerse]);
 
+  // repeat toggle: off -> 1 -> 2 -> off
   const toggleRepeat = useCallback(() => {
-    setRepeatMode((m) => {
-      const next = m === 0 ? 1 : m === 1 ? 2 : 0;
+    setRepeatMode((m) => (m === 0 ? 1 : m === 1 ? 2 : 0));
+  }, []);
 
-      if (next <= 0) {
-        repeatStateRef.current = { idx: -1, done: 0, armed: true, lastFire: 0 };
-        return next;
-      }
-
-      const vs = versesRef.current;
-      if (!vs.length) return next;
-
-      let idx = activeIndexRef.current;
-      if (idx < 0) idx = findActiveVerseIndex(vs, currentTimeRef.current);
-      idx = clamp(idx, 0, vs.length - 1);
-
-      const v = vs[idx];
-      const s = Number(v?.start);
-      if (Number.isFinite(s)) {
-        repeatStateRef.current = { idx, done: 0, armed: true, lastFire: 0 };
-        tactilePulse(10);
-        seekTo(s, true);
-      }
-      return next;
-    });
-  }, [seekTo]);
-
-  useEffect(() => {
-    const a = audioRef.current;
-    const vs = versesRef.current;
-    if (!a || !vs.length) return;
-    if (repeatMode <= 0) return;
-
-    let idx = activeIndexRef.current;
-    if (idx < 0 || !vs[idx]) idx = findActiveVerseIndex(vs, currentTime);
-    if (idx < 0 || !vs[idx]) return;
-
-    const v = vs[idx];
-    const s = Number(v?.start);
-    const e = Number(v?.end);
-    if (!Number.isFinite(s) || !Number.isFinite(e) || e <= s) return;
-
-    const st = repeatStateRef.current;
-
-    if (st.idx !== idx) {
-      repeatStateRef.current = { idx, done: 0, armed: true, lastFire: 0 };
-      return;
-    }
-
-    if (currentTime < e - 0.12) {
-      repeatStateRef.current.armed = true;
-      return;
-    }
-
-    const nearEnd = currentTime >= e - 0.02;
-    if (!nearEnd || !repeatStateRef.current.armed) return;
-
-    const now = performance.now();
-    if (now - (repeatStateRef.current.lastFire || 0) < 350) return;
-    repeatStateRef.current.lastFire = now;
-
-    repeatStateRef.current.armed = false;
-
-    const done = repeatStateRef.current.done || 0;
-    if (done < repeatMode) {
-      repeatStateRef.current.done = done + 1;
-      a.currentTime = s;
-      a.play().catch(() => {});
-      return;
-    }
-
-    repeatStateRef.current.done = 0;
-    a.pause();
-    a.currentTime = s;
-    setCurrentTime(s);
-  }, [currentTime, repeatMode]);
-
+  // Existing loops
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1912,6 +1893,7 @@ export default function App() {
     }
   }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint]);
 
+  // Active row sync
   useEffect(() => {
     if (!verses.length) return;
     const idx = findActiveVerseIndex(verses, currentTime);
@@ -1926,6 +1908,7 @@ export default function App() {
   const setA = useCallback(() => setAPoint(currentTimeRef.current), []);
   const setB = useCallback(() => setBPoint(currentTimeRef.current), []);
 
+  // Keyboard
   useEffect(() => {
     const onKey = (e) => {
       const tag = document.activeElement?.tagName?.toLowerCase();
@@ -2009,9 +1992,10 @@ export default function App() {
     setSingleOn((x) => {
       const next = !x;
       if (!next) pause();
+      if (next && versesRef.current.length && activeIndexRef.current < 0) seekVerse(0, false);
       return next;
     });
-  }, [pause]);
+  }, [pause, seekVerse]);
 
   const header = selectedSurah ? (
     <div className="surahHeader">
@@ -2049,7 +2033,7 @@ export default function App() {
         {error ? <div className="errorBox">{error}</div> : null}
 
         <SinglePlayerPanel
-          open={singleOn}
+          open={singleOn && !!activeVerse && !loadingVerses}
           verse={activeVerse}
           isPlaying={isPlaying}
           onPlayPause={onPlayPause}
@@ -2063,12 +2047,13 @@ export default function App() {
             const cur = activeIndexRef.current;
             const base = cur >= 0 ? cur : 0;
             const next = clamp(base + dir, 0, Math.max(0, vs.length - 1));
-
-            // Wheel: no forced autoplay, preserve last state
+            // IMPORTANT: do not force autoplay; keep current state
             seekVerse(next, isPlayingRef.current);
           }}
           repeatMode={repeatMode}
           onToggleRepeat={toggleRepeat}
+          loading={loadingVerses}
+          errorText={error}
         />
 
         <div className={`playerCard playerSticky ${toolsCollapsed ? "collapsed" : ""}`}>
