@@ -447,16 +447,18 @@ html,body{
   .colDe{ display:none; }
 }
 
-/* === Arabic snippet highlight (RED) === */
+/* === Arabic snippet highlight (KOYU KİREMİT KIRMIZI) === */
 .arHl{
   display:inline;
   padding: 0.06em 0.14em;
   margin: 0 0.02em;
   border-radius: 0.35em;
-  background: rgba(255, 60, 60, 0.22);
+
+  /* koyu kiremit kırmızı ton */
+  background: rgba(139, 45, 45, 0.28);
   box-shadow:
-    0 0 0 1px rgba(255, 80, 80, 0.35) inset,
-    0 10px 22px rgba(255, 30, 30, 0.10);
+    0 0 0 1px rgba(170, 60, 60, 0.42) inset,
+    0 10px 22px rgba(139, 45, 45, 0.14);
   text-shadow: 0 2px 10px rgba(0,0,0,0.28);
 }
 
