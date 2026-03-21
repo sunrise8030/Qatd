@@ -1,4 +1,4 @@
- // =========================
+// =========================
 // FILE: src/App.jsx (FULL)
 // =========================
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -16,6 +16,20 @@ const SURAHES = [
     versesUrl: "/data/yusuf.json",
   },
 ];
+
+/**
+ * Ayet renklendirme:
+ * 1) JSON içinde destek:
+ *    - { highlight: true }
+ *    - { color: "#f5d76e" }  (veya rgba/hsla)
+ *    - { className: "hlGold" } (CSS class)
+ * 2) Buradan kural:
+ *    - ayahNo: { color, className }
+ */
+const HIGHLIGHT_RULES = {
+  // 1: { color: "#f5d76e", className: "hlGold" },
+  // 5: { color: "#63b3ed", className: "hlBlue" },
+};
 
 function resolvePublicUrl(path) {
   const base = import.meta.env.BASE_URL || "/";
@@ -47,6 +61,21 @@ function tactilePulse(ms = 8) {
       navigator.vibrate(ms);
     }
   } catch {}
+}
+
+function getVerseHighlight(verse) {
+  const ay = Number(verse?.ayah);
+  const rule = Number.isFinite(ay) ? HIGHLIGHT_RULES[ay] : null;
+
+  const jsonClass = typeof verse?.className === "string" ? verse.className.trim() : "";
+  const jsonColor = typeof verse?.color === "string" ? verse.color.trim() : "";
+  const jsonHighlight = Boolean(verse?.highlight);
+
+  const className = (jsonClass || rule?.className || "").trim();
+  const color = (jsonColor || rule?.color || "").trim();
+
+  const on = jsonHighlight || Boolean(className) || Boolean(color) || Boolean(rule);
+  return { on, className, color };
 }
 
 // Overlap-safe
@@ -363,7 +392,8 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const accumPxRef = useRef(0);
   const rafRef = useRef(0);
 
-  const STEP_PX = 22;
+  // Daha küçük STEP_PX => daha hassas
+  const STEP_PX = 12;
 
   useEffect(() => {
     return () => {
@@ -403,7 +433,8 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
       return;
     }
 
-    const DECAY = 0.006;
+    // Daha az decay => inertia daha uzun, daha hassas his
+    const DECAY = 0.0045;
     const MAX_MS = 1100;
     const startTs = performance.now();
     let last = performance.now();
@@ -466,7 +497,8 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
     stop();
 
     const dy = e.deltaY;
-    const steps = clamp(Math.round(Math.abs(dy) / 28), 1, 10);
+    // Daha küçük bölen => daha hassas/seri step
+    const steps = clamp(Math.round(Math.abs(dy) / 18), 1, 14);
     const dir = dy < 0 ? +1 : -1;
 
     for (let i = 0; i < steps; i += 1) onStep(dir);
@@ -575,32 +607,42 @@ function SinglePlayerPanel({
   if (!open) return null;
 
   const ay = Number(verse?.ayah || 0);
+  const hl = getVerseHighlight(verse);
+  const hlClass = hl.on ? `highlight ${hl.className || ""}`.trim() : "";
+  const hlStyle = hl.on && hl.color ? { "--hl": hl.color } : undefined;
 
   return (
     <div className="singlePlayerBackdrop" role="dialog" aria-modal="true" aria-label="Single Player">
-      <div className="singlePlayerCard">
+      <div className={`singlePlayerCard ${hlClass}`} style={hlStyle}>
         <div className="singlePlayerLines">
-          <div className="singlePlayerLine singlePlayerLineAr" dir="rtl">
+          <div className={`singlePlayerLine singlePlayerLineAr ${hlClass}`} style={hlStyle} dir="rtl">
             {(verse?.ar || "—").trim()}
           </div>
 
-          <div className="singlePlayerLine singlePlayerLineDe">{(verse?.de || "—").trim()}</div>
+          <div className={`singlePlayerLine singlePlayerLineDe ${hlClass}`} style={hlStyle}>
+            {(verse?.de || "—").trim()}
+          </div>
 
-          <div className="singlePlayerLine singlePlayerLineTr">{(verse?.tr || "—").trim()}</div>
+          <div className={`singlePlayerLine singlePlayerLineTr ${hlClass}`} style={hlStyle}>
+            {(verse?.tr || "—").trim()}
+          </div>
 
-          {/* dock altta sabit => içerik kesilmesin */}
           <div style={{ height: 140 }} />
         </div>
       </div>
 
-      {/* Dock: bottom fixed, tek satır */}
       <div className="singlePlayerDockBottom" aria-label="Player Dock">
         <div className="singlePlayerDockRow">
           <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
             ◀
           </button>
 
-          <button className="spBtn spBtnPrimary" type="button" onClick={onPlayPause} aria-label="Play/Pause">
+          <button
+            className="spBtn spBtnPrimary"
+            type="button"
+            onClick={onPlayPause}
+            aria-label="Play/Pause"
+          >
             {isPlaying ? "⏸" : "▶"}
           </button>
 
@@ -1006,32 +1048,72 @@ function SyncPanel({
           <div className="syncRow">
             <div className="syncNudgeGroup">
               <span className="muted">Start:</span>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.1)} disabled={!active}>
+              <button
+                className="btnTiny"
+                type="button"
+                onClick={() => nudgeStart(-0.1)}
+                disabled={!active}
+              >
                 -0.1
               </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.1)} disabled={!active}>
+              <button
+                className="btnTiny"
+                type="button"
+                onClick={() => nudgeStart(+0.1)}
+                disabled={!active}
+              >
                 +0.1
               </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.5)} disabled={!active}>
+              <button
+                className="btnTiny"
+                type="button"
+                onClick={() => nudgeStart(-0.5)}
+                disabled={!active}
+              >
                 -0.5
               </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.5)} disabled={!active}>
+              <button
+                className="btnTiny"
+                type="button"
+                onClick={() => nudgeStart(+0.5)}
+                disabled={!active}
+              >
                 +0.5
               </button>
             </div>
 
             <div className="syncNudgeGroup">
               <span className="muted">End:</span>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.1)} disabled={!active}>
+              <button
+                className="btnTiny"
+                type="button"
+                onClick={() => nudgeEnd(-0.1)}
+                disabled={!active}
+              >
                 -0.1
               </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.1)} disabled={!active}>
+              <button
+                className="btnTiny"
+                type="button"
+                onClick={() => nudgeEnd(+0.1)}
+                disabled={!active}
+              >
                 +0.1
               </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.5)} disabled={!active}>
+              <button
+                className="btnTiny"
+                type="button"
+                onClick={() => nudgeEnd(-0.5)}
+                disabled={!active}
+              >
                 -0.5
               </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.5)} disabled={!active}>
+              <button
+                className="btnTiny"
+                type="button"
+                onClick={() => nudgeEnd(+0.5)}
+                disabled={!active}
+              >
                 +0.5
               </button>
             </div>
@@ -1220,11 +1302,16 @@ function VersesTable({ verses, activeIndex, onRowClick, rowRefs }) {
       <div className="tableBody" role="table">
         {verses.map((v, idx) => {
           const active = idx === activeIndex;
+          const hl = getVerseHighlight(v);
+          const hlClass = hl.on ? `highlight ${hl.className || ""}`.trim() : "";
+          const hlStyle = hl.on && hl.color ? { "--hl": hl.color } : undefined;
+
           return (
             <button
               key={`${v.ayah}-${idx}`}
               type="button"
-              className={`row ${active ? "active" : ""}`}
+              className={`row ${active ? "active" : ""} ${hlClass}`}
+              style={hlStyle}
               onClick={() => onRowClick(idx)}
               ref={(el) => {
                 rowRefs.current[idx] = el;
@@ -1268,7 +1355,9 @@ export default function App() {
   const [bPoint, setBPoint] = useState(null);
 
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
-  const [singleOn, setSingleOn] = useState(false);
+
+  // Sayfa single player ile açılsın
+  const [singleOn, setSingleOn] = useState(true);
 
   // repeat: 0 off, 1 => 1 tekrar, 2 => 2 tekrar
   const [repeatMode, setRepeatMode] = useState(0);
@@ -1336,7 +1425,9 @@ export default function App() {
     setCurrentTime(0);
     setDuration(0);
     setIsPlaying(false);
-    setSingleOn(false);
+
+    // single player açık kalsın (sayfa açılışında true)
+    setSingleOn(true);
 
     setRepeatMode(0);
     repeatStateRef.current = { idx: -1, done: 0, armed: true, lastFire: 0 };
@@ -1359,13 +1450,16 @@ export default function App() {
         }
 
         const data = parseJsonTolerant(text, versesSrc);
-        if (!Array.isArray(data)) throw new Error(`Invalid verses JSON (expected array) | url=${versesSrc}`);
+        if (!Array.isArray(data)) {
+          throw new Error(`Invalid verses JSON (expected array) | url=${versesSrc}`);
+        }
 
         if (!cancelled) {
           rowRefs.current = [];
           setVerses(data);
         }
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.error("[verses] load failed:", e);
         if (!cancelled) setError(`Verses could not be loaded: ${e.message}`);
       }
@@ -1432,6 +1526,14 @@ export default function App() {
     [seekTo]
   );
 
+  // Sayfa single player ile açılınca: ayetler gelince ilk ayete konumlan (autoplay yok)
+  useEffect(() => {
+    if (!singleOn) return;
+    if (!verses.length) return;
+    if (activeIndexRef.current >= 0) return;
+    seekVerse(0, false);
+  }, [singleOn, verses.length, seekVerse]);
+
   const onPlayPause = useCallback(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1488,7 +1590,6 @@ export default function App() {
     });
   }, []);
 
-  // Draft auto-save
   useEffect(() => {
     const t = setTimeout(() => {
       try {
@@ -1553,7 +1654,6 @@ export default function App() {
     if (idx >= 0) seekVerse(idx, true);
   }, [seekVerse]);
 
-  // repeat toggle: off -> 1 -> 2 -> off
   const toggleRepeat = useCallback(() => {
     setRepeatMode((m) => {
       const next = m === 0 ? 1 : m === 1 ? 2 : 0;
@@ -1581,7 +1681,6 @@ export default function App() {
     });
   }, [seekTo]);
 
-  // Repeat engine
   useEffect(() => {
     const a = audioRef.current;
     const vs = versesRef.current;
@@ -1604,7 +1703,6 @@ export default function App() {
       return;
     }
 
-    // re-arm
     if (currentTime < e - 0.12) {
       repeatStateRef.current.armed = true;
       return;
@@ -1613,7 +1711,6 @@ export default function App() {
     const nearEnd = currentTime >= e - 0.02;
     if (!nearEnd || !repeatStateRef.current.armed) return;
 
-    // spam guard
     const now = performance.now();
     if (now - (repeatStateRef.current.lastFire || 0) < 350) return;
     repeatStateRef.current.lastFire = now;
@@ -1634,7 +1731,6 @@ export default function App() {
     setCurrentTime(s);
   }, [currentTime, repeatMode]);
 
-  // Existing loops (kalsın)
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1663,7 +1759,6 @@ export default function App() {
     }
   }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint]);
 
-  // Active row sync
   useEffect(() => {
     if (!verses.length) return;
     const idx = findActiveVerseIndex(verses, currentTime);
@@ -1678,7 +1773,6 @@ export default function App() {
   const setA = useCallback(() => setAPoint(currentTimeRef.current), []);
   const setB = useCallback(() => setBPoint(currentTimeRef.current), []);
 
-  // Keyboard
   useEffect(() => {
     const onKey = (e) => {
       const tag = document.activeElement?.tagName?.toLowerCase();
@@ -1746,6 +1840,7 @@ export default function App() {
       await githubPutFile({ owner, repo, path, token, branch, message, contentBase64: content, sha });
       alert(`Committed ✅ ${owner}/${repo}:${branch}/${path}`);
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.error(e);
       alert(String(e?.message || e));
     }
