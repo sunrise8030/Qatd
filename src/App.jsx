@@ -17,50 +17,157 @@ const SURAHES = [
   },
 ];
 
-// AYAH -> COLOR (from your full list)
-// green ✅ / red ❌
-const SEGMENT_COLOR = {
-  6: "green",
-  18: "green",
-  21: "green",
-  22: "green",
-  33: "red",
-  34: "green",
-  40: "green",
-  53: "green",
-  56: "green",
-  64: "green",
-  66: "green",
-  67: "green",
-  76: "green",
-  80: "green",
-  86: "red",
-  87: "green",
-  88: "green",
-  90: "green",
-  91: "green",
-  92: "green",
-  98: "green",
-  100: "green",
-  101: "red",
-  108: "green",
+/**
+ * SEGMENTS: only the parts you provided are colored.
+ * - ar: highlight + color
+ * - tr/de: color only
+ */
+const SEGMENTS = {
+  6: {
+    color: "green",
+    ar: "إِنَّ رَبَّكَ عَلِيمٌ حَكِيمٌۭ",
+    de: "Gewiß, dein Herr ist Allwissend und Allweise.",
+    tr: "“Şüphesiz ki Rabbin, (her şeyi) hakkıyla bilendir; her hüküm ve icraatında pek çok hikmetler bulunandır.”",
+  },
+  18: {
+    color: "green",
+    ar: "فَصَبْرٌۭ جَمِيلٌۭ ۖ وَٱللَّهُ ٱلْمُسْتَعَانُ عَلَىٰ مَا تَصِفُونَ",
+    de: "(So gilt es,) schöne Geduld (zu üben). Allah ist Derjenige, bei Dem Hilfe zu suchen ist gegen das, was ihr beschreibt.",
+    tr: "“Artık bana düşen, güzelce sabretmektir. Sizin bu anlattıklarınız karşısında yardımına müracaat edilecek sadece Allah var.”",
+  },
+  21: {
+    color: "green",
+    ar: "وَٱللَّهُ غَالِبٌ عَلَىٰٓ أَمْرِهِۦ وَلَٰكِنَّ أَكْثَرَ ٱلنَّاسِ لَا يَعْلَمُونَ",
+    de: "Und Allah ist in Seiner Angelegenheit überlegen. Aber die meisten Menschen wissen nicht.",
+    tr: "“Allah, neyi diler, neye hükmederse onu muhakkak yerine getirir. Ne var ki, insanların çoğu bunu bilmez.”",
+  },
+  22: {
+    color: "green",
+    ar: "وَكَذَٰلِكَ نَجْزِى ٱلْمُحْسِنِينَ",
+    de: "So vergelten Wir den Gutes Tuenden.",
+    tr: "“Kendilerini iyiliğe adamış, daima Allah’ı görüyormuşçasına ve Allah’ın kendilerini gördüğünün şuuru içinde davrananları işte böyle mükâfatlandırırız.”",
+  },
+  33: {
+    color: "red",
+    ar: "وَإِلَّا تَصْرِفْ عَنِّى كَيْدَهُنَّ أَصْبُ إِلَيْهِنَّ وَأَكُن مِّنَ ٱلْجَٰهِلِينَ",
+    de: "Und wenn Du ihre List von mir nicht abwendest, werde ich mich zu ihnen hingezogen fühlen und zu den Toren gehören.",
+    tr: "“Eğer fendlerini bozup beni onlardan kurtarmazsan, kayıp onlara meyleder ve cahillerden (doğru nedir, yanlış nedir bilmeyen, bilseler bile yapmamaları gerekeni bile bile yapanlardan) olurum.”",
+  },
+  34: {
+    color: "green",
+    ar: "فَٱسْتَجَابَ لَهُۥ رَبُّهُۥ فَصَرَفَ عَنْهُ كَيْدَهُنَّ ۚ إِنَّهُۥ هُوَ ٱلسَّمِيعُ ٱلْعَلِيمُ",
+    de: "Da erhörte ihn sein Herr und wendete ihre List von ihm ab. Er ist ja der Allhörende und Allwissende.",
+    tr: "“Rabbisi duasını kabul buyurup kadınların fendini O’nun üzerinden çekti. Hiç şüphesiz O’dur Semî‘ (her şeyi, her duayı hakkıyla işiten); Alîm (her şeyi, herkesin durumunu hakkıyla bilen).”",
+  },
+  40: {
+    color: "green",
+    ar: "إِنِ ٱلْحُكْمُ إِلَّا لِلَّهِ ۚ أَمَرَ أَلَّا تَعْبُدُوٓا۟ إِلَّآ إِيَّاهُ ۚ ذَٰلِكَ ٱلدِّينُ ٱلْقَيِّمُ وَلَٰكِنَّ أَكْثَرَ ٱلنَّاسِ لَا يَعْلَمُونَ",
+    de: "Das Urteil ist allein Allahs. Er hat befohlen, daß ihr nur Ihm dienen sollt. Das ist die richtige Religion. Aber die meisten Menschen wissen nicht.",
+    tr: "“Şurası bir gerçek ki, mutlak manâda hükmetme yetkisi sadece Allah’a aittir. O, Kendisinden başka hiç bir varlığa ibadet etmemenizi emretmiştir. Budur doğru ve her bakımdan sağlam din. Ne var ki, insanların çoğu bilmemekte ve bilgisizce hareket etmektedir.”",
+  },
+  53: {
+    color: "green",
+    ar: "وَمَآ أُبَرِّئُ نَفْسِىٓ",
+    de: "Und ich spreche mich nicht selbst frei.",
+    tr: "“Bununla birlikte, hiç bir zaman nefsimi de temize çıkarmam.”",
+  },
+  56: {
+    color: "green",
+    ar: "نُصِيبُ بِرَحْمَتِنَا مَن نَّشَآءُ ۖ وَلَا نُضِيعُ أَجْرَ ٱلْمُحْسِنِينَ",
+    de: "Wir treffen mit Unserer Barmherzigkeit, wen Wir wollen, und Wir lassen den Lohn der Gutes Tuenden nicht verlorengehen.",
+    tr: "“Kimi dilersek ona bu şekilde hususî rahmetimizle muamele eder ve bütünüyle iyiliğe adanmış olarak, Allah’ı görür gibi, en azından O’nun kendilerini gördüğünün şuuru içinde davrananların mükâfatını asla zayi etmeyiz.”",
+  },
+  64: {
+    color: "green",
+    ar: "فَٱللَّهُ خَيْرٌ حَٰفِظًۭا ۖ وَهُوَ أَرْحَمُ ٱلرَّٰحِمِينَ",
+    de: "Allah ist besser als Behütender, und Er ist der Barmherzigste der Barmherzigen.",
+    tr: "“Ama Allah’tır gerçek hayırlı koruyucu ve O, bütün merhamet edenlerin üstünde mutlak merhamet sahibidir.”",
+  },
+  66: {
+    color: "green",
+    ar: "قَالَ ٱللَّهُ عَلَىٰ مَا نَقُولُ وَكِيلٌۭ",
+    de: "Allah ist Sachwalter über das, was wir (hier) sagen.",
+    tr: "“Allah konuştuklarımıza şahit ve gözeticidir; verilen sözlerin yerine gelip gelmemesi nihayette yine O’nun iznine ve kudretine bağlıdır.”",
+  },
+  67: {
+    color: "green",
+    ar: "إِنِ ٱلْحُكْمُ إِلَّا لِلَّهِ ۖ عَلَيْهِ تَوَكَّلْتُ ۖ وَعَلَيْهِ فَلْيَتَوَكَّلِ ٱلْمُتَوَكِّلُونَ",
+    de: "Das Urteil ist allein Allahs. Auf Ihn verlasse ich mich; und auf Ihn sollen sich diejenigen verlassen, die sich (überhaupt auf jemanden) verlassen (wollen).",
+    tr: "“Mutlak manâda bütün hüküm ve hakimiyet ancak Allah’ındır. Ancak O’na dayanır, O’na güvenirim. Kendisine dayanıp güvenecek bir güç ve makam arayan herkes (bütün insanlar), ancak O’na dayanıp güvenmelidirler.”",
+  },
+  76: {
+    color: "green",
+    ar: "إِلَّآ أَن يَشَآءَ ٱللَّهُ ۚ نَرْفَعُ دَرَجَٰتٍۢ مَّن نَّشَآءُ ۗ وَفَوْقَ كُلِّ ذِى عِلْمٍ عَلِيمٌۭ",
+    de: "außer daß Allah es wollte. Wir erhöhen, wen Wir wollen, um Rangstufen. Und über jedem, der Wissen besitzt, steht einer, der (noch mehr) weiß.",
+    tr: "“fakat Allah ne dilerse o olur (ve Allah, bir şeyi dileyince onun sebeplerini de hazırlar). Biz, kimi dilersek onu böyle mertebe mertebe yükseltiriz. Ve her bir bilgi sahibinin üstünde daha iyi bir bilen (ve hepsinin üstünde her şeyi bilen olarak Allah) vardır.”",
+  },
+  80: {
+    color: "green",
+    ar: "وَهُوَ خَيْرُ ٱلْحَٰكِمِينَ",
+    de: "Er ist der Beste derer, die Urteile fällen.",
+    tr: "“Allah, her zaman en hayırlı hükmü verendir.”",
+  },
+  86: {
+    color: "red",
+    ar: "إِنَّمَآ أَشْكُوا۟ بَثِّى وَحُزْنِىٓ إِلَى ٱللَّهِ",
+    de: "Ich klage meinen unerträglichen Kummer und meine Trauer nur Allah (allein)",
+    tr: "“Ben, bütün dertlerimi, keder ve hüznümü Allah’a arz ediyor, O’na şikâyette bulunuyorum.”",
+  },
+  87: {
+    color: "green",
+    ar: "وَلَا تَا۟يْـَٔسُوا۟ مِن رَّوْحِ ٱللَّهِ ۖ إِنَّهُۥ لَا يَا۟يْـَٔسُ مِن رَّوْحِ ٱللَّهِ إِلَّا ٱلْقَوْمُ ٱلْكَٰفِرُونَ",
+    de: "Und gebt nicht die Hoffnung auf das Erbarmen Allahs auf. Es gibt die Hoffnung auf das Erbarmen Allahs nur das ungläubige Volk auf.",
+    tr: "“Allah’ın rahmetinden asla ümidinizi kesmeyin. Şurası bir gerçek ki, O’na inanmayan kâfirler güruhu dışında hiç kimse Allah’ın rahmetinden ümit kesmez.”",
+  },
+  88: {
+    color: "green",
+    ar: "إِنَّ ٱللَّهَ يَجْزِى ٱلْمُتَصَدِّقِينَ",
+    de: "Allah vergilt denjenigen, die Almosen geben.",
+    tr: "“Hiç kuşkusuz Allah, fazladan iyilikte bulunanları bol bol mükâfatlandırır.”",
+  },
+  90: {
+    color: "green",
+    ar: "إِنَّ ٱللَّهَ لَا يُضِيعُ أَجْرَ ٱلْمُحْسِنِينَ",
+    de: "Gewiß, Allah läßt den Lohn der Gutes Tuenden nicht verlorengehen.",
+    tr: "“Doğrusu şu ki, kim O’na karşı derin saygı duyar, O’na karşı gelmekten sakınır ve O’na itaatla birlikte başına gelenlere de sabrederse, hiç şüphesiz Allah, böyle iyiliğe adanmış ve O’nu görürcesine davranan kimselerin mükâfatını asla zayi etmez.”",
+  },
+  91: {
+    color: "green",
+    ar: "تَٱللَّهِ لَقَدْ ءَاثَرَكَ ٱللَّهُ عَلَيْنَا وَإِن كُنَّا لَخَٰطِـِٔينَ",
+    de: "Bei Allah, Allah hat dich uns vorgezogen. Und wir haben wahrlich Verfehlungen begangen.",
+    tr: "“Allah’a yemin olsun ki, gerçekten Allah seni bize tercih etti; biz, başka değil, ancak bir yanlış içinde idik.”",
+  },
+  92: {
+    color: "green",
+    ar: "لَا تَثْرِيبَ عَلَيْكُمُ ٱلْيَوْمَ ۖ يَغْفِرُ ٱللَّهُ لَكُمْ ۖ وَهُوَ أَرْحَمُ ٱلرَّٰحِمِينَ",
+    de: "Keine Schelte soll heute über euch kommen. Allah vergibt euch, Er ist ja der Barmherzigste der Barmherzigen.",
+    tr: "“Hayır! Bugün size hiçbir kınama yok! (Ben hakkımı çoktan helâl ettim;) Allah da sizi affetsin. Çünkü O, bütün merhamet edenlerin üstünde mutlak merhamet sahibidir.”",
+  },
+  98: {
+    color: "green",
+    ar: "إِنَّهُۥ هُوَ ٱلْغَفُورُ ٱلرَّحِيمُ",
+    de: "Er ist ja der Allvergebende und Barmherzige.",
+    tr: "“Hiç şüphesiz O, Ğafûr (günahları çok bağışlayan)dır; Rahîm (bilhassa tevbe ile Kendisine yönelen mü’ min kullarına karşı hususî rahmeti pek bol olan)dır.”",
+  },
+  100: {
+    color: "green",
+    ar: "إِنَّ رَبِّى لَطِيفٌۭ لِّمَا يَشَآءُ ۚ إِنَّهُۥ هُوَ ٱلْعَلِيمُ ٱلْحَكِيمُ",
+    de: "Gewiß, mein Herr ist feinfühlig (in der Durchführung dessen), was Er will. Er ist ja der Allwissende und Allweise.",
+    tr: "“Gerçekten Rabbim, her ne dilerse onu pek güzel şekilde ve insanların göremeyeceği bir incelik içinde yerine getirir. Şüphesiz O, evet O, Alîm (her şeyi hakkıyla bilen)dir; Hakîm (bütün hüküm ve icraatında pek çok hikmetler bulunan)dır.”",
+  },
+  101: {
+    color: "red",
+    ar: "تَوَفَّنِى مُسْلِمًۭا وَأَلْحِقْنِى بِٱلصَّٰلِحِينَ",
+    de: "Berufe mich als (Dir) ergeben ab und nimm mich unter die Rechtschaffenen auf.",
+    tr: "“Beni Müslüman olarak vefat ettir ve beni salihler içine kat!”",
+  },
+  108: {
+    color: "green",
+    ar: "قُلْ هَٰذِهِۦ سَبِيلِىٓ أَدْعُوٓا۟ إِلَى ٱللَّهِ ۚ عَلَىٰ بَصِيرَةٍ أَنَا۠ وَمَنِ ٱتَّبَعَنِى ۖ وَسُبْحَٰنَ ٱللَّهِ وَمَآ أَنَا۠ مِنَ ٱلْمُشْرِكِينَ",
+    de: "Sag: Das ist mein Weg: Ich rufe zu Allah aufgrund eines sichtbaren Hinweises, ich und diejenigen, die mir folgen. Preis sei Allah! Und ich gehöre nicht zu den Götzendienern.",
+    tr: "“İşte benim (iman, ihlâs ve Tevhid) yolum: Ben, (körü körüne ve taklide dayalı olarak değil,) görerek, delile dayanarak ve insanların idrakine hitap ederek Allah’a çağırıyorum: ben ve bana tâbi olanlar. Ve Allah’ı şirkin her türlüsünden tenzih ederim, asla O’na ortak tanıyanlardan değilim ben.”",
+  },
 };
-
-function renderColoredLine(text, ayah, lang) {
-  const s = String(text ?? "");
-  const a = Number(ayah);
-  const color = SEGMENT_COLOR[a];
-
-  if (!color) return s;
-
-  if (lang === "ar") {
-    const cls = color === "green" ? "mark markGreen" : "mark markRed";
-    return <span className={cls}>{s}</span>;
-  }
-
-  const cls = color === "green" ? "fontGreen" : "fontRed";
-  return <span className={cls}>{s}</span>;
-}
 
 function resolvePublicUrl(path) {
   const base = import.meta.env.BASE_URL || "/";
@@ -252,6 +359,137 @@ async function githubPutFile({ owner, repo, path, token, branch, message, conten
   return res.json();
 }
 
+/* =========================
+   Segment marking (robust)
+   ========================= */
+
+function stripOuterQuotes(s) {
+  const t = String(s ?? "").trim();
+  // Turkish quotes: “...”, German might also include
+  return t.replace(/^["“”]+/, "").replace(/["“”]+$/, "").trim();
+}
+
+function normalizeCommon(s) {
+  return String(s ?? "")
+    .replaceAll("\u00A0", " ")
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function escapeRegexLiteral(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function normalizeArabicSnippet(snippet) {
+  return String(snippet || "")
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, "")
+    .replace(/\u0640/g, "")
+    .trim();
+}
+
+function buildArabicLooseRegex(snippet) {
+  const base = normalizeArabicSnippet(snippet);
+  if (!base) return null;
+
+  const DIACR = "[\\u064B-\\u065F\\u0670\\u06D6-\\u06ED]*";
+  const TAT = "\\u0640*";
+  const WS = "\\s*";
+
+  const chars = Array.from(base);
+  const parts = [];
+
+  for (const ch of chars) {
+    if (/\s/.test(ch)) {
+      parts.push(WS);
+      continue;
+    }
+    const esc = escapeRegexLiteral(ch);
+    parts.push(`${TAT}${esc}${DIACR}`);
+  }
+
+  return new RegExp(parts.join(""), "g");
+}
+
+function applyRegexMarkFirst(text, regex, className) {
+  const s = String(text ?? "");
+  if (!s || !regex) return s;
+
+  regex.lastIndex = 0;
+  const m = regex.exec(s);
+  if (!m) return s;
+
+  const start = m.index;
+  const matchText = m[0] ?? "";
+  const end = start + matchText.length;
+
+  return (
+    <>
+      {s.slice(0, start)}
+      <span className={className}>{matchText}</span>
+      {s.slice(end)}
+    </>
+  );
+}
+
+function splitAndMarkFirst(text, needle, className) {
+  const s = String(text ?? "");
+  const n = String(needle ?? "");
+  if (!s || !n) return s;
+
+  const idx = s.indexOf(n);
+  if (idx < 0) return s;
+
+  return (
+    <>
+      {s.slice(0, idx)}
+      <span className={className}>{n}</span>
+      {s.slice(idx + n.length)}
+    </>
+  );
+}
+
+function markSegment(text, ayah, lang) {
+  const s = String(text ?? "");
+  const a = Number(ayah);
+  const seg = SEGMENTS[a];
+  if (!seg) return s;
+
+  const color = seg.color === "green" ? "green" : "red";
+  const rawNeedle = seg[lang];
+  if (!rawNeedle) return s;
+
+  if (lang === "ar") {
+    const cls = color === "green" ? "mark markGreen" : "mark markRed";
+    const rx = buildArabicLooseRegex(rawNeedle);
+    return applyRegexMarkFirst(s, rx, cls);
+  }
+
+  const cls = color === "green" ? "fontGreen" : "fontRed";
+  const needle = stripOuterQuotes(rawNeedle);
+
+  // Try direct
+  const direct = splitAndMarkFirst(s, needle, cls);
+  if (direct !== s) return direct;
+
+  // Try common normalization variants (quotes/apostrophes/whitespace)
+  const sN = normalizeCommon(s);
+  const nN = normalizeCommon(needle);
+  if (!sN || !nN) return s;
+
+  const idxN = sN.indexOf(nN);
+  if (idxN < 0) return s;
+
+  // Fallback: try to locate a close substring in original by searching a smaller prefix
+  const prefix = nN.slice(0, Math.min(24, nN.length));
+  const prefixIdx = normalizeCommon(s).indexOf(prefix);
+  if (prefixIdx < 0) return s;
+
+  // Best effort: if normalized match exists, color the entire line (only if match exists)
+  return <span className={cls}>{s}</span>;
+}
+
 function SurahList({ surahs, selectedId, query, onQuery, onSelect }) {
   return (
     <aside className="sidebar">
@@ -393,8 +631,7 @@ function Timeline({
 
 /**
  * iOS-like vertical wheel (3D)
- * - up swipe => +1
- * - down swipe => -1
+ * - sensitivity increased
  * - inertia + haptic
  */
 function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
@@ -408,7 +645,6 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const accumPxRef = useRef(0);
   const rafRef = useRef(0);
 
-  // sensitivity ↑
   const STEP_PX = 12;
 
   useEffect(() => {
@@ -579,11 +815,6 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   );
 }
 
-/**
- * Single Player
- * - Bottom dock (fixed)
- * - No extra overlay panels
- */
 function SinglePlayerPanel({
   open,
   verse,
@@ -627,23 +858,21 @@ function SinglePlayerPanel({
       <div className="singlePlayerCard">
         <div className="singlePlayerLines">
           <div className="singlePlayerLine singlePlayerLineAr" dir="rtl">
-            {renderColoredLine((verse?.ar || "—").trim(), ay, "ar")}
+            {markSegment((verse?.ar || "—").trim(), ay, "ar")}
           </div>
 
           <div className="singlePlayerLine singlePlayerLineDe">
-            {renderColoredLine((verse?.de || "—").trim(), ay, "de")}
+            {markSegment((verse?.de || "—").trim(), ay, "de")}
           </div>
 
           <div className="singlePlayerLine singlePlayerLineTr">
-            {renderColoredLine((verse?.tr || "—").trim(), ay, "tr")}
+            {markSegment((verse?.tr || "—").trim(), ay, "tr")}
           </div>
 
-          {/* dock altta sabit => içerik kesilmesin */}
           <div style={{ height: 140 }} />
         </div>
       </div>
 
-      {/* Dock: bottom fixed, tek satır */}
       <div className="singlePlayerDockBottom" aria-label="Player Dock">
         <div className="singlePlayerDockRow">
           <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
@@ -1275,10 +1504,10 @@ function VersesTable({ verses, activeIndex, onRowClick, rowRefs }) {
             >
               <div className="cell colNo">{v.ayah}</div>
               <div className="cell colAr" dir="rtl">
-                {renderColoredLine((v.ar || "").trimStart(), v.ayah, "ar")}
+                {markSegment((v.ar || "").trimStart(), v.ayah, "ar")}
               </div>
-              <div className="cell colDe">{renderColoredLine(v.de, v.ayah, "de")}</div>
-              <div className="cell colTr">{renderColoredLine(v.tr, v.ayah, "tr")}</div>
+              <div className="cell colDe">{markSegment(v.de, v.ayah, "de")}</div>
+              <div className="cell colTr">{markSegment(v.tr, v.ayah, "tr")}</div>
             </button>
           );
         })}
@@ -1404,7 +1633,8 @@ export default function App() {
         }
 
         const data = parseJsonTolerant(text, versesSrc);
-        if (!Array.isArray(data)) throw new Error(`Invalid verses JSON (expected array) | url=${versesSrc}`);
+        if (!Array.isArray(data))
+          throw new Error(`Invalid verses JSON (expected array) | url=${versesSrc}`);
 
         if (!cancelled) {
           rowRefs.current = [];
@@ -1477,7 +1707,6 @@ export default function App() {
     [seekTo]
   );
 
-  // Single Player açıkken: ayetler gelince 1. ayete konumlan (autoplay yok)
   useEffect(() => {
     if (!singleOn) return;
     if (!verses.length) return;
@@ -1534,7 +1763,8 @@ export default function App() {
 
       if (Number.isFinite(s)) v.start = Math.max(0, s);
       if (Number.isFinite(e)) v.end = Math.max(0, e);
-      if (Number.isFinite(v.start) && Number.isFinite(v.end) && v.end <= v.start) v.end = v.start + 0.01;
+      if (Number.isFinite(v.start) && Number.isFinite(v.end) && v.end <= v.start)
+        v.end = v.start + 0.01;
 
       next[idx] = v;
       return next;
@@ -1552,7 +1782,9 @@ export default function App() {
   }, [draftKey, verses]);
 
   const exportJson = useCallback(() => {
-    const blob = new Blob([JSON.stringify(versesRef.current, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(versesRef.current, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -1602,7 +1834,9 @@ export default function App() {
 
   const jumpFirstUntimed = useCallback(() => {
     const vs = versesRef.current;
-    const idx = vs.findIndex((v) => !Number.isFinite(Number(v?.start)) || !Number.isFinite(Number(v?.end)));
+    const idx = vs.findIndex(
+      (v) => !Number.isFinite(Number(v?.start)) || !Number.isFinite(Number(v?.end))
+    );
     if (idx >= 0) seekVerse(idx, true);
   }, [seekVerse]);
 
@@ -1657,7 +1891,6 @@ export default function App() {
       return;
     }
 
-    // re-arm
     if (currentTime < e - 0.12) {
       repeatStateRef.current.armed = true;
       return;
@@ -1666,7 +1899,6 @@ export default function App() {
     const nearEnd = currentTime >= e - 0.02;
     if (!nearEnd || !repeatStateRef.current.armed) return;
 
-    // spam guard
     const now = performance.now();
     if (now - (repeatStateRef.current.lastFire || 0) < 350) return;
     repeatStateRef.current.lastFire = now;
@@ -1687,7 +1919,6 @@ export default function App() {
     setCurrentTime(s);
   }, [currentTime, repeatMode]);
 
-  // Existing loops (kalsın)
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1716,7 +1947,6 @@ export default function App() {
     }
   }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint]);
 
-  // Active row sync
   useEffect(() => {
     if (!verses.length) return;
     const idx = findActiveVerseIndex(verses, currentTime);
@@ -1731,11 +1961,11 @@ export default function App() {
   const setA = useCallback(() => setAPoint(currentTimeRef.current), []);
   const setB = useCallback(() => setBPoint(currentTimeRef.current), []);
 
-  // Keyboard
   useEffect(() => {
     const onKey = (e) => {
       const tag = document.activeElement?.tagName?.toLowerCase();
-      const typing = tag === "input" || tag === "textarea" || document.activeElement?.isContentEditable;
+      const typing =
+        tag === "input" || tag === "textarea" || document.activeElement?.isContentEditable;
       if (typing) return;
 
       if (e.code === "Space") {
@@ -1804,7 +2034,10 @@ export default function App() {
     }
   }, []);
 
-  const activeVerse = useMemo(() => (activeIndex >= 0 ? verses[activeIndex] : null), [activeIndex, verses]);
+  const activeVerse = useMemo(() => (activeIndex >= 0 ? verses[activeIndex] : null), [
+    activeIndex,
+    verses,
+  ]);
 
   const closeSingle = useCallback(() => {
     setSingleOn(false);
@@ -1870,7 +2103,7 @@ export default function App() {
             const base = cur >= 0 ? cur : 0;
             const next = clamp(base + dir, 0, Math.max(0, vs.length - 1));
 
-            // ÇARK: autoplay yok; mevcut çalma durumuna göre
+            // Wheel: no forced autoplay, preserve last state
             seekVerse(next, isPlayingRef.current);
           }}
           repeatMode={repeatMode}
