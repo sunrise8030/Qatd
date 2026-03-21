@@ -17,41 +17,8 @@ const SURAHES = [
   },
 ];
 
-/**
- * فقط المطلوب:
- * - Renk: koyu kiremit kırmızı (CSS: .arHl)
- * - Sadece Arapça
- * - Sadece ilgili ayet parçaları (snippet)
- *
- * Snippet eşleşmesi artık "toleranslı":
- * - harake/diakritik farklı olsa da eşleşir
- * - fazla boşluk/punktuasyon farklarıyla da çalışır (makul ölçüde)
- */
-const AR_HIGHLIGHTS = {
-  33: [
-    "قَالَ رَبِّ ٱلسِّجْنُ أَحَبُّ إِلَىَّ مِمَّا يَدْعُونَنِىٓ إِلَيْهِ ۖ",
-    "وَإِلَّا تَصْرِفْ عَنِّى كَيْدَهُنَّ أَصْبُ إِلَيْهِنَّ وَأَكُن مِّنَ ٱلْجَٰهِلِينَ",
-  ],
-  101: ["تَوَفَّنِى مُسْلِمًا وَأَلْحِقْنِى بِٱلصَّٰلِحِينَ"],
-
-  18: ["فَصَبْرٌ جَمِيلٌ ۖ وَٱللَّهُ ٱلْمُسْتَعَانُ عَلَىٰ مَا تَصِفُونَ"],
-  64: ["فَٱللَّهُ خَيْرٌ حَٰفِظًا ۖ وَهُوَ أَرْحَمُ ٱلرَّٰحِمِينَ"],
-  66: ["ٱللَّهُ عَلَىٰ مَا نَقُولُ وَكِيلٌ"],
-  67: [
-    "إِنِ ٱلْحُكْمُ إِلَّا لِلَّهِ ۖ عَلَيْهِ تَوَكَّلْتُ ۖ وَعَلَيْهِ فَلْيَتَوَكَّلِ ٱلْمُتَوَكِّلُونَ",
-  ],
-  83: [
-    "فَصَبْرٌ جَمِيلٌ ۖ عَسَى ٱللَّهُ أَن يَأْتِيَنِى بِهِمْ جَمِيعًا ۚ إِنَّهُۥ هُوَ ٱلْعَلِيمُ ٱلْحَكِيمُ",
-  ],
-  86: ["إِنَّمَآ أَشْكُوا۟ بَثِّى وَحُزْنِىٓ إِلَى ٱللَّهِ"],
-  87: ["وَلَا تَا۟يْـَٔسُوا۟ مِن رَّوْحِ ٱللَّهِ"],
-  98: ["إِنَّهُۥ هُوَ ٱلْغَفُورُ ٱلرَّحِيمُ"],
-
-  21: ["وَٱللَّهُ غَالِبٌ عَلَىٰٓ أَمْرِهِۦ"],
-  76: ["وَفَوْقَ كُلِّ ذِى عِلْمٍ عَلِيمٌ"],
-  90: ["إِنَّ ٱللَّهَ لَا يُضِيعُ أَجْرَ ٱلْمُحْسِنِينَ"],
-  92: ["لَا تَثْرِيبَ عَلَيْكُمُ ٱلْيَوْمَ"],
-};
+// Parlak kiremit kırmızısı uygulanacak ayetler (sadece Arapça satır)
+const HOT_AYAH_SET = new Set([33, 101, 18, 64, 66, 67, 83, 86, 87, 98, 21, 76, 90, 92]);
 
 function resolvePublicUrl(path) {
   const base = import.meta.env.BASE_URL || "/";
@@ -243,114 +210,6 @@ async function githubPutFile({ owner, repo, path, token, branch, message, conten
   return res.json();
 }
 
-function escapeRegexLiteral(s) {
-  return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function normalizeSnippetForRegex(snippet) {
-  return String(snippet || "")
-    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, "") // harakat/marks
-    .replace(/\u0640/g, "") // tatweel
-    .trim();
-}
-
-/**
- * Build a "loose" Arabic regex:
- * - matches same base letters even if diacritics differ
- * - allows optional tatweel and diacritics after each char
- * - allows flexible whitespace around spaces
- */
-function buildArabicLooseRegex(snippet) {
-  const base = normalizeSnippetForRegex(snippet);
-  if (!base) return null;
-
-  const DIACR = "[\\u064B-\\u065F\\u0670\\u06D6-\\u06ED]*";
-  const TAT = "\\u0640*";
-  const WS = "\\s*";
-
-  const chars = Array.from(base);
-  const parts = [];
-
-  for (const ch of chars) {
-    if (/\s/.test(ch)) {
-      parts.push(WS);
-      continue;
-    }
-    const esc = escapeRegexLiteral(ch);
-    parts.push(`${TAT}${esc}${DIACR}`);
-  }
-
-  // also tolerate different Arabic punctuation marks by ignoring exact spacing
-  const pattern = parts.join("");
-  return new RegExp(pattern, "g");
-}
-
-function applyRegexHighlightToString(str, regex, keyPrefix) {
-  const s = String(str ?? "");
-  if (!s || !regex) return [s];
-
-  // reset lastIndex (global regex)
-  regex.lastIndex = 0;
-
-  const out = [];
-  let last = 0;
-  let m;
-  let mi = 0;
-
-  while ((m = regex.exec(s)) !== null) {
-    const start = m.index;
-    const matchText = m[0] ?? "";
-    const end = start + matchText.length;
-
-    if (end <= last) {
-      // safety to avoid infinite loops
-      regex.lastIndex = last + 1;
-      continue;
-    }
-
-    if (start > last) out.push(s.slice(last, start));
-    out.push(
-      <span className="arHl" key={`${keyPrefix}:m:${mi}`}>
-        {matchText}
-      </span>
-    );
-    last = end;
-    mi += 1;
-  }
-
-  if (last < s.length) out.push(s.slice(last));
-  return out.length ? out : [s];
-}
-
-function renderArabicWithHighlights(arText, ayah) {
-  const text = String(arText || "");
-  const ay = Number(ayah);
-  const snippets = Number.isFinite(ay) ? AR_HIGHLIGHTS[ay] : null;
-  if (!snippets || !Array.isArray(snippets) || snippets.length === 0) return text;
-
-  let nodes = [text];
-
-  for (let sIdx = 0; sIdx < snippets.length; sIdx += 1) {
-    const snippet = snippets[sIdx];
-    const rx = buildArabicLooseRegex(snippet);
-    if (!rx) continue;
-
-    const nextNodes = [];
-    for (let nIdx = 0; nIdx < nodes.length; nIdx += 1) {
-      const node = nodes[nIdx];
-      if (typeof node !== "string") {
-        nextNodes.push(node);
-        continue;
-      }
-      const parts = applyRegexHighlightToString(node, rx, `ayah:${ay}:snip:${sIdx}:node:${nIdx}`);
-      nextNodes.push(...parts);
-    }
-    nodes = nextNodes;
-  }
-
-  return nodes;
-}
-
 function SurahList({ surahs, selectedId, query, onQuery, onSelect }) {
   return (
     <aside className="sidebar">
@@ -507,7 +366,7 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const accumPxRef = useRef(0);
   const rafRef = useRef(0);
 
-  // Hassasiyet artırıldı:
+  // Hassasiyet ↑
   const STEP_PX = 12;
 
   useEffect(() => {
@@ -548,8 +407,7 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
       return;
     }
 
-    // Daha uzun inertia hissi:
-    const DECAY = 0.0045;
+    const DECAY = 0.0045; // inertia biraz daha uzun
     const MAX_MS = 1100;
     const startTs = performance.now();
     let last = performance.now();
@@ -612,7 +470,6 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
     stop();
 
     const dy = e.deltaY;
-    // Wheel hassasiyet artırıldı:
     const steps = clamp(Math.round(Math.abs(dy) / 18), 1, 14);
     const dir = dy < 0 ? +1 : -1;
 
@@ -721,18 +578,20 @@ function SinglePlayerPanel({
   if (!open) return null;
 
   const ay = Number(verse?.ayah || 0);
+  const isHot = HOT_AYAH_SET.has(ay);
 
   return (
     <div className="singlePlayerBackdrop" role="dialog" aria-modal="true" aria-label="Single Player">
       <div className="singlePlayerCard">
         <div className="singlePlayerLines">
-          {/* ONLY ARABIC gets snippet highlights */}
-          <div className="singlePlayerLine singlePlayerLineAr" dir="rtl">
-            {renderArabicWithHighlights((verse?.ar || "—").trim(), verse?.ayah)}
+          <div
+            className={`singlePlayerLine singlePlayerLineAr ${isHot ? "arVerseHot" : ""}`}
+            dir="rtl"
+          >
+            {(verse?.ar || "—").trim()}
           </div>
 
           <div className="singlePlayerLine singlePlayerLineDe">{(verse?.de || "—").trim()}</div>
-
           <div className="singlePlayerLine singlePlayerLineTr">{(verse?.tr || "—").trim()}</div>
 
           <div style={{ height: 140 }} />
@@ -1365,6 +1224,8 @@ function VersesTable({ verses, activeIndex, onRowClick, rowRefs }) {
       <div className="tableBody" role="table">
         {verses.map((v, idx) => {
           const active = idx === activeIndex;
+          const isHot = HOT_AYAH_SET.has(Number(v?.ayah));
+
           return (
             <button
               key={`${v.ayah}-${idx}`}
@@ -1376,12 +1237,9 @@ function VersesTable({ verses, activeIndex, onRowClick, rowRefs }) {
               }}
             >
               <div className="cell colNo">{v.ayah}</div>
-
-              {/* ONLY ARABIC gets snippet highlights */}
-              <div className="cell colAr" dir="rtl">
-                {renderArabicWithHighlights((v.ar || "").trimStart(), v.ayah)}
+              <div className={`cell colAr ${isHot ? "arVerseHot" : ""}`} dir="rtl">
+                {(v.ar || "").trimStart()}
               </div>
-
               <div className="cell colDe">{v.de}</div>
               <div className="cell colTr">{v.tr}</div>
             </button>
@@ -1417,7 +1275,7 @@ export default function App() {
 
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
 
-  // Sayfa single player ile yüklensin:
+  // Sayfa single player ile yüklensin
   const [singleOn, setSingleOn] = useState(true);
 
   // repeat: 0 off, 1 => 1 tekrar, 2 => 2 tekrar
@@ -1445,13 +1303,15 @@ export default function App() {
   const activeIndexRef = useRef(activeIndex);
   const currentTimeRef = useRef(currentTime);
   const durationRef = useRef(duration);
+  const isPlayingRef = useRef(isPlaying);
 
   useEffect(() => {
     versesRef.current = verses;
     activeIndexRef.current = activeIndex;
     currentTimeRef.current = currentTime;
     durationRef.current = duration;
-  }, [verses, activeIndex, currentTime, duration]);
+    isPlayingRef.current = isPlaying;
+  }, [verses, activeIndex, currentTime, duration, isPlaying]);
 
   const draftKey = useMemo(() => `qatd:draft:${selectedSurah.slug}`, [selectedSurah.slug]);
 
@@ -1486,7 +1346,6 @@ export default function App() {
     setCurrentTime(0);
     setDuration(0);
     setIsPlaying(false);
-
     setSingleOn(true);
 
     setRepeatMode(0);
@@ -1583,7 +1442,7 @@ export default function App() {
     [seekTo]
   );
 
-  // Single player açıkken: ayetler gelince 1. ayete konumlan (autoplay yok)
+  // Single Player açıkken: ayetler gelince 1. ayete konumlan (autoplay YOK)
   useEffect(() => {
     if (!singleOn) return;
     if (!verses.length) return;
@@ -1647,6 +1506,7 @@ export default function App() {
     });
   }, []);
 
+  // Draft auto-save
   useEffect(() => {
     const t = setTimeout(() => {
       try {
@@ -1711,6 +1571,7 @@ export default function App() {
     if (idx >= 0) seekVerse(idx, true);
   }, [seekVerse]);
 
+  // repeat toggle: off -> 1 -> 2 -> off
   const toggleRepeat = useCallback(() => {
     setRepeatMode((m) => {
       const next = m === 0 ? 1 : m === 1 ? 2 : 0;
@@ -1738,6 +1599,7 @@ export default function App() {
     });
   }, [seekTo]);
 
+  // Repeat engine
   useEffect(() => {
     const a = audioRef.current;
     const vs = versesRef.current;
@@ -1760,6 +1622,7 @@ export default function App() {
       return;
     }
 
+    // re-arm
     if (currentTime < e - 0.12) {
       repeatStateRef.current.armed = true;
       return;
@@ -1768,6 +1631,7 @@ export default function App() {
     const nearEnd = currentTime >= e - 0.02;
     if (!nearEnd || !repeatStateRef.current.armed) return;
 
+    // spam guard
     const now = performance.now();
     if (now - (repeatStateRef.current.lastFire || 0) < 350) return;
     repeatStateRef.current.lastFire = now;
@@ -1788,6 +1652,7 @@ export default function App() {
     setCurrentTime(s);
   }, [currentTime, repeatMode]);
 
+  // Existing loops (kalsın)
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1816,6 +1681,7 @@ export default function App() {
     }
   }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint]);
 
+  // Active row sync
   useEffect(() => {
     if (!verses.length) return;
     const idx = findActiveVerseIndex(verses, currentTime);
@@ -1830,11 +1696,11 @@ export default function App() {
   const setA = useCallback(() => setAPoint(currentTimeRef.current), []);
   const setB = useCallback(() => setBPoint(currentTimeRef.current), []);
 
+  // Keyboard
   useEffect(() => {
     const onKey = (e) => {
       const tag = document.activeElement?.tagName?.toLowerCase();
-      const typing =
-        tag === "input" || tag === "textarea" || document.activeElement?.isContentEditable;
+      const typing = tag === "input" || tag === "textarea" || document.activeElement?.isContentEditable;
       if (typing) return;
 
       if (e.code === "Space") {
@@ -1968,7 +1834,9 @@ export default function App() {
             const cur = activeIndexRef.current;
             const base = cur >= 0 ? cur : 0;
             const next = clamp(base + dir, 0, Math.max(0, vs.length - 1));
-            seekVerse(next, true);
+
+            // ÇARK: play/pause bozulmasın; son duruma göre hareket etsin
+            seekVerse(next, isPlayingRef.current);
           }}
           repeatMode={repeatMode}
           onToggleRepeat={toggleRepeat}
