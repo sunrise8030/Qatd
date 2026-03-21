@@ -67,9 +67,9 @@ const SEGMENTS = {
   },
   53: {
     color: "green",
-    ar: "وَمَآ أُبَرِّئُ نَفْسِىٓ",
-    de: "Und ich spreche mich nicht selbst frei.",
-    tr: "“Bununla birlikte, hiç bir zaman nefsimi de temize çıkarmam.”",
+    ar: "إِنَّ ٱلنَّفْسَ لَأَمَّارَةٌۢ بِٱلسُّوٓءِ إِلَّا مَا رَحِمَ رَبِّىٓ ۚ إِنَّ رَبِّى غَفُورٌۭ رَّحِيمٌۭ",
+    de: "Die Seele gebietet fürwahr mit Nachdruck das Böse, außer daß mein Herr Sich erbarmt. Mein Herr ist Allvergebend und Barmherzig.",
+    tr: "“Çünkü nefis, daima ve ısrarla kötülüğü emreder; meğer ki Rabbim, hususî olarak merhamet edip koruya. Şurası bir gerçek ki Rabbim, günahları pek çok bağışlayandır; (bilhassa inanmış kullarına karşı) hususî rahmeti pek bol olandır.”",
   },
   56: {
     color: "green",
@@ -83,12 +83,6 @@ const SEGMENTS = {
     de: "Allah ist besser als Behütender, und Er ist der Barmherzigste der Barmherzigen.",
     tr: "“Ama Allah’tır gerçek hayırlı koruyucu ve O, bütün merhamet edenlerin üstünde mutlak merhamet sahibidir.”",
   },
-  66: {
-    color: "green",
-    ar: "قَالَ ٱللَّهُ عَلَىٰ مَا نَقُولُ وَكِيلٌۭ",
-    de: "Allah ist Sachwalter über das, was wir (hier) sagen.",
-    tr: "“Allah konuştuklarımıza şahit ve gözeticidir; verilen sözlerin yerine gelip gelmemesi nihayette yine O’nun iznine ve kudretine bağlıdır.”",
-  },
   67: {
     color: "green",
     ar: "إِنِ ٱلْحُكْمُ إِلَّا لِلَّهِ ۖ عَلَيْهِ تَوَكَّلْتُ ۖ وَعَلَيْهِ فَلْيَتَوَكَّلِ ٱلْمُتَوَكِّلُونَ",
@@ -101,12 +95,6 @@ const SEGMENTS = {
     de: "außer daß Allah es wollte. Wir erhöhen, wen Wir wollen, um Rangstufen. Und über jedem, der Wissen besitzt, steht einer, der (noch mehr) weiß.",
     tr: "“fakat Allah ne dilerse o olur (ve Allah, bir şeyi dileyince onun sebeplerini de hazırlar). Biz, kimi dilersek onu böyle mertebe mertebe yükseltiriz. Ve her bir bilgi sahibinin üstünde daha iyi bir bilen (ve hepsinin üstünde her şeyi bilen olarak Allah) vardır.”",
   },
-  80: {
-    color: "green",
-    ar: "وَهُوَ خَيْرُ ٱلْحَٰكِمِينَ",
-    de: "Er ist der Beste derer, die Urteile fällen.",
-    tr: "“Allah, her zaman en hayırlı hükmü verendir.”",
-  },
   86: {
     color: "red",
     ar: "إِنَّمَآ أَشْكُوا۟ بَثِّى وَحُزْنِىٓ إِلَى ٱللَّهِ",
@@ -115,39 +103,21 @@ const SEGMENTS = {
   },
   87: {
     color: "green",
-    ar: "وَلَا تَا۟يْـَٔسُوا۟ مِن رَّوْحِ ٱللَّهِ ۖ إِنَّهُۥ لَا يَا۟يْـَٔسُ مِن رَّوْحِ ٱللَّهِ إِلَّا ٱلْقَوْمُ ٱلْكَٰفِرُونَ",
+    ar: "وَلَا تَا۟يْـَٔسُوا۟ مِن رَّوْحِ ٱلْلَّهِ ۖ إِنَّهُۥ لَا يَا۟يْـَٔسُ مِن رَّوْحِ ٱلْلَّهِ إِلَّا ٱلْقَوْمُ ٱلْكَٰفِرُونَ",
     de: "Und gebt nicht die Hoffnung auf das Erbarmen Allahs auf. Es gibt die Hoffnung auf das Erbarmen Allahs nur das ungläubige Volk auf.",
     tr: "“Allah’ın rahmetinden asla ümidinizi kesmeyin. Şurası bir gerçek ki, O’na inanmayan kâfirler güruhu dışında hiç kimse Allah’ın rahmetinden ümit kesmez.”",
   },
-  88: {
-    color: "green",
-    ar: "إِنَّ ٱللَّهَ يَجْزِى ٱلْمُتَصَدِّقِينَ",
-    de: "Allah vergilt denjenigen, die Almosen geben.",
-    tr: "“Hiç kuşkusuz Allah, fazladan iyilikte bulunanları bol bol mükâfatlandırır.”",
-  },
-  90: {
-    color: "green",
-    ar: "إِنَّ ٱللَّهَ لَا يُضِيعُ أَجْرَ ٱلْمُحْسِنِينَ",
-    de: "Gewiß, Allah läßt den Lohn der Gutes Tuenden nicht verlorengehen.",
-    tr: "“Doğrusu şu ki, kim O’na karşı derin saygı duyar, O’na karşı gelmekten sakınır ve O’na itaatla birlikte başına gelenlere de sabrederse, hiç şüphesiz Allah, böyle iyiliğe adanmış ve O’nu görürcesine davranan kimselerin mükâfatını asla zayi etmez.”",
-  },
   91: {
     color: "green",
-    ar: "تَٱللَّهِ لَقَدْ ءَاثَرَكَ ٱللَّهُ عَلَيْنَا وَإِن كُنَّا لَخَٰطِـِٔينَ",
+    ar: "تَٱللَّهِ لَقَدْ ءَاثَرَكَ ٱلْلَّهُ عَلَيْنَا وَإِن كُنَّا لَخَٰطِـِٔينَ",
     de: "Bei Allah, Allah hat dich uns vorgezogen. Und wir haben wahrlich Verfehlungen begangen.",
     tr: "“Allah’a yemin olsun ki, gerçekten Allah seni bize tercih etti; biz, başka değil, ancak bir yanlış içinde idik.”",
   },
   92: {
     color: "green",
-    ar: "لَا تَثْرِيبَ عَلَيْكُمُ ٱلْيَوْمَ ۖ يَغْفِرُ ٱللَّهُ لَكُمْ ۖ وَهُوَ أَرْحَمُ ٱلرَّٰحِمِينَ",
+    ar: "لَا تَثْرِيبَ عَلَيْكُمُ ٱلْيَوْمَ ۖ يَغْفِرُ ٱلْلَّهُ لَكُمْ ۖ وَهُوَ أَرْحَمُ ٱلرَّٰحِمِينَ",
     de: "Keine Schelte soll heute über euch kommen. Allah vergibt euch, Er ist ja der Barmherzigste der Barmherzigen.",
     tr: "“Hayır! Bugün size hiçbir kınama yok! (Ben hakkımı çoktan helâl ettim;) Allah da sizi affetsin. Çünkü O, bütün merhamet edenlerin üstünde mutlak merhamet sahibidir.”",
-  },
-  98: {
-    color: "green",
-    ar: "إِنَّهُۥ هُوَ ٱلْغَفُورُ ٱلرَّحِيمُ",
-    de: "Er ist ja der Allvergebende und Barmherzige.",
-    tr: "“Hiç şüphesiz O, Ğafûr (günahları çok bağışlayan)dır; Rahîm (bilhassa tevbe ile Kendisine yönelen mü’ min kullarına karşı hususî rahmeti pek bol olan)dır.”",
   },
   100: {
     color: "green",
@@ -163,7 +133,7 @@ const SEGMENTS = {
   },
   108: {
     color: "green",
-    ar: "قُلْ هَٰذِهِۦ سَبِيلِىٓ أَدْعُوٓا۟ إِلَى ٱللَّهِ ۚ عَلَىٰ بَصِيرَةٍ أَنَا۠ وَمَنِ ٱتَّبَعَنِى ۖ وَسُبْحَٰنَ ٱللَّهِ وَمَآ أَنَا۠ مِنَ ٱلْمُشْرِكِينَ",
+    ar: "قُلْ هَٰذِهِۦ سَبِيلِىٓ أَدْعُوٓا۟ إِلَى ٱلْلَّهِ ۚ عَلَىٰ بَصِيرَةٍ أَنَا۠ وَمَنِ ٱتَّبَعَنِى ۖ وَسُبْحَٰنَ ٱلْلَّهِ وَمَآ أَنَا۠ مِنَ ٱلْمُشْرِكِينَ",
     de: "Sag: Das ist mein Weg: Ich rufe zu Allah aufgrund eines sichtbaren Hinweises, ich und diejenigen, die mir folgen. Preis sei Allah! Und ich gehöre nicht zu den Götzendienern.",
     tr: "“İşte benim (iman, ihlâs ve Tevhid) yolum: Ben, (körü körüne ve taklide dayalı olarak değil,) görerek, delile dayanarak ve insanların idrakine hitap ederek Allah’a çağırıyorum: ben ve bana tâbi olanlar. Ve Allah’ı şirkin her türlüsünden tenzih ederim, asla O’na ortak tanıyanlardan değilim ben.”",
   },
@@ -365,7 +335,6 @@ async function githubPutFile({ owner, repo, path, token, branch, message, conten
 
 function stripOuterQuotes(s) {
   const t = String(s ?? "").trim();
-  // Turkish quotes: “...”, German might also include
   return t.replace(/^["“”]+/, "").replace(/["“”]+$/, "").trim();
 }
 
@@ -382,34 +351,40 @@ function escapeRegexLiteral(s) {
   return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function normalizeArabicSnippet(snippet) {
-  return String(snippet || "")
-    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, "")
-    .replace(/\u0640/g, "")
-    .trim();
+function normalizeArabicCore(s) {
+  const raw = String(s ?? "");
+  const noDiacr = raw
+    .replace(/[\u064B-\u065F\u0670\u0610-\u061A\u06D6-\u06ED]/g, "")
+    .replace(/\u0640/g, "");
+  const noStops = noDiacr.replace(/[ۖۗۘۙۚۛۜ۝۞]/g, "");
+  return noStops.trim();
 }
 
-function buildArabicLooseRegex(snippet) {
-  const base = normalizeArabicSnippet(snippet);
+/**
+ * Arabic tolerant regex:
+ * - ignores diacritics + Quran marks + tatweel
+ * - allows Quran stop signs / punctuation / whitespace between letters
+ */
+function buildArabicSuperLooseRegex(snippet) {
+  const base = normalizeArabicCore(snippet);
   if (!base) return null;
 
-  const DIACR = "[\\u064B-\\u065F\\u0670\\u06D6-\\u06ED]*";
+  const DIACR = "[\\u064B-\\u065F\\u0670\\u0610-\\u061A\\u06D6-\\u06ED]*";
   const TAT = "\\u0640*";
-  const WS = "\\s*";
+  const BETWEEN =
+    "[\\s\\u0640\\u064B-\\u065F\\u0670\\u0610-\\u061A\\u06D6-\\u06ED\\u060C\\u061B\\u061F\\u06D4\\u06D5ۖۗۘۙۚۛۜ۝۞]*";
 
-  const chars = Array.from(base);
+  const chars = Array.from(base).filter((ch) => !/\s/.test(ch) && ch !== "ۚ" && ch !== "ۖ");
+
+  if (!chars.length) return null;
+
   const parts = [];
-
   for (const ch of chars) {
-    if (/\s/.test(ch)) {
-      parts.push(WS);
-      continue;
-    }
     const esc = escapeRegexLiteral(ch);
     parts.push(`${TAT}${esc}${DIACR}`);
   }
 
-  return new RegExp(parts.join(""), "g");
+  return new RegExp(parts.join(BETWEEN), "g");
 }
 
 function applyRegexMarkFirst(text, regex, className) {
@@ -462,32 +437,32 @@ function markSegment(text, ayah, lang) {
 
   if (lang === "ar") {
     const cls = color === "green" ? "mark markGreen" : "mark markRed";
-    const rx = buildArabicLooseRegex(rawNeedle);
-    return applyRegexMarkFirst(s, rx, cls);
+
+    // Try strict-ish (super loose) regex
+    const rx = buildArabicSuperLooseRegex(rawNeedle);
+    const hit = applyRegexMarkFirst(s, rx, cls);
+    if (hit !== s) return hit;
+
+    // If still not found (rare), try core-normalized contains => color whole line (only for Arabic)
+    const sCore = normalizeArabicCore(s);
+    const nCore = normalizeArabicCore(rawNeedle);
+    if (sCore && nCore && sCore.includes(nCore)) return <span className={cls}>{s}</span>;
+
+    return s;
   }
 
   const cls = color === "green" ? "fontGreen" : "fontRed";
   const needle = stripOuterQuotes(rawNeedle);
 
-  // Try direct
   const direct = splitAndMarkFirst(s, needle, cls);
   if (direct !== s) return direct;
 
-  // Try common normalization variants (quotes/apostrophes/whitespace)
   const sN = normalizeCommon(s);
   const nN = normalizeCommon(needle);
   if (!sN || !nN) return s;
 
-  const idxN = sN.indexOf(nN);
-  if (idxN < 0) return s;
-
-  // Fallback: try to locate a close substring in original by searching a smaller prefix
-  const prefix = nN.slice(0, Math.min(24, nN.length));
-  const prefixIdx = normalizeCommon(s).indexOf(prefix);
-  if (prefixIdx < 0) return s;
-
-  // Best effort: if normalized match exists, color the entire line (only if match exists)
-  return <span className={cls}>{s}</span>;
+  if (sN.includes(nN)) return <span className={cls}>{s}</span>;
+  return s;
 }
 
 function SurahList({ surahs, selectedId, query, onQuery, onSelect }) {
@@ -1542,7 +1517,6 @@ export default function App() {
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
   const [singleOn, setSingleOn] = useState(true);
 
-  // repeat: 0 off, 1 => 1 tekrar, 2 => 2 tekrar
   const [repeatMode, setRepeatMode] = useState(0);
   const repeatStateRef = useRef({ idx: -1, done: 0, armed: true, lastFire: 0 });
 
@@ -1633,8 +1607,7 @@ export default function App() {
         }
 
         const data = parseJsonTolerant(text, versesSrc);
-        if (!Array.isArray(data))
-          throw new Error(`Invalid verses JSON (expected array) | url=${versesSrc}`);
+        if (!Array.isArray(data)) throw new Error(`Invalid verses JSON (expected array) | url=${versesSrc}`);
 
         if (!cancelled) {
           rowRefs.current = [];
@@ -1763,15 +1736,13 @@ export default function App() {
 
       if (Number.isFinite(s)) v.start = Math.max(0, s);
       if (Number.isFinite(e)) v.end = Math.max(0, e);
-      if (Number.isFinite(v.start) && Number.isFinite(v.end) && v.end <= v.start)
-        v.end = v.start + 0.01;
+      if (Number.isFinite(v.start) && Number.isFinite(v.end) && v.end <= v.start) v.end = v.start + 0.01;
 
       next[idx] = v;
       return next;
     });
   }, []);
 
-  // Draft auto-save
   useEffect(() => {
     const t = setTimeout(() => {
       try {
@@ -1782,9 +1753,7 @@ export default function App() {
   }, [draftKey, verses]);
 
   const exportJson = useCallback(() => {
-    const blob = new Blob([JSON.stringify(versesRef.current, null, 2)], {
-      type: "application/json",
-    });
+    const blob = new Blob([JSON.stringify(versesRef.current, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -1834,13 +1803,10 @@ export default function App() {
 
   const jumpFirstUntimed = useCallback(() => {
     const vs = versesRef.current;
-    const idx = vs.findIndex(
-      (v) => !Number.isFinite(Number(v?.start)) || !Number.isFinite(Number(v?.end))
-    );
+    const idx = vs.findIndex((v) => !Number.isFinite(Number(v?.start)) || !Number.isFinite(Number(v?.end)));
     if (idx >= 0) seekVerse(idx, true);
   }, [seekVerse]);
 
-  // repeat toggle: off -> 1 -> 2 -> off
   const toggleRepeat = useCallback(() => {
     setRepeatMode((m) => {
       const next = m === 0 ? 1 : m === 1 ? 2 : 0;
@@ -1868,7 +1834,6 @@ export default function App() {
     });
   }, [seekTo]);
 
-  // Repeat engine
   useEffect(() => {
     const a = audioRef.current;
     const vs = versesRef.current;
@@ -1964,8 +1929,7 @@ export default function App() {
   useEffect(() => {
     const onKey = (e) => {
       const tag = document.activeElement?.tagName?.toLowerCase();
-      const typing =
-        tag === "input" || tag === "textarea" || document.activeElement?.isContentEditable;
+      const typing = tag === "input" || tag === "textarea" || document.activeElement?.isContentEditable;
       if (typing) return;
 
       if (e.code === "Space") {
@@ -2034,10 +1998,7 @@ export default function App() {
     }
   }, []);
 
-  const activeVerse = useMemo(() => (activeIndex >= 0 ? verses[activeIndex] : null), [
-    activeIndex,
-    verses,
-  ]);
+  const activeVerse = useMemo(() => (activeIndex >= 0 ? verses[activeIndex] : null), [activeIndex, verses]);
 
   const closeSingle = useCallback(() => {
     setSingleOn(false);
