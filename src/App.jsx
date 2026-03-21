@@ -55,9 +55,9 @@ const SEGMENTS = {
   },
   34: {
     color: "green",
-    ar: "فَٱسْتَجَابَ لَهُۥ رَبُّهُۥ فَصَرَفَ عَنْهُ كَيْدَهُنَّ ۚ إِنَّهُۥ هُوَ ٱلسَّمِيعُ ٱلْعَلِيمُ",
-    de: "Da erhörte ihn sein Herr und wendete ihre List von ihm ab. Er ist ja der Allhörende und Allwissende.",
-    tr: "“Rabbisi duasını kabul buyurup kadınların fendini O’nun üzerinden çekti. Hiç şüphesiz O’dur Semî‘ (her şeyi, her duayı hakkıyla işiten); Alîm (her şeyi, herkesin durumunu hakkıyla bilen).”",
+    ar: "فَٱçإِنَّهُۥ هُوَ ٱلسَّمِيعُ ٱلْعَلِيمُ",
+    de: "Er ist ja der Allhörende und Allwissende.",
+    tr: "Hiç şüphesiz O’dur Semî‘ (her şeyi, her duayı hakkıyla işiten); Alîm (her şeyi, herkesin durumunu hakkıyla bilen).”",
   },
   40: {
     color: "green",
