@@ -1,5 +1,5 @@
 // =========================
-// FILE: src/App.jsx (FULL)
+// FILE: src/App.jsx (FULL - UPDATED / GÜNCEL)
 // =========================
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
@@ -65,11 +65,12 @@ const SEGMENTS = {
     de: "Das Urteil ist allein Allahs. Er hat befohlen, daß ihr nur Ihm dienen sollt. Das ist die richtige Religion. Aber die meisten Menschen wissen nicht.",
     tr: "“Şurası bir gerçek ki, mutlak manâda hükmetme yetkisi sadece Allah’a aittir. O, Kendisinden başka hiç bir varlığa ibadet etmemenizi emretmiştir. Budur doğru ve her bakımdan sağlam din. Ne var ki, insanların çoğu bilmemekte ve bilgisizce hareket etmektedir.”",
   },
+  // ✅ FIX: 12:53 correct segment (was wrong before)
   53: {
     color: "green",
-    ar: "وَمَآ أُبَرِّئُ نَفْسِىٓ",
-    de: "Und ich spreche mich nicht selbst frei.",
-    tr: "“Bununla birlikte, hiç bir zaman nefsimi de temize çıkarmam.”",
+    ar: "إِنَّ ٱلنَّفْسَ لَأَمَّارَةٌۢ بِٱلسُّوٓءِ إِلَّا مَا رَحِمَ رَبِّىٓ ۚ إِنَّ رَبِّى غَفُورٌۭ رَّحِيمٌۭ",
+    de: "Die Seele gebietet fürwahr mit Nachdruck das Böse, außer daß mein Herr Sich erbarmt. Mein Herr ist Allvergebend und Barmherzig.",
+    tr: "“Çünkü nefis, daima ve ısrarla kötülüğü emreder; meğer ki Rabbim, hususî olarak merhamet edip koruya. Şurası bir gerçek ki Rabbim, günahları pek çok bağışlayandır; (bilhassa inanmış kullarına karşı) hususî rahmeti pek bol olandır.”",
   },
   56: {
     color: "green",
@@ -365,7 +366,6 @@ async function githubPutFile({ owner, repo, path, token, branch, message, conten
 
 function stripOuterQuotes(s) {
   const t = String(s ?? "").trim();
-  // Turkish quotes: “...”, German might also include
   return t.replace(/^["“”]+/, "").replace(/["“”]+$/, "").trim();
 }
 
@@ -410,6 +410,94 @@ function buildArabicLooseRegex(snippet) {
   }
 
   return new RegExp(parts.join(""), "g");
+}
+
+// ✅ NEW: Arabic normalized mapping (stronger than regex; fixes "not colored" cases)
+function isArabicIgnorable(ch) {
+  return /[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/.test(ch);
+}
+
+function foldArabicChar(ch) {
+  switch (ch) {
+    case "ٱ":
+    case "أ":
+    case "إ":
+    case "آ":
+      return "ا";
+    case "ى":
+      return "ي";
+    case "ؤ":
+      return "و";
+    case "ئ":
+      return "ي";
+    case "ة":
+      return "ه";
+    default:
+      return ch;
+  }
+}
+
+function normalizeArabicForSearch(original) {
+  const s = String(original ?? "");
+  let norm = "";
+  const map = [];
+
+  for (let i = 0; i < s.length; i += 1) {
+    const ch = s[i];
+
+    if (isArabicIgnorable(ch)) continue;
+
+    if (/\s/.test(ch)) {
+      if (norm.length && norm[norm.length - 1] !== " ") {
+        map.push(i);
+        norm += " ";
+      }
+      continue;
+    }
+
+    const folded = foldArabicChar(ch);
+    map.push(i);
+    norm += folded;
+  }
+
+  return { norm: norm.trim().replace(/\s+/g, " "), map };
+}
+
+function extendArabicMatchEnd(original, endIndexExclusive) {
+  const s = String(original ?? "");
+  let end = endIndexExclusive;
+  while (end < s.length && isArabicIgnorable(s[end])) end += 1;
+  return end;
+}
+
+function markArabicByNormalizedMapping(text, snippet, className) {
+  const s = String(text ?? "");
+  const needleRaw = String(snippet ?? "");
+  if (!s || !needleRaw) return null;
+
+  const { norm: textN, map: textMap } = normalizeArabicForSearch(s);
+  const { norm: needleN } = normalizeArabicForSearch(needleRaw);
+
+  if (!textN || !needleN) return null;
+
+  const idxN = textN.indexOf(needleN);
+  if (idxN < 0) return null;
+
+  const startOrig = textMap[idxN];
+  const lastNormPos = idxN + needleN.length - 1;
+  const lastOrig = textMap[lastNormPos];
+
+  if (startOrig == null || lastOrig == null) return null;
+
+  const endOrigExclusive = extendArabicMatchEnd(s, lastOrig + 1);
+
+  return (
+    <>
+      {s.slice(0, startOrig)}
+      <span className={className}>{s.slice(startOrig, endOrigExclusive)}</span>
+      {s.slice(endOrigExclusive)}
+    </>
+  );
 }
 
 function applyRegexMarkFirst(text, regex, className) {
@@ -462,6 +550,10 @@ function markSegment(text, ayah, lang) {
 
   if (lang === "ar") {
     const cls = color === "green" ? "mark markGreen" : "mark markRed";
+
+    const mapped = markArabicByNormalizedMapping(s, rawNeedle, cls);
+    if (mapped) return mapped;
+
     const rx = buildArabicLooseRegex(rawNeedle);
     return applyRegexMarkFirst(s, rx, cls);
   }
@@ -469,11 +561,9 @@ function markSegment(text, ayah, lang) {
   const cls = color === "green" ? "fontGreen" : "fontRed";
   const needle = stripOuterQuotes(rawNeedle);
 
-  // Try direct
   const direct = splitAndMarkFirst(s, needle, cls);
   if (direct !== s) return direct;
 
-  // Try common normalization variants (quotes/apostrophes/whitespace)
   const sN = normalizeCommon(s);
   const nN = normalizeCommon(needle);
   if (!sN || !nN) return s;
@@ -481,12 +571,10 @@ function markSegment(text, ayah, lang) {
   const idxN = sN.indexOf(nN);
   if (idxN < 0) return s;
 
-  // Fallback: try to locate a close substring in original by searching a smaller prefix
   const prefix = nN.slice(0, Math.min(24, nN.length));
   const prefixIdx = normalizeCommon(s).indexOf(prefix);
   if (prefixIdx < 0) return s;
 
-  // Best effort: if normalized match exists, color the entire line (only if match exists)
   return <span className={cls}>{s}</span>;
 }
 
@@ -854,7 +942,18 @@ function SinglePlayerPanel({
   const ay = Number(verse?.ayah || 0);
 
   return (
-    <div className="singlePlayerBackdrop" role="dialog" aria-modal="true" aria-label="Single Player">
+    <div
+      className="singlePlayerBackdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Single Player"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      onTouchStart={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div className="singlePlayerCard">
         <div className="singlePlayerLines">
           <div className="singlePlayerLine singlePlayerLineAr" dir="rtl">
@@ -879,7 +978,12 @@ function SinglePlayerPanel({
             ◀
           </button>
 
-          <button className="spBtn spBtnPrimary" type="button" onClick={onPlayPause} aria-label="Play/Pause">
+          <button
+            className="spBtn spBtnPrimary"
+            type="button"
+            onClick={onPlayPause}
+            aria-label="Play/Pause"
+          >
             {isPlaying ? "⏸" : "▶"}
           </button>
 
@@ -1045,8 +1149,8 @@ function PlayerControls({
           </div>
 
           <div className="kbdHelp muted">
-            Space play/pause • ↑/↓ prev/next • ←/→ ±1s • Shift+←/→ ±0.1s • S start • E end • N end+next • L loop ayah •
-            Shift+L loop AB • A/B set points
+            Space play/pause • ↑/↓ prev/next • ←/→ ±1s • Shift+←/→ ±0.1s • S start • E end • N end+next
+            • L loop ayah • Shift+L loop AB • A/B set points
           </div>
         </>
       )}
@@ -1239,7 +1343,12 @@ function SyncPanel({
             <button className="btnSmall" type="button" onClick={setEndToT} disabled={!active}>
               Set END = t (E)
             </button>
-            <button className="btnSmall" type="button" onClick={setEndToTAndNext} disabled={!active}>
+            <button
+              className="btnSmall"
+              type="button"
+              onClick={setEndToTAndNext}
+              disabled={!active}
+            >
               END=t + Next (N)
             </button>
           </div>
@@ -1278,32 +1387,72 @@ function SyncPanel({
           <div className="syncRow">
             <div className="syncNudgeGroup">
               <span className="muted">Start:</span>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.1)} disabled={!active}>
+              <button
+                className="btnTiny"
+                type="button"
+                onClick={() => nudgeStart(-0.1)}
+                disabled={!active}
+              >
                 -0.1
               </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.1)} disabled={!active}>
+              <button
+                className="btnTiny"
+                type="button"
+                onClick={() => nudgeStart(+0.1)}
+                disabled={!active}
+              >
                 +0.1
               </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.5)} disabled={!active}>
+              <button
+                className="btnTiny"
+                type="button"
+                onClick={() => nudgeStart(-0.5)}
+                disabled={!active}
+              >
                 -0.5
               </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.5)} disabled={!active}>
+              <button
+                className="btnTiny"
+                type="button"
+                onClick={() => nudgeStart(+0.5)}
+                disabled={!active}
+              >
                 +0.5
               </button>
             </div>
 
             <div className="syncNudgeGroup">
               <span className="muted">End:</span>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.1)} disabled={!active}>
+              <button
+                className="btnTiny"
+                type="button"
+                onClick={() => nudgeEnd(-0.1)}
+                disabled={!active}
+              >
                 -0.1
               </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.1)} disabled={!active}>
+              <button
+                className="btnTiny"
+                type="button"
+                onClick={() => nudgeEnd(+0.1)}
+                disabled={!active}
+              >
                 +0.1
               </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.5)} disabled={!active}>
+              <button
+                className="btnTiny"
+                type="button"
+                onClick={() => nudgeEnd(-0.5)}
+                disabled={!active}
+              >
                 -0.5
               </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.5)} disabled={!active}>
+              <button
+                className="btnTiny"
+                type="button"
+                onClick={() => nudgeEnd(+0.5)}
+                disabled={!active}
+              >
                 +0.5
               </button>
             </div>
@@ -1628,7 +1777,10 @@ export default function App() {
 
         if (!res.ok) {
           throw new Error(
-            `Fetch failed: ${res.status} ${res.statusText} | url=${versesSrc} | body=${text.slice(0, 160)}`
+            `Fetch failed: ${res.status} ${res.statusText} | url=${versesSrc} | body=${text.slice(
+              0,
+              160
+            )}`
           );
         }
 
@@ -1963,6 +2115,9 @@ export default function App() {
 
   useEffect(() => {
     const onKey = (e) => {
+      // ✅ Single Player açıkken App hotkey'leri devre dışı (double-fire engel)
+      if (singleOn) return;
+
       const tag = document.activeElement?.tagName?.toLowerCase();
       const typing =
         tag === "input" || tag === "textarea" || document.activeElement?.isContentEditable;
@@ -2020,13 +2175,22 @@ export default function App() {
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onPlayPause, nudge, prevAyah, nextAyah, updateVerse, seekVerse, setA, setB]);
+  }, [singleOn, onPlayPause, nudge, prevAyah, nextAyah, updateVerse, seekVerse, setA, setB]);
 
   const commitGithub = useCallback(async ({ owner, repo, path, branch, token, message, content }) => {
     try {
       setError("");
       const sha = await githubGetFileSha({ owner, repo, path, token, branch });
-      await githubPutFile({ owner, repo, path, token, branch, message, contentBase64: content, sha });
+      await githubPutFile({
+        owner,
+        repo,
+        path,
+        token,
+        branch,
+        message,
+        contentBase64: content,
+        sha,
+      });
       alert(`Committed ✅ ${owner}/${repo}:${branch}/${path}`);
     } catch (e) {
       console.error(e);
@@ -2102,8 +2266,6 @@ export default function App() {
             const cur = activeIndexRef.current;
             const base = cur >= 0 ? cur : 0;
             const next = clamp(base + dir, 0, Math.max(0, vs.length - 1));
-
-            // Wheel: no forced autoplay, preserve last state
             seekVerse(next, isPlayingRef.current);
           }}
           repeatMode={repeatMode}
