@@ -18,9 +18,9 @@ const SURAHES = [
 ];
 
 /**
- * Segments (only these parts are colored)
- * - ar: highlight + colored font
- * - tr/de: colored font only (no highlight)
+ * SEGMENTS: only the parts you provided are colored.
+ * - ar: highlight + color
+ * - tr/de: color only
  */
 const SEGMENTS = {
   6: {
@@ -67,9 +67,9 @@ const SEGMENTS = {
   },
   53: {
     color: "green",
-    ar: "إِنَّ ٱلنَّفْسَ لَأَمَّارَةٌۢ بِٱلسُّوٓءِ إِلَّا مَا رَحِمَ رَبِّىٓ ۚ إِنَّ رَبِّى غَفُورٌۭ رَّحِيمٌۭ",
-    de: "Die Seele gebietet fürwahr mit Nachdruck das Böse, außer daß mein Herr Sich erbarmt. Mein Herr ist Allvergebend und Barmherzig.",
-    tr: "“Çünkü nefis, daima ve ısrarla kötülüğü emreder; meğer ki Rabbim, hususî olarak merhamet edip koruya. Şurası bir gerçek ki Rabbim, günahları pek çok bağışlayandır; (bilhassa inanmış kullarına karşı) hususî rahmeti pek bol olandır.”",
+    ar: "وَمَآ أُبَرِّئُ نَفْسِىٓ",
+    de: "Und ich spreche mich nicht selbst frei.",
+    tr: "“Bununla birlikte, hiç bir zaman nefsimi de temize çıkarmam.”",
   },
   56: {
     color: "green",
@@ -290,123 +290,6 @@ function parseJsonTolerant(text, urlForMsg = "") {
   }
 }
 
-/* ===== Segment marking helpers ===== */
-function stripOuterQuotes(s) {
-  const t = String(s ?? "").trim();
-  return t.replace(/^["“”]+/, "").replace(/["“”]+$/, "").trim();
-}
-
-function normalizeCommon(s) {
-  return String(s ?? "")
-    .replaceAll("\u00A0", " ")
-    .replace(/[“”]/g, '"')
-    .replace(/[‘’]/g, "'")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function escapeRegexLiteral(s) {
-  return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function normalizeArabicCore(s) {
-  return String(s ?? "")
-    .replace(/[\u064B-\u065F\u0670\u0610-\u061A\u06D6-\u06ED]/g, "")
-    .replace(/\u0640/g, "")
-    .replace(/[ۖۗۘۙۚۛۜ۝۞]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function buildArabicSuperLooseRegex(snippet) {
-  const base = normalizeArabicCore(snippet);
-  if (!base) return null;
-
-  const DIACR = "[\\u064B-\\u065F\\u0670\\u0610-\\u061A\\u06D6-\\u06ED]*";
-  const BETWEEN =
-    "[\\s\\u0640\\u064B-\\u065F\\u0670\\u0610-\\u061A\\u06D6-\\u06ED\\u060C\\u061B\\u061F\\u06D4\\u06D5ۖۗۘۙۚۛۜ۝۞]*";
-
-  const chars = Array.from(base).filter((ch) => !/\s/.test(ch));
-  if (!chars.length) return null;
-
-  const parts = chars.map((ch) => `${escapeRegexLiteral(ch)}${DIACR}`);
-  return new RegExp(parts.join(BETWEEN), "g");
-}
-
-function applyRegexMarkFirst(text, regex, className) {
-  const s = String(text ?? "");
-  if (!s || !regex) return s;
-
-  regex.lastIndex = 0;
-  const m = regex.exec(s);
-  if (!m) return s;
-
-  const start = m.index;
-  const matchText = m[0] ?? "";
-  const end = start + matchText.length;
-
-  return (
-    <>
-      {s.slice(0, start)}
-      <span className={className}>{matchText}</span>
-      {s.slice(end)}
-    </>
-  );
-}
-
-function splitAndMarkFirst(text, needle, className) {
-  const s = String(text ?? "");
-  const n = String(needle ?? "");
-  if (!s || !n) return s;
-
-  const idx = s.indexOf(n);
-  if (idx < 0) return s;
-
-  return (
-    <>
-      {s.slice(0, idx)}
-      <span className={className}>{n}</span>
-      {s.slice(idx + n.length)}
-    </>
-  );
-}
-
-function markSegment(text, ayah, lang) {
-  const s = String(text ?? "");
-  const a = Number(ayah);
-  const seg = SEGMENTS[a];
-  if (!seg) return s;
-
-  const color = seg.color === "green" ? "green" : "red";
-  const rawNeedle = seg[lang];
-  if (!rawNeedle) return s;
-
-  if (lang === "ar") {
-    const cls = color === "green" ? "mark markGreen" : "mark markRed";
-    const rx = buildArabicSuperLooseRegex(rawNeedle);
-    const hit = applyRegexMarkFirst(s, rx, cls);
-    if (hit !== s) return hit;
-
-    const sCore = normalizeArabicCore(s);
-    const nCore = normalizeArabicCore(rawNeedle);
-    if (sCore && nCore && sCore.includes(nCore)) return <span className={cls}>{s}</span>;
-
-    return s;
-  }
-
-  const cls = color === "green" ? "fontGreen" : "fontRed";
-  const needle = stripOuterQuotes(rawNeedle);
-
-  const direct = splitAndMarkFirst(s, needle, cls);
-  if (direct !== s) return direct;
-
-  const sN = normalizeCommon(s);
-  const nN = normalizeCommon(needle);
-  if (sN && nN && sN.includes(nN)) return <span className={cls}>{s}</span>;
-
-  return s;
-}
-
 function base64EncodeUtf8(text) {
   const bytes = new TextEncoder().encode(String(text ?? ""));
   let bin = "";
@@ -474,6 +357,137 @@ async function githubPutFile({ owner, repo, path, token, branch, message, conten
     throw new Error(`GitHub PUT failed: ${res.status} ${res.statusText} :: ${t}`);
   }
   return res.json();
+}
+
+/* =========================
+   Segment marking (robust)
+   ========================= */
+
+function stripOuterQuotes(s) {
+  const t = String(s ?? "").trim();
+  // Turkish quotes: “...”, German might also include
+  return t.replace(/^["“”]+/, "").replace(/["“”]+$/, "").trim();
+}
+
+function normalizeCommon(s) {
+  return String(s ?? "")
+    .replaceAll("\u00A0", " ")
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function escapeRegexLiteral(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function normalizeArabicSnippet(snippet) {
+  return String(snippet || "")
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, "")
+    .replace(/\u0640/g, "")
+    .trim();
+}
+
+function buildArabicLooseRegex(snippet) {
+  const base = normalizeArabicSnippet(snippet);
+  if (!base) return null;
+
+  const DIACR = "[\\u064B-\\u065F\\u0670\\u06D6-\\u06ED]*";
+  const TAT = "\\u0640*";
+  const WS = "\\s*";
+
+  const chars = Array.from(base);
+  const parts = [];
+
+  for (const ch of chars) {
+    if (/\s/.test(ch)) {
+      parts.push(WS);
+      continue;
+    }
+    const esc = escapeRegexLiteral(ch);
+    parts.push(`${TAT}${esc}${DIACR}`);
+  }
+
+  return new RegExp(parts.join(""), "g");
+}
+
+function applyRegexMarkFirst(text, regex, className) {
+  const s = String(text ?? "");
+  if (!s || !regex) return s;
+
+  regex.lastIndex = 0;
+  const m = regex.exec(s);
+  if (!m) return s;
+
+  const start = m.index;
+  const matchText = m[0] ?? "";
+  const end = start + matchText.length;
+
+  return (
+    <>
+      {s.slice(0, start)}
+      <span className={className}>{matchText}</span>
+      {s.slice(end)}
+    </>
+  );
+}
+
+function splitAndMarkFirst(text, needle, className) {
+  const s = String(text ?? "");
+  const n = String(needle ?? "");
+  if (!s || !n) return s;
+
+  const idx = s.indexOf(n);
+  if (idx < 0) return s;
+
+  return (
+    <>
+      {s.slice(0, idx)}
+      <span className={className}>{n}</span>
+      {s.slice(idx + n.length)}
+    </>
+  );
+}
+
+function markSegment(text, ayah, lang) {
+  const s = String(text ?? "");
+  const a = Number(ayah);
+  const seg = SEGMENTS[a];
+  if (!seg) return s;
+
+  const color = seg.color === "green" ? "green" : "red";
+  const rawNeedle = seg[lang];
+  if (!rawNeedle) return s;
+
+  if (lang === "ar") {
+    const cls = color === "green" ? "mark markGreen" : "mark markRed";
+    const rx = buildArabicLooseRegex(rawNeedle);
+    return applyRegexMarkFirst(s, rx, cls);
+  }
+
+  const cls = color === "green" ? "fontGreen" : "fontRed";
+  const needle = stripOuterQuotes(rawNeedle);
+
+  // Try direct
+  const direct = splitAndMarkFirst(s, needle, cls);
+  if (direct !== s) return direct;
+
+  // Try common normalization variants (quotes/apostrophes/whitespace)
+  const sN = normalizeCommon(s);
+  const nN = normalizeCommon(needle);
+  if (!sN || !nN) return s;
+
+  const idxN = sN.indexOf(nN);
+  if (idxN < 0) return s;
+
+  // Fallback: try to locate a close substring in original by searching a smaller prefix
+  const prefix = nN.slice(0, Math.min(24, nN.length));
+  const prefixIdx = normalizeCommon(s).indexOf(prefix);
+  if (prefixIdx < 0) return s;
+
+  // Best effort: if normalized match exists, color the entire line (only if match exists)
+  return <span className={cls}>{s}</span>;
 }
 
 function SurahList({ surahs, selectedId, query, onQuery, onSelect }) {
@@ -617,8 +631,7 @@ function Timeline({
 
 /**
  * iOS-like vertical wheel (3D)
- * - up swipe => +1
- * - down swipe => -1
+ * - sensitivity increased
  * - inertia + haptic
  */
 function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
@@ -632,7 +645,6 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const accumPxRef = useRef(0);
   const rafRef = useRef(0);
 
-  // increased sensitivity
   const STEP_PX = 12;
 
   useEffect(() => {
@@ -803,11 +815,6 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   );
 }
 
-/**
- * Single Player
- * - Bottom dock (fixed)
- * - No extra overlay panels
- */
 function SinglePlayerPanel({
   open,
   verse,
@@ -820,8 +827,6 @@ function SinglePlayerPanel({
   onDialStep,
   repeatMode,
   onToggleRepeat,
-  loading,
-  errorText,
 }) {
   useEffect(() => {
     if (!open) return;
@@ -851,50 +856,38 @@ function SinglePlayerPanel({
   return (
     <div className="singlePlayerBackdrop" role="dialog" aria-modal="true" aria-label="Single Player">
       <div className="singlePlayerCard">
-        {errorText ? <div className="spInlineError">{errorText}</div> : null}
-
         <div className="singlePlayerLines">
           <div className="singlePlayerLine singlePlayerLineAr" dir="rtl">
-            {loading ? "Loading…" : markSegment((verse?.ar || "—").trim(), ay, "ar")}
+            {markSegment((verse?.ar || "—").trim(), ay, "ar")}
           </div>
 
           <div className="singlePlayerLine singlePlayerLineDe">
-            {loading ? "Loading…" : markSegment((verse?.de || "—").trim(), ay, "de")}
+            {markSegment((verse?.de || "—").trim(), ay, "de")}
           </div>
 
           <div className="singlePlayerLine singlePlayerLineTr">
-            {loading ? "Loading…" : markSegment((verse?.tr || "—").trim(), ay, "tr")}
+            {markSegment((verse?.tr || "—").trim(), ay, "tr")}
           </div>
 
-          {/* dock altta sabit => içerik kesilmesin */}
           <div style={{ height: 140 }} />
         </div>
       </div>
 
-      {/* Dock: bottom fixed, tek satır */}
       <div className="singlePlayerDockBottom" aria-label="Player Dock">
         <div className="singlePlayerDockRow">
-          <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev" disabled={loading}>
+          <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
             ◀
           </button>
 
-          <button
-            className="spBtn spBtnPrimary"
-            type="button"
-            onClick={onPlayPause}
-            aria-label="Play/Pause"
-            disabled={loading}
-          >
+          <button className="spBtn spBtnPrimary" type="button" onClick={onPlayPause} aria-label="Play/Pause">
             {isPlaying ? "⏸" : "▶"}
           </button>
 
-          <button className="spBtn" type="button" onClick={onNext} aria-label="Next" disabled={loading}>
+          <button className="spBtn" type="button" onClick={onNext} aria-label="Next">
             ▶
           </button>
 
-          <div style={{ transform: "scale(0.92)", transformOrigin: "center" }}>
-            <IOSPickerWheelVertical3D disabled={dialDisabled || loading} value={ay} onStep={onDialStep} />
-          </div>
+          <IOSPickerWheelVertical3D disabled={dialDisabled} value={ay} onStep={onDialStep} />
 
           <button
             className={`spRBtn ${repeatMode ? "on" : "off"}`}
@@ -904,7 +897,6 @@ function SinglePlayerPanel({
               onToggleRepeat();
             }}
             aria-label="Repeat"
-            disabled={loading}
           >
             {repeatMode === 2 ? "rr" : "r"}
           </button>
@@ -1247,12 +1239,7 @@ function SyncPanel({
             <button className="btnSmall" type="button" onClick={setEndToT} disabled={!active}>
               Set END = t (E)
             </button>
-            <button
-              className="btnSmall"
-              type="button"
-              onClick={setEndToTAndNext}
-              disabled={!active}
-            >
+            <button className="btnSmall" type="button" onClick={setEndToTAndNext} disabled={!active}>
               END=t + Next (N)
             </button>
           </div>
@@ -1534,7 +1521,6 @@ export default function App() {
   const [selectedSurah, setSelectedSurah] = useState(SURAHES[0]);
   const [verses, setVerses] = useState([]);
   const [error, setError] = useState("");
-  const [loadingVerses, setLoadingVerses] = useState(false);
 
   const audioRef = useRef(null);
   const rowRefs = useRef([]);
@@ -1554,7 +1540,6 @@ export default function App() {
   const [bPoint, setBPoint] = useState(null);
 
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
-  // open single by default, but will be toggled OFF during loading and ON after successful load
   const [singleOn, setSingleOn] = useState(true);
 
   // repeat: 0 off, 1 => 1 tekrar, 2 => 2 tekrar
@@ -1620,15 +1605,12 @@ export default function App() {
     let cancelled = false;
 
     setError("");
-    setLoadingVerses(true);
     setVerses([]);
     setActiveIndex(-1);
     setCurrentTime(0);
     setDuration(0);
     setIsPlaying(false);
-
-    // IMPORTANT: prevent "— — — frozen overlay": close while loading; reopen on success.
-    setSingleOn(false);
+    setSingleOn(true);
 
     setRepeatMode(0);
     repeatStateRef.current = { idx: -1, done: 0, armed: true, lastFire: 0 };
@@ -1651,21 +1633,16 @@ export default function App() {
         }
 
         const data = parseJsonTolerant(text, versesSrc);
-        if (!Array.isArray(data)) throw new Error(`Invalid verses JSON (expected array) | url=${versesSrc}`);
+        if (!Array.isArray(data))
+          throw new Error(`Invalid verses JSON (expected array) | url=${versesSrc}`);
 
         if (!cancelled) {
           rowRefs.current = [];
           setVerses(data);
-          setLoadingVerses(false);
-          setSingleOn(true); // auto open after load
         }
       } catch (e) {
         console.error("[verses] load failed:", e);
-        if (!cancelled) {
-          setLoadingVerses(false);
-          setSingleOn(false);
-          setError(`Verses could not be loaded: ${e.message}`);
-        }
+        if (!cancelled) setError(`Verses could not be loaded: ${e.message}`);
       }
     })();
 
@@ -1730,7 +1707,6 @@ export default function App() {
     [seekTo]
   );
 
-  // when single opens first time, position to first verse without forcing play
   useEffect(() => {
     if (!singleOn) return;
     if (!verses.length) return;
@@ -1787,7 +1763,8 @@ export default function App() {
 
       if (Number.isFinite(s)) v.start = Math.max(0, s);
       if (Number.isFinite(e)) v.end = Math.max(0, e);
-      if (Number.isFinite(v.start) && Number.isFinite(v.end) && v.end <= v.start) v.end = v.start + 0.01;
+      if (Number.isFinite(v.start) && Number.isFinite(v.end) && v.end <= v.start)
+        v.end = v.start + 0.01;
 
       next[idx] = v;
       return next;
@@ -1805,7 +1782,9 @@ export default function App() {
   }, [draftKey, verses]);
 
   const exportJson = useCallback(() => {
-    const blob = new Blob([JSON.stringify(versesRef.current, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(versesRef.current, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -1855,16 +1834,91 @@ export default function App() {
 
   const jumpFirstUntimed = useCallback(() => {
     const vs = versesRef.current;
-    const idx = vs.findIndex((v) => !Number.isFinite(Number(v?.start)) || !Number.isFinite(Number(v?.end)));
+    const idx = vs.findIndex(
+      (v) => !Number.isFinite(Number(v?.start)) || !Number.isFinite(Number(v?.end))
+    );
     if (idx >= 0) seekVerse(idx, true);
   }, [seekVerse]);
 
   // repeat toggle: off -> 1 -> 2 -> off
   const toggleRepeat = useCallback(() => {
-    setRepeatMode((m) => (m === 0 ? 1 : m === 1 ? 2 : 0));
-  }, []);
+    setRepeatMode((m) => {
+      const next = m === 0 ? 1 : m === 1 ? 2 : 0;
 
-  // Existing loops
+      if (next <= 0) {
+        repeatStateRef.current = { idx: -1, done: 0, armed: true, lastFire: 0 };
+        return next;
+      }
+
+      const vs = versesRef.current;
+      if (!vs.length) return next;
+
+      let idx = activeIndexRef.current;
+      if (idx < 0) idx = findActiveVerseIndex(vs, currentTimeRef.current);
+      idx = clamp(idx, 0, vs.length - 1);
+
+      const v = vs[idx];
+      const s = Number(v?.start);
+      if (Number.isFinite(s)) {
+        repeatStateRef.current = { idx, done: 0, armed: true, lastFire: 0 };
+        tactilePulse(10);
+        seekTo(s, true);
+      }
+      return next;
+    });
+  }, [seekTo]);
+
+  // Repeat engine
+  useEffect(() => {
+    const a = audioRef.current;
+    const vs = versesRef.current;
+    if (!a || !vs.length) return;
+    if (repeatMode <= 0) return;
+
+    let idx = activeIndexRef.current;
+    if (idx < 0 || !vs[idx]) idx = findActiveVerseIndex(vs, currentTime);
+    if (idx < 0 || !vs[idx]) return;
+
+    const v = vs[idx];
+    const s = Number(v?.start);
+    const e = Number(v?.end);
+    if (!Number.isFinite(s) || !Number.isFinite(e) || e <= s) return;
+
+    const st = repeatStateRef.current;
+
+    if (st.idx !== idx) {
+      repeatStateRef.current = { idx, done: 0, armed: true, lastFire: 0 };
+      return;
+    }
+
+    if (currentTime < e - 0.12) {
+      repeatStateRef.current.armed = true;
+      return;
+    }
+
+    const nearEnd = currentTime >= e - 0.02;
+    if (!nearEnd || !repeatStateRef.current.armed) return;
+
+    const now = performance.now();
+    if (now - (repeatStateRef.current.lastFire || 0) < 350) return;
+    repeatStateRef.current.lastFire = now;
+
+    repeatStateRef.current.armed = false;
+
+    const done = repeatStateRef.current.done || 0;
+    if (done < repeatMode) {
+      repeatStateRef.current.done = done + 1;
+      a.currentTime = s;
+      a.play().catch(() => {});
+      return;
+    }
+
+    repeatStateRef.current.done = 0;
+    a.pause();
+    a.currentTime = s;
+    setCurrentTime(s);
+  }, [currentTime, repeatMode]);
+
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -1893,7 +1947,6 @@ export default function App() {
     }
   }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint]);
 
-  // Active row sync
   useEffect(() => {
     if (!verses.length) return;
     const idx = findActiveVerseIndex(verses, currentTime);
@@ -1908,11 +1961,11 @@ export default function App() {
   const setA = useCallback(() => setAPoint(currentTimeRef.current), []);
   const setB = useCallback(() => setBPoint(currentTimeRef.current), []);
 
-  // Keyboard
   useEffect(() => {
     const onKey = (e) => {
       const tag = document.activeElement?.tagName?.toLowerCase();
-      const typing = tag === "input" || tag === "textarea" || document.activeElement?.isContentEditable;
+      const typing =
+        tag === "input" || tag === "textarea" || document.activeElement?.isContentEditable;
       if (typing) return;
 
       if (e.code === "Space") {
@@ -1981,7 +2034,10 @@ export default function App() {
     }
   }, []);
 
-  const activeVerse = useMemo(() => (activeIndex >= 0 ? verses[activeIndex] : null), [activeIndex, verses]);
+  const activeVerse = useMemo(() => (activeIndex >= 0 ? verses[activeIndex] : null), [
+    activeIndex,
+    verses,
+  ]);
 
   const closeSingle = useCallback(() => {
     setSingleOn(false);
@@ -1992,10 +2048,9 @@ export default function App() {
     setSingleOn((x) => {
       const next = !x;
       if (!next) pause();
-      if (next && versesRef.current.length && activeIndexRef.current < 0) seekVerse(0, false);
       return next;
     });
-  }, [pause, seekVerse]);
+  }, [pause]);
 
   const header = selectedSurah ? (
     <div className="surahHeader">
@@ -2033,7 +2088,7 @@ export default function App() {
         {error ? <div className="errorBox">{error}</div> : null}
 
         <SinglePlayerPanel
-          open={singleOn && !!activeVerse && !loadingVerses}
+          open={singleOn}
           verse={activeVerse}
           isPlaying={isPlaying}
           onPlayPause={onPlayPause}
@@ -2047,13 +2102,12 @@ export default function App() {
             const cur = activeIndexRef.current;
             const base = cur >= 0 ? cur : 0;
             const next = clamp(base + dir, 0, Math.max(0, vs.length - 1));
-            // IMPORTANT: do not force autoplay; keep current state
+
+            // Wheel: no forced autoplay, preserve last state
             seekVerse(next, isPlayingRef.current);
           }}
           repeatMode={repeatMode}
           onToggleRepeat={toggleRepeat}
-          loading={loadingVerses}
-          errorText={error}
         />
 
         <div className={`playerCard playerSticky ${toolsCollapsed ? "collapsed" : ""}`}>
