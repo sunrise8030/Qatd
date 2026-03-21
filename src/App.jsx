@@ -1,1999 +1,753 @@
-// =========================
-// FILE: src/App.jsx (FULL)
-// =========================
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import "./styles.css";
+/* =========================
+   FILE: src/styles.css (FULL)
+   ========================= */
+/* src/styles.css */
+:root{
+  --bg:#0b0f16;
+  --panel:#0f1520;
+  --border:rgba(255,255,255,0.08);
+  --text:rgba(255,255,255,0.92);
+  --muted:rgba(255,255,255,0.62);
+  --accent:rgba(99,179,237,1);
+  --danger:rgba(255,120,120,0.18);
 
-const SURAHES = [
-  {
-    id: 12,
-    slug: "yusuf",
-    nameAr: "يوسف",
-    nameTr: "Yusuf",
-    nameDe: "Yusuf",
-    ayahCount: 111,
-    audioUrl: "/audio/yusuf.mp3",
-    versesUrl: "/data/yusuf.json",
-  },
-];
-
-/**
- * فقط المطلوب:
- * - Renk: kırmızı
- * - Sadece Arapça
- * - Sadece ilgili ayet parçaları (snippet)
- *
- * Not: Snippet eşleşmesi "birebir" string match ile çalışır.
- * JSON'daki ar metni ile snippet birebir aynıysa boyar.
- */
-const AR_HIGHLIGHTS = {
-  33: [
-    "قَالَ رَبِّ ٱلسِّجْنُ أَحَبُّ إِلَىَّ مِمَّا يَدْعُونَنِىٓ إِلَيْهِ ۖ",
-    "وَإِلَّا تَصِرْفْ عَنِّى كَيْدَهُنَّ أَصْبُ إِلَيْهِنَّ وَأَكُن مِّنَ ٱلْجَٰهِلِينَ",
-  ],
-  101: ["تَوَفَّنِى مُسْلِمًا وَأَلْحِقْنِى بِٱلصَّٰلِحِينَ"],
-
-  18: ["فَصَبْرٌ جَمِيلٌ ۖ وَٱللَّهُ ٱلْمُسْتَعَانُ عَلَىٰ مَا تَصِفُونَ"],
-  64: ["فَٱللَّهُ خَيْرٌ حَٰفِظًا ۖ وَهُوَ أَرْحَمُ ٱلرَّٰحِمِينَ"],
-  66: ["ٱللَّهُ عَلَىٰ مَا نَقُولُ وَكِيلٌ"],
-  67: [
-    "إِنِ ٱلْحُكْمُ إِلَّا لِلَّهِ ۖ عَلَيْهِ تَوَكَّلْتُ ۖ وَعَلَيْهِ فَلْيَتَوَكَّلِ ٱلْمُتَوَكِّلُونَ",
-  ],
-  83: [
-    "فَصَبْرٌ جَمِيلٌ ۖ عَسَى ٱللَّهُ أَن يَأْتِيَنِى بِهِمْ جَمِيعًا ۚ إِنَّهُۥ هُوَ ٱلْعَلِيمُ ٱلْحَكِيمُ",
-  ],
-  86: ["إِنَّمَآ أَشْكُوا۟ بَثِّى وَحُزْنِىٓ إِلَى ٱللَّهِ"],
-  87: ["وَلَا تَا۟يْـَٔسُوا۟ مِن رَّوْحِ ٱللَّهِ"],
-  98: ["إِنَّهُۥ هُوَ ٱلْغَفُورُ ٱلرَّحِيمُ"],
-
-  21: ["وَٱللَّهُ غَالِبٌ عَلَىٰٓ أَمْرِهِۦ"],
-  76: ["وَفَوْقَ كُلِّ ذِى عِلْمٍ عَلِيمٌ"],
-  90: ["إِنَّ ٱللَّهَ لَا يُضِيعُ أَجْرَ ٱلْمُحْسِنِينَ"],
-  92: ["لَا تَثْرِيبَ عَلَيْكُمُ ٱلْيَوْمَ"],
-};
-
-function resolvePublicUrl(path) {
-  const base = import.meta.env.BASE_URL || "/";
-  const p = String(path || "").replace(/^\//, "");
-  const b = String(base || "/");
-  return new URL(`${b}${p}`, window.location.origin).toString();
+  --w-no: 70px;
+  --w-ar: 1.1fr;
+  --w-de: 1fr;
+  --w-tr: 1fr;
 }
 
-function clamp(n, a, b) {
-  return Math.max(a, Math.min(b, n));
+*{ box-sizing:border-box; }
+
+html,body{
+  height:100%;
+  margin:0;
+  background:
+    radial-gradient(1200px 800px at 30% 15%, rgba(120,120,255,0.12), transparent 55%),
+    radial-gradient(1200px 800px at 70% 35%, rgba(255,120,120,0.10), transparent 55%),
+    var(--bg);
+  color:var(--text);
+  font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji";
 }
 
-function formatTime(sec) {
-  if (!Number.isFinite(sec)) return "0:00.00";
-  const s = Math.max(0, sec);
-  const mm = Math.floor(s / 60);
-  const ss = Math.floor(s % 60);
-  const ms = Math.floor((s - Math.floor(s)) * 100);
-  return `${mm}:${String(ss).padStart(2, "0")}.${String(ms).padStart(2, "0")}`;
+.appShell{ display:grid; grid-template-columns:360px 1fr; min-height:100vh; }
+
+@media (max-width:980px){
+  .appShell{ grid-template-columns:1fr; }
+  .sidebar{ position:sticky; top:0; z-index:5; }
 }
 
-function formatSec(sec) {
-  return Number.isFinite(sec) ? `${sec.toFixed(2)}s` : "—";
+.sidebar{
+  border-right:1px solid var(--border);
+  background:rgba(15,21,32,0.72);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  padding:16px;
 }
 
-function tactilePulse(ms = 8) {
-  try {
-    if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
-      navigator.vibrate(ms);
-    }
-  } catch {}
+.sidebarHeader{ margin-bottom:12px; }
+.appTitle{ margin:0 0 10px; font-size:18px; }
+.fieldLabel{ display:block; color:var(--muted); font-size:12px; margin:8px 0 6px; }
+
+.searchInput{
+  width:100%;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,0.25);
+  color:var(--text);
+  outline:none;
 }
 
-// Overlap-safe
-function findActiveVerseIndex(verses, t) {
-  if (!Array.isArray(verses) || verses.length === 0 || !Number.isFinite(t)) return -1;
+.surahList{ display:grid; gap:10px; margin-top:12px; }
+.surahCard{
+  text-align:left;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,0.18);
+  border-radius:14px;
+  padding:12px;
+  cursor:pointer;
+  color:inherit;
+}
+.surahCard:hover{ border-color:rgba(255,255,255,0.16); }
+.surahCard.active{
+  border-color:rgba(99,179,237,0.55);
+  box-shadow:0 0 0 2px rgba(99,179,237,0.15) inset;
+}
+.surahCardTop{ display:flex; justify-content:space-between; align-items:center; color:var(--muted); font-size:12px; }
+.surahNames{ margin-top:8px; }
+.surahNameStrong{ font-weight:650; font-size:16px; }
+.surahNameMuted{ color:var(--muted); font-size:13px; margin-top:2px; }
+.surahNameAr{ color:var(--text); font-size:16px; margin-top:6px; text-align:right; }
+.surahMeta{ margin-top:10px; color:var(--muted); font-size:12px; }
 
-  let bestIdx = -1;
-  let bestStart = -Infinity;
+.content{ padding:16px; }
 
-  for (let i = 0; i < verses.length; i += 1) {
-    const v = verses[i];
-    const start = Number(v?.start);
-    const end = Number(v?.end);
-    if (!Number.isFinite(start) || !Number.isFinite(end)) continue;
-    if (start <= t && t < end && start > bestStart) {
-      bestStart = start;
-      bestIdx = i;
-    }
-  }
-  if (bestIdx !== -1) return bestIdx;
-
-  let closest = -1;
-  let bestDelta = Infinity;
-  for (let i = 0; i < verses.length; i += 1) {
-    const start = Number(verses[i]?.start);
-    if (!Number.isFinite(start)) continue;
-    const d = Math.abs(t - start);
-    if (d < bestDelta) {
-      bestDelta = d;
-      closest = i;
-    }
-  }
-  return closest;
+.surahHeader{
+  border:1px solid var(--border);
+  background:rgba(15,21,32,0.55);
+  border-radius:16px;
+  padding:14px 16px;
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:10px;
+}
+.surahTitle{ margin:0; font-size:20px; }
+.surahSub{ color:var(--muted); margin-top:3px; }
+.surahHeaderRight{ font-size:18px; align-self:start; }
+.surahBadges{ grid-column:1 / -1; display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+.badge{
+  font-size:12px;
+  color:var(--muted);
+  border:1px solid var(--border);
+  background:rgba(0,0,0,0.18);
+  padding:6px 10px;
+  border-radius:999px;
 }
 
-function getStickyOverlayTopPx() {
-  const el = document.querySelector(".playerSticky");
-  if (!el) return null;
-  const r = el.getBoundingClientRect();
-  if (r.height <= 0) return null;
-  if (r.bottom <= 0 || r.top >= window.innerHeight) return null;
-  return r.top;
+.errorBox{
+  margin-top:12px;
+  border:1px solid rgba(255,120,120,0.35);
+  background:var(--danger);
+  border-radius:12px;
+  padding:10px 12px;
 }
 
-function ensureRowVisible(el, padding = 10) {
-  if (!el) return;
-  const r = el.getBoundingClientRect();
-  const overlayTop = getStickyOverlayTopPx();
+/* Player */
+.playerCard{
+  margin-top:14px;
+  border:1px solid var(--border);
+  background:rgba(15,21,32,0.55);
+  border-radius:16px;
+  padding:12px;
+  position:relative;
+}
+.playerSticky{
+  position:sticky;
+  top:10px;
+  z-index:20;
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+}
+.playerControls{ display:grid; gap:10px; }
 
-  const viewportTop = padding;
-  const viewportBottom = window.innerHeight - padding;
-  const effectiveBottom =
-    overlayTop != null ? Math.min(viewportBottom, overlayTop - padding) : viewportBottom;
-
-  const above = r.top < viewportTop;
-  const below = r.bottom > effectiveBottom;
-
-  if (above || below) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+.liveTimeBar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.liveTime{
+  display:flex;
+  align-items:baseline;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.liveActions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.liveLabel{
+  font-size:12px;
+  color:var(--muted);
+  border:1px solid var(--border);
+  background:rgba(0,0,0,0.18);
+  padding:4px 8px;
+  border-radius:999px;
+}
+.liveSec{
+  font-variant-numeric:tabular-nums;
+  font-size:26px;
+  font-weight:800;
+}
+.liveDur{
+  font-variant-numeric:tabular-nums;
+  font-size:12px;
 }
 
-function parseJsonTolerant(text, urlForMsg = "") {
-  const raw = String(text ?? "");
-  let s = raw.replace(/^\uFEFF/, "").trim();
+.btnSmall,.btnTiny,.btnPrimary{
+  border:1px solid var(--border);
+  background:rgba(0,0,0,0.22);
+  color:var(--text);
+  cursor:pointer;
+  border-radius:10px;
+}
+.btnSmall{ padding:8px 10px; }
+.btnTiny{ padding:6px 8px; font-size:12px; }
+.btnPrimary{
+  padding:12px 18px;
+  border-radius:12px;
+  font-size:14px;
+  font-weight:800;
+  border-color: rgba(99,179,237,0.35);
+  box-shadow: 0 0 0 2px rgba(99,179,237,0.10) inset;
+}
+.btnToggle{ border-color:rgba(255,255,255,0.14); }
+.btnSmall:hover,.btnTiny:hover,.btnPrimary:hover{ border-color:rgba(255,255,255,0.16); }
 
-  if (
-    s.startsWith("<!doctype") ||
-    s.startsWith("<html") ||
-    s.startsWith("<head") ||
-    s.startsWith("<")
-  ) {
-    throw new Error(`Expected JSON but got HTML | url=${urlForMsg} | head=${s.slice(0, 80)}`);
-  }
+.btnRow{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.divider{ width:1px; height:28px; background:var(--border); margin:0 2px; }
 
-  s = s.replace(/,\s*([}\]])/g, "$1");
-
-  try {
-    return JSON.parse(s);
-  } catch (e) {
-    const msg = String(e?.message || e);
-    const m = msg.match(/position\s+(\d+)/i);
-    if (m) {
-      const pos = Number(m[1]);
-      const from = Math.max(0, pos - 80);
-      const to = Math.min(s.length, pos + 80);
-      const ctx = s.slice(from, to).replaceAll("\n", "\\n");
-      throw new Error(`JSON parse failed | url=${urlForMsg} | pos=${pos} | ctx=...${ctx}...`);
-    }
-    throw new Error(`JSON parse failed | url=${urlForMsg} | msg=${msg}`);
-  }
+.chip{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,0.18);
+  padding:8px 10px;
+  border-radius:999px;
+  color:var(--muted);
+  font-size:12px;
 }
 
-function base64EncodeUtf8(text) {
-  const bytes = new TextEncoder().encode(String(text ?? ""));
-  let bin = "";
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  }
-  return btoa(bin);
+.rate{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  color:var(--muted);
+  font-size:12px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,0.18);
+  padding:8px 10px;
+  border-radius:999px;
 }
 
-async function ghFetch(url, options) {
-  try {
-    return await fetch(url, options);
-  } catch {
-    throw new Error(
-      "Network error (fetch failed). Check: internet/firewall, adblock, VPN, GitHub blocked."
+.rate select{
+  background:rgba(0,0,0,0.25);
+  color:var(--text);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:4px 8px;
+}
+
+.kbdHelp{ font-size:12px; }
+.mono{ font-variant-numeric:tabular-nums; }
+.muted{ color:var(--muted); }
+
+/* Single Player button (big, bright, 3D) */
+.btnSinglePlayer{
+  padding: 14px 16px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 950;
+  cursor: pointer;
+  color: rgba(10,14,22,0.98);
+  border: 1px solid rgba(255,255,255,0.18);
+  background: linear-gradient(180deg, rgba(170,220,255,1), rgba(99,179,237,1));
+  box-shadow:
+    0 10px 22px rgba(0,0,0,0.35),
+    0 3px 0 rgba(255,255,255,0.22) inset,
+    0 -6px 10px rgba(0,0,0,0.25) inset;
+  transform: translateY(0);
+}
+.btnSinglePlayer:hover{ filter: brightness(1.06); }
+.btnSinglePlayer:active{
+  transform: translateY(2px);
+  box-shadow:
+    0 6px 14px rgba(0,0,0,0.30),
+    0 2px 0 rgba(255,255,255,0.18) inset,
+    0 -4px 8px rgba(0,0,0,0.22) inset;
+}
+.btnSinglePlayer.on{
+  background: linear-gradient(180deg, rgba(195,255,215,1), rgba(90,210,150,1));
+}
+
+/* Timeline */
+.timeline{
+  margin-top:10px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,0.18);
+  border-radius:14px;
+  padding:10px;
+}
+.timelineTop{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:8px;
+}
+.timelineTrack{
+  position:relative;
+  height:10px;
+  border-radius:999px;
+  background:rgba(255,255,255,0.08);
+  overflow:hidden;
+  cursor:pointer;
+}
+.timelineProgress{ height:100%; background:rgba(99,179,237,0.65); width:0%; }
+.timelineMarker{
+  position:absolute;
+  top:-4px;
+  width:6px;
+  height:18px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,0.22);
+  background:rgba(255,255,255,0.08);
+  transform:translateX(-50%);
+  cursor:pointer;
+}
+.timelineMarker.active{ background:rgba(99,179,237,0.55); border-color:rgba(99,179,237,0.9); }
+.timelineSlider{ width:100%; margin-top:10px; }
+
+/* Sync panel */
+.syncPanel{
+  margin-top:10px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,0.18);
+  border-radius:14px;
+  padding:12px;
+}
+.syncHeader{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+.syncTitle{ font-weight:650; }
+.syncMeta{ font-size:12px; }
+.syncGrid{ display:grid; grid-template-columns:1.2fr 1fr; gap:10px; }
+@media (max-width:980px){ .syncGrid{ grid-template-columns:1fr; } }
+.syncBlock{
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:12px;
+  padding:10px;
+  background:rgba(255,255,255,0.02);
+}
+.syncRow{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:8px; }
+.syncInputs{ display:flex; gap:8px; flex-wrap:wrap; align-items:end; }
+.miniLabel{ display:grid; gap:6px; font-size:12px; color:var(--muted); }
+.miniInput{
+  width:140px;
+  padding:8px 10px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,0.25);
+  color:var(--text);
+  outline:none;
+}
+.syncMetaInline{ display:flex; align-items:end; gap:10px; padding:0 2px 2px; }
+.autoSaved{ align-self:end; font-size:12px; padding:8px 6px; }
+.deltaPill{
+  font-variant-numeric:tabular-nums;
+  font-size:12px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,0.18);
+  padding:6px 10px;
+  border-radius:999px;
+}
+.syncNudgeGroup{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:999px;
+  padding:6px 8px;
+  background:rgba(0,0,0,0.14);
+}
+.hiddenFile{ display:none; }
+
+/* Table */
+.tableWrap{
+  margin-top:14px;
+  border:1px solid var(--border);
+  background:rgba(15,21,32,0.55);
+  border-radius:16px;
+  overflow:auto;
+}
+.tableHeader, .row{ min-width:980px; }
+
+.tableHeader{
+  display:grid;
+  grid-template-columns: var(--w-no) var(--w-ar) var(--w-de) var(--w-tr);
+  padding:12px;
+  border-bottom:1px solid var(--border);
+  color:var(--muted);
+  font-size:13px;
+  position:sticky;
+  top:0;
+  background:rgba(15,21,32,0.90);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  z-index:2;
+}
+
+.row{
+  display:grid;
+  grid-template-columns: var(--w-no) var(--w-ar) var(--w-de) var(--w-tr);
+  border-bottom:1px solid rgba(255,255,255,0.06);
+  padding:10px 12px;
+  text-align:left;
+  color:inherit;
+  cursor:pointer;
+  align-items: stretch;
+
+  background:
+    linear-gradient(90deg,
+      rgba(0,0,0,0.00) 0%,
+      rgba(0,0,0,0.00) calc(var(--w-no)),
+      rgba(99,179,237,0.06) calc(var(--w-no)),
+      rgba(99,179,237,0.06) calc(var(--w-no) + 33.333%),
+      rgba(255,255,255,0.03) calc(var(--w-no) + 33.333%),
+      rgba(255,255,255,0.03) calc(var(--w-no) + 66.666%),
+      rgba(255,255,255,0.04) calc(var(--w-no) + 66.666%),
+      rgba(255,255,255,0.04) 100%
     );
+}
+
+.tableBody .row:nth-child(odd){ background-color: rgba(255,255,255,0.05); }
+.tableBody .row:nth-child(even){ background-color: rgba(0,0,0,0.18); }
+
+.row:hover{ filter: brightness(1.08); }
+
+.row.active{
+  background-color: rgba(99,179,237,0.14) !important;
+  box-shadow: 0 0 0 1px rgba(99,179,237,0.35) inset;
+}
+
+.cell{
+  padding-right:10px;
+  border-right:1px solid rgba(255,255,255,0.06);
+  display:flex;
+  align-items:flex-start;
+  min-height: 100%;
+}
+.cell:last-child{ border-right:none; }
+
+.colNo{ color:var(--muted); font-variant-numeric:tabular-nums; }
+.colAr{
+  display: block !important;
+  direction: rtl;
+  unicode-bidi: isolate-override;
+  text-align: right;
+  font-size: 18px;
+  line-height: 1.55;
+  padding-left: 12px;
+  font-family: "Noto Naskh Arabic","Amiri","Scheherazade New","Noto Sans Arabic", serif;
+  white-space: normal;
+}
+.colDe, .colTr{ font-size:14px; line-height:1.5; }
+
+@media (max-width:700px){
+  :root{
+    --w-no: 60px;
+    --w-ar: 1.2fr;
+    --w-tr: 1fr;
+    --w-de: 0fr;
   }
-}
 
-async function githubGetFileSha({ owner, repo, path, token, branch }) {
-  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path).replaceAll(
-    "%2F",
-    "/"
-  )}?ref=${encodeURIComponent(branch)}`;
-
-  const res = await ghFetch(url, {
-    headers: {
-      Accept: "application/vnd.github+json",
-      Authorization: `Bearer ${token}`,
-      "X-GitHub-Api-Version": "2022-11-28",
-    },
-  });
-
-  if (res.status === 404) return null;
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`GitHub GET failed: ${res.status} ${res.statusText} :: ${t}`);
+  .tableHeader, .row{
+    min-width:680px;
+    grid-template-columns: var(--w-no) var(--w-ar) var(--w-tr);
   }
-  const data = await res.json();
-  return data?.sha || null;
+  .colDe{ display:none; }
 }
 
-async function githubPutFile({ owner, repo, path, token, branch, message, contentBase64, sha }) {
-  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path).replaceAll(
-    "%2F",
-    "/"
-  )}`;
+/* === Arabic snippet highlight (KOYU KİREMİT KIRMIZI) === */
+.arHl{
+  display:inline;
+  padding: 0.06em 0.14em;
+  margin: 0 0.02em;
+  border-radius: 0.35em;
 
-  const body = { message, content: contentBase64, branch, ...(sha ? { sha } : {}) };
-
-  const res = await ghFetch(url, {
-    method: "PUT",
-    headers: {
-      Accept: "application/vnd.github+json",
-      Authorization: `Bearer ${token}`,
-      "X-GitHub-Api-Version": "2022-11-28",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`GitHub PUT failed: ${res.status} ${res.statusText} :: ${t}`);
-  }
-  return res.json();
+  /* koyu kiremit kırmızı ton */
+  background: rgba(139, 45, 45, 0.28);
+  box-shadow:
+    0 0 0 1px rgba(170, 60, 60, 0.42) inset,
+    0 10px 22px rgba(139, 45, 45, 0.14);
+  text-shadow: 0 2px 10px rgba(0,0,0,0.28);
 }
 
-function splitAndMark(str, snippet, markKeyPrefix) {
-  if (!snippet || !str) return [str];
-  const parts = String(str).split(String(snippet));
-  if (parts.length === 1) return [str];
-
-  const out = [];
-  for (let i = 0; i < parts.length; i += 1) {
-    const p = parts[i];
-    if (p) out.push(p);
-    if (i !== parts.length - 1) {
-      out.push(
-        <span className="arHl" key={`${markKeyPrefix}:${i}`}>
-          {snippet}
-        </span>
-      );
-    }
-  }
-  return out;
+/* -------- Single Player (CENTERED overlay + blur BACK) -------- */
+.singlePlayerBackdrop{
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: grid;
+  place-items: center;
+  padding: 14px;
 }
 
-function renderArabicWithHighlights(arText, ayah) {
-  const text = String(arText || "");
-  const ay = Number(ayah);
-  const snippets = Number.isFinite(ay) ? AR_HIGHLIGHTS[ay] : null;
-  if (!snippets || !Array.isArray(snippets) || snippets.length === 0) return text;
-
-  let nodes = [text];
-  for (let sIdx = 0; sIdx < snippets.length; sIdx += 1) {
-    const snippet = snippets[sIdx];
-    const nextNodes = [];
-    for (let nIdx = 0; nIdx < nodes.length; nIdx += 1) {
-      const node = nodes[nIdx];
-      if (typeof node !== "string") {
-        nextNodes.push(node);
-        continue;
-      }
-      const parts = splitAndMark(node, snippet, `ayah:${ay}:snip:${sIdx}:node:${nIdx}`);
-      nextNodes.push(...parts);
-    }
-    nodes = nextNodes;
-  }
-  return nodes;
+.singlePlayerCard{
+  width: min(1100px, 100%);
+  background: rgba(15,21,32,0.74);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px;
+  box-shadow: 0 30px 90px rgba(0,0,0,0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 14px;
+  max-height: 86vh;
+  overflow: auto;
 }
 
-function SurahList({ surahs, selectedId, query, onQuery, onSelect }) {
-  return (
-    <aside className="sidebar">
-      <div className="sidebarHeader">
-        <h1 className="appTitle">Türkçe-Almanca Kur’an Player</h1>
-        <label className="fieldLabel" htmlFor="search">
-          Search (name / id / slug)
-        </label>
-        <input
-          id="search"
-          className="searchInput"
-          value={query}
-          onChange={(e) => onQuery(e.target.value)}
-          placeholder="e.g. yusuf, 12, يوسف"
-          autoComplete="off"
-        />
-      </div>
-
-      <div className="surahList" role="list">
-        {surahs.map((s) => {
-          const active = s.id === selectedId;
-          return (
-            <button
-              key={s.id}
-              className={`surahCard ${active ? "active" : ""}`}
-              onClick={() => onSelect(s)}
-              type="button"
-            >
-              <div className="surahCardTop">
-                <div className="surahId">#{s.id}</div>
-                <div className="surahSlug">{s.slug}</div>
-              </div>
-              <div className="surahNames">
-                <div className="surahNameStrong">{s.nameTr}</div>
-                <div className="surahNameMuted">{s.nameDe}</div>
-                <div className="surahNameAr" dir="rtl">
-                  {s.nameAr}
-                </div>
-              </div>
-              <div className="surahMeta">{s.ayahCount} ayahs</div>
-            </button>
-          );
-        })}
-      </div>
-    </aside>
-  );
+.singlePlayerLines{
+  display: grid;
+  gap: 10px;
 }
 
-function Timeline({
-  duration,
-  currentTime,
-  verses,
-  activeIndex,
-  onSeek,
-  onSeekVerse,
-  showMarkers,
-  markerEvery,
-}) {
-  const trackRef = useRef(null);
-
-  const markers = useMemo(() => {
-    if (!showMarkers || !Number.isFinite(duration) || duration <= 0) return [];
-    return verses
-      .map((v, idx) => {
-        const start = Number(v?.start);
-        if (!Number.isFinite(start)) return null;
-        const leftPct = clamp((start / duration) * 100, 0, 100);
-        const ay = Number(v?.ayah);
-        const show =
-          idx === activeIndex ||
-          markerEvery === 1 ||
-          (Number.isFinite(ay) && ay > 0 && ay % markerEvery === 0);
-        return { idx, leftPct, ayah: v.ayah, show };
-      })
-      .filter(Boolean)
-      .filter((m) => m.show);
-  }, [verses, duration, showMarkers, activeIndex, markerEvery]);
-
-  const onClickTrack = (e) => {
-    if (!trackRef.current || !Number.isFinite(duration) || duration <= 0) return;
-    const rect = trackRef.current.getBoundingClientRect();
-    const x = clamp(e.clientX - rect.left, 0, rect.width);
-    const t = (x / rect.width) * duration;
-    onSeek(t);
-  };
-
-  return (
-    <div className="timeline">
-      <div className="timelineTop">
-        <div className="timeReadout">
-          <span className="mono">{formatTime(currentTime)}</span>
-          <span className="muted"> / </span>
-          <span className="mono muted">{formatTime(duration)}</span>
-          <span className="muted"> • </span>
-          <span className="mono muted">{formatSec(currentTime)}</span>
-        </div>
-        <div className="timelineHint muted">Drag • Click markers • Shift+←/→ ±0.1s</div>
-      </div>
-
-      <div className="timelineTrack" ref={trackRef} onClick={onClickTrack} role="presentation">
-        <div
-          className="timelineProgress"
-          style={{
-            width:
-              Number.isFinite(duration) && duration > 0
-                ? `${clamp((currentTime / duration) * 100, 0, 100)}%`
-                : "0%",
-          }}
-        />
-        {markers.map((m) => (
-          <button
-            key={`${m.idx}-${m.ayah}`}
-            type="button"
-            className={`timelineMarker ${m.idx === activeIndex ? "active" : ""}`}
-            style={{ left: `${m.leftPct}%` }}
-            title={`Ayah ${m.ayah}`}
-            onClick={(ev) => {
-              ev.stopPropagation();
-              tactilePulse(8);
-              onSeekVerse(m.idx);
-            }}
-          />
-        ))}
-      </div>
-
-      <input
-        className="timelineSlider"
-        type="range"
-        min={0}
-        max={Number.isFinite(duration) && duration > 0 ? duration : 0}
-        step={0.01}
-        value={Number.isFinite(currentTime) ? currentTime : 0}
-        onChange={(e) => onSeek(Number(e.target.value))}
-        aria-label="Seek audio"
-      />
-    </div>
-  );
+.singlePlayerLine{
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: rgba(0,0,0,0.14);
+}
+.singlePlayerLines > :nth-child(odd){
+  background: rgba(255,255,255,0.06);
 }
 
-/**
- * iOS-like vertical wheel (3D)
- * - up swipe => +1
- * - down swipe => -1
- * - inertia + haptic
- */
-function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
-  const ref = useRef(null);
-
-  const draggingRef = useRef(false);
-  const lastYRef = useRef(0);
-  const lastTsRef = useRef(0);
-
-  const velRef = useRef(0);
-  const accumPxRef = useRef(0);
-  const rafRef = useRef(0);
-
-  // Hassasiyet artırıldı:
-  const STEP_PX = 12;
-
-  useEffect(() => {
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, []);
-
-  const stop = () => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    rafRef.current = 0;
-    velRef.current = 0;
-    accumPxRef.current = 0;
-  };
-
-  const tickSteps = () => {
-    let did = false;
-
-    while (accumPxRef.current <= -STEP_PX) {
-      onStep(+1);
-      accumPxRef.current += STEP_PX;
-      did = true;
-    }
-
-    while (accumPxRef.current >= STEP_PX) {
-      onStep(-1);
-      accumPxRef.current -= STEP_PX;
-      did = true;
-    }
-
-    if (did) tactilePulse(8);
-  };
-
-  const startInertia = () => {
-    const v0 = velRef.current;
-    if (!Number.isFinite(v0) || Math.abs(v0) < 0.05) {
-      stop();
-      return;
-    }
-
-    // Daha uzun inertia hissi:
-    const DECAY = 0.0045;
-    const MAX_MS = 1100;
-    const startTs = performance.now();
-    let last = performance.now();
-
-    const frame = () => {
-      const now = performance.now();
-      const dt = now - last;
-      last = now;
-
-      const sign = Math.sign(velRef.current || v0);
-      const sp = Math.abs(velRef.current || v0);
-      const nextSp = Math.max(0, sp * (1 - DECAY * dt));
-      velRef.current = sign * nextSp;
-
-      accumPxRef.current += velRef.current * dt;
-      tickSteps();
-
-      if (nextSp < 0.05 || now - startTs > MAX_MS) {
-        stop();
-        return;
-      }
-      rafRef.current = requestAnimationFrame(frame);
-    };
-
-    rafRef.current = requestAnimationFrame(frame);
-  };
-
-  const onPointerDown = (e) => {
-    if (disabled) return;
-    stop();
-    draggingRef.current = true;
-    lastYRef.current = e.clientY;
-    lastTsRef.current = performance.now();
-    ref.current?.setPointerCapture?.(e.pointerId);
-  };
-
-  const onPointerMove = (e) => {
-    if (disabled || !draggingRef.current) return;
-
-    const now = performance.now();
-    const dy = e.clientY - lastYRef.current;
-    const dt = Math.max(1, now - (lastTsRef.current || now));
-
-    lastYRef.current = e.clientY;
-    lastTsRef.current = now;
-
-    velRef.current = dy / dt;
-    accumPxRef.current += dy;
-    tickSteps();
-  };
-
-  const onPointerUp = () => {
-    draggingRef.current = false;
-    startInertia();
-  };
-
-  const onWheel = (e) => {
-    if (disabled) return;
-    e.preventDefault();
-    stop();
-
-    const dy = e.deltaY;
-    // Wheel hassasiyet artırıldı:
-    const steps = clamp(Math.round(Math.abs(dy) / 18), 1, 14);
-    const dir = dy < 0 ? +1 : -1;
-
-    for (let i = 0; i < steps; i += 1) onStep(dir);
-    tactilePulse(8);
-
-    velRef.current = clamp(dy / 820, -1.0, 1.0);
-    startInertia();
-  };
-
-  const items = useMemo(() => {
-    const v = Number(value) || 0;
-    return [v - 3, v - 2, v - 1, v, v + 1, v + 2, v + 3];
-  }, [value]);
-
-  const angles = [-82, -54, -28, 0, 28, 54, 82];
-  const radius = 90;
-
-  return (
-    <div className={`spPicker3D ${disabled ? "disabled" : ""}`}>
-      <div className="spPickerShine" />
-      <div className="spPickerFadeTop" />
-      <div className="spPickerFadeBottom" />
-      <div className="spPickerBar" />
-
-      <div
-        ref={ref}
-        className="spPickerViewport"
-        role="slider"
-        aria-label="Ayet çarkı"
-        tabIndex={disabled ? -1 : 0}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        onWheel={onWheel}
-      >
-        <div className="spPickerItems3D">
-          {items.map((n, i) => {
-            const ang = angles[i] ?? 0;
-            const active = n === Number(value);
-
-            const abs = Math.abs(ang);
-            const opacity = clamp(1 - abs / 92, 0.12, 1);
-            const blur = clamp(abs / 55, 0, 1.4);
-            const scale = clamp(1 - abs / 220, 0.86, 1);
-
-            return (
-              <div
-                key={n}
-                className={`spPickerItem3D ${active ? "active" : ""}`}
-                style={{
-                  opacity,
-                  filter: `blur(${blur}px)`,
-                  transform: `rotateX(${ang}deg) translateZ(${radius}px) scale(${scale})`,
-                }}
-              >
-                {n <= 0 ? "—" : String(n).padStart(2, "0")}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
+.singlePlayerLineAr{
+  direction: rtl;
+  unicode-bidi: isolate-override;
+  text-align: right;
+  font-family: "Noto Naskh Arabic","Amiri","Scheherazade New","Noto Sans Arabic", serif;
+  font-size: clamp(44px, 7.0vw, 78px);
+  line-height: 1.75;
+  white-space: pre-wrap;
 }
 
-/**
- * Single Player
- * - Bottom dock (fixed)
- */
-function SinglePlayerPanel({
-  open,
-  verse,
-  isPlaying,
-  onPlayPause,
-  onPrev,
-  onNext,
-  onClose,
-  dialDisabled,
-  onDialStep,
-  repeatMode,
-  onToggleRepeat,
-}) {
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e) => {
-      if (e.key === "Escape") onClose();
-      if (e.code === "Space") {
-        e.preventDefault();
-        onPlayPause();
-      }
-      if (e.key === "ArrowUp") {
-        e.preventDefault();
-        onPrev();
-      }
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        onNext();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose, onPlayPause, onPrev, onNext]);
-
-  if (!open) return null;
-
-  const ay = Number(verse?.ayah || 0);
-
-  return (
-    <div className="singlePlayerBackdrop" role="dialog" aria-modal="true" aria-label="Single Player">
-      <div className="singlePlayerCard">
-        <div className="singlePlayerLines">
-          {/* ONLY ARABIC gets highlights */}
-          <div className="singlePlayerLine singlePlayerLineAr" dir="rtl">
-            {renderArabicWithHighlights((verse?.ar || "—").trim(), verse?.ayah)}
-          </div>
-
-          <div className="singlePlayerLine singlePlayerLineDe">{(verse?.de || "—").trim()}</div>
-
-          <div className="singlePlayerLine singlePlayerLineTr">{(verse?.tr || "—").trim()}</div>
-
-          <div style={{ height: 140 }} />
-        </div>
-      </div>
-
-      <div className="singlePlayerDockBottom" aria-label="Player Dock">
-        <div className="singlePlayerDockRow">
-          <button className="spBtn" type="button" onClick={onPrev} aria-label="Prev">
-            ◀
-          </button>
-
-          <button
-            className="spBtn spBtnPrimary"
-            type="button"
-            onClick={onPlayPause}
-            aria-label="Play/Pause"
-          >
-            {isPlaying ? "⏸" : "▶"}
-          </button>
-
-          <button className="spBtn" type="button" onClick={onNext} aria-label="Next">
-            ▶
-          </button>
-
-          <div style={{ transform: "scale(0.92)", transformOrigin: "center" }}>
-            <IOSPickerWheelVertical3D disabled={dialDisabled} value={ay} onStep={onDialStep} />
-          </div>
-
-          <button
-            className={`spRBtn ${repeatMode ? "on" : "off"}`}
-            type="button"
-            onClick={() => {
-              tactilePulse(10);
-              onToggleRepeat();
-            }}
-            aria-label="Repeat"
-          >
-            {repeatMode === 2 ? "rr" : "r"}
-          </button>
-
-          <button className="spBtn spBtnClose" type="button" onClick={onClose} aria-label="Close">
-            ✕
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+.singlePlayerLineDe{
+  font-size: clamp(26px, 4.0vw, 40px);
+  line-height: 1.55;
+  color: rgba(255,255,255,0.82);
+  white-space: pre-wrap;
 }
 
-function PlayerControls({
-  isPlaying,
-  currentTime,
-  duration,
-  collapsed,
-  onToggleCollapsed,
-  onPlayPause,
-  onPrev,
-  onNext,
-  onNudge,
-  loopAyah,
-  onToggleLoopAyah,
-  loopAB,
-  onToggleLoopAB,
-  rate,
-  onRate,
-  markersOn,
-  onToggleMarkers,
-  markerEvery,
-  onMarkerEvery,
-  aPoint,
-  bPoint,
-  onSetA,
-  onSetB,
-  singleOn,
-  onToggleSingle,
-}) {
-  return (
-    <div className="playerControls">
-      <div className="liveTimeBar">
-        <div className="liveTime">
-          <span className="liveLabel">LIVE</span>
-          <span className="liveSec">
-            {Number.isFinite(currentTime) ? currentTime.toFixed(2) : "0.00"}s
-          </span>
-          <span className="liveDur muted">
-            / {Number.isFinite(duration) ? duration.toFixed(2) : "0.00"}s
-          </span>
-        </div>
-
-        <div className="liveActions">
-          <button className="btnPrimary" type="button" onClick={onPlayPause}>
-            {isPlaying ? "Pause" : "Play"}
-          </button>
-          <button className="btnSmall" type="button" onClick={onPrev} title="Prev ayah">
-            ◀
-          </button>
-          <button className="btnSmall" type="button" onClick={onNext} title="Next ayah">
-            ▶
-          </button>
-
-          <button
-            className={`btnSinglePlayer ${singleOn ? "on" : ""}`}
-            type="button"
-            onClick={onToggleSingle}
-          >
-            {singleOn ? "Single Player: ON" : "Single Player"}
-          </button>
-
-          <button
-            className="btnSmall btnToggle"
-            type="button"
-            onClick={onToggleCollapsed}
-            title="Toggle tools"
-          >
-            {collapsed ? "Open tools" : "Close tools"}
-          </button>
-        </div>
-      </div>
-
-      {collapsed ? null : (
-        <>
-          <div className="btnRow">
-            <button className="btnSmall" type="button" onClick={() => onNudge(-1)}>
-              -1s
-            </button>
-            <button className="btnSmall" type="button" onClick={() => onNudge(-0.1)}>
-              -0.1
-            </button>
-            <button className="btnSmall" type="button" onClick={() => onNudge(+0.1)}>
-              +0.1
-            </button>
-            <button className="btnSmall" type="button" onClick={() => onNudge(+1)}>
-              +1s
-            </button>
-
-            <div className="divider" />
-
-            <label className="chip" title="Loop current ayah (L)">
-              <input type="checkbox" checked={loopAyah} onChange={onToggleLoopAyah} />
-              Loop ayah (L)
-            </label>
-
-            <label className="chip" title="Loop A..B (Shift+L)">
-              <input type="checkbox" checked={loopAB} onChange={onToggleLoopAB} />
-              Loop A..B (Shift+L)
-            </label>
-
-            <button className="btnSmall" type="button" onClick={onSetA} title="Set A (A)">
-              Set A {aPoint != null ? `(${formatTime(aPoint)})` : ""}
-            </button>
-            <button className="btnSmall" type="button" onClick={onSetB} title="Set B (B)">
-              Set B {bPoint != null ? `(${formatTime(bPoint)})` : ""}
-            </button>
-
-            <div className="divider" />
-
-            <label className="chip">
-              <input type="checkbox" checked={markersOn} onChange={onToggleMarkers} />
-              Markers
-            </label>
-
-            <label className="rate">
-              Markers:
-              <select value={markerEvery} onChange={(e) => onMarkerEvery(Number(e.target.value))}>
-                <option value={1}>All</option>
-                <option value={2}>Every 2</option>
-                <option value={5}>Every 5</option>
-              </select>
-            </label>
-
-            <div className="divider" />
-
-            <label className="rate">
-              Speed:
-              <select value={rate} onChange={(e) => onRate(Number(e.target.value))}>
-                <option value={0.75}>0.75×</option>
-                <option value={1}>1×</option>
-                <option value={1.25}>1.25×</option>
-                <option value={1.5}>1.5×</option>
-              </select>
-            </label>
-          </div>
-
-          <div className="kbdHelp muted">
-            Space play/pause • ↑/↓ prev/next • ←/→ ±1s • Shift+←/→ ±0.1s • S start • E end • N end+next • L loop ayah •
-            Shift+L loop AB • A/B set points
-          </div>
-        </>
-      )}
-    </div>
-  );
+.singlePlayerLineTr{
+  font-size: clamp(26px, 4.0vw, 40px);
+  line-height: 1.55;
+  white-space: pre-wrap;
 }
 
-function SyncPanel({
-  verses,
-  activeIndex,
-  currentTime,
-  duration,
-  onUpdateVerse,
-  onSeek,
-  onSeekVerse,
-  onExportJson,
-  onImportJson,
-  onSaveDraft,
-  onRestoreDraft,
-  onClearDraft,
-  onJumpFirstUntimed,
-  onCommitGithub,
-}) {
-  const [startInput, setStartInput] = useState("");
-  const [endInput, setEndInput] = useState("");
-  const [jumpAyah, setJumpAyah] = useState("");
-  const [jumpTime, setJumpTime] = useState("");
-  const fileRef = useRef(null);
-
-  const [commitOpen, setCommitOpen] = useState(false);
-  const [ghRepo, setGhRepo] = useState("");
-  const [ghBranch, setGhBranch] = useState("main");
-  const [ghPath, setGhPath] = useState("public/data/yusuf.json");
-  const [ghToken, setGhToken] = useState("");
-  const [ghMsg, setGhMsg] = useState("");
-  const [ghRemember, setGhRemember] = useState(true);
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("qatd:ghcfg");
-      if (!saved) return;
-      const cfg = JSON.parse(saved);
-      if (cfg?.repo) setGhRepo(cfg.repo);
-      if (cfg?.branch) setGhBranch(cfg.branch);
-      if (cfg?.path) setGhPath(cfg.path);
-      if (cfg?.token) setGhToken(cfg.token);
-      if (cfg?.remember === false) setGhRemember(false);
-    } catch {}
-  }, []);
-
-  useEffect(() => {
-    try {
-      if (!ghRemember) {
-        localStorage.removeItem("qatd:ghcfg");
-        return;
-      }
-      localStorage.setItem(
-        "qatd:ghcfg",
-        JSON.stringify({
-          repo: ghRepo,
-          branch: ghBranch,
-          path: ghPath,
-          token: ghToken,
-          remember: true,
-        })
-      );
-    } catch {}
-  }, [ghRepo, ghBranch, ghPath, ghToken, ghRemember]);
-
-  const active = activeIndex >= 0 ? verses[activeIndex] : null;
-
-  useEffect(() => {
-    if (!active) {
-      setStartInput("");
-      setEndInput("");
-      return;
-    }
-    const s = Number(active.start);
-    const e = Number(active.end);
-    setStartInput(Number.isFinite(s) ? String(s) : "");
-    setEndInput(Number.isFinite(e) ? String(e) : "");
-  }, [activeIndex, active]);
-
-  useEffect(() => {
-    if (!active) return;
-    const t = setTimeout(() => {
-      const s = Number(startInput);
-      const e = Number(endInput);
-      const patch = {};
-      if (Number.isFinite(s)) patch.start = clamp(s, 0, Math.max(0, duration || s));
-      if (Number.isFinite(e)) patch.end = clamp(e, 0, Math.max(0, duration || e));
-      if (Number.isFinite(patch.start) && Number.isFinite(patch.end) && patch.end <= patch.start) {
-        patch.end = patch.start + 0.01;
-      }
-      if (Object.keys(patch).length) onUpdateVerse(activeIndex, patch);
-    }, 250);
-    return () => clearTimeout(t);
-  }, [startInput, endInput, activeIndex, active, duration, onUpdateVerse]);
-
-  const startNum = Number(startInput);
-  const endNum = Number(endInput);
-  const deltaOk = Number.isFinite(startNum) && Number.isFinite(endNum) && endNum > startNum;
-  const delta = deltaOk ? endNum - startNum : null;
-
-  const setStartToT = () => active && onUpdateVerse(activeIndex, { start: currentTime });
-  const setEndToT = () => active && onUpdateVerse(activeIndex, { end: currentTime });
-  const setEndToTAndNext = () => {
-    if (!active) return;
-    onUpdateVerse(activeIndex, { end: currentTime });
-    const nextIdx = Math.min(verses.length - 1, activeIndex + 1);
-    onSeekVerse(nextIdx);
-  };
-
-  const nudgeStart = (d) => {
-    if (!active) return;
-    const s = Number(active.start);
-    if (!Number.isFinite(s)) return;
-    onUpdateVerse(activeIndex, { start: Math.max(0, s + d) });
-  };
-
-  const nudgeEnd = (d) => {
-    if (!active) return;
-    const e = Number(active.end);
-    if (!Number.isFinite(e)) return;
-    onUpdateVerse(activeIndex, { end: Math.max(0, e + d) });
-  };
-
-  const jumpToAyah = () => {
-    const n = Number(jumpAyah);
-    if (!Number.isFinite(n)) return;
-    const idx = verses.findIndex((v) => Number(v?.ayah) === n);
-    if (idx >= 0) onSeekVerse(idx);
-  };
-
-  const jumpToTime = () => {
-    const t = Number(jumpTime);
-    if (!Number.isFinite(t)) return;
-    onSeek(t);
-  };
-
-  const doCommit = async () => {
-    const repoStr = ghRepo.trim();
-    const token = ghToken.trim();
-    const path = ghPath.trim();
-    const branch = ghBranch.trim() || "main";
-
-    if (!repoStr.includes("/")) {
-      alert("Repo format: owner/repo");
-      return;
-    }
-    if (!token) {
-      alert("Token required (fine-grained PAT: Contents RW on that repo).");
-      return;
-    }
-    if (!path) {
-      alert("File path required (e.g. public/data/yusuf.json)");
-      return;
-    }
-
-    const [owner, repo] = repoStr.split("/", 2);
-    const jsonText = JSON.stringify(verses, null, 2);
-    const content = base64EncodeUtf8(jsonText);
-    const message =
-      ghMsg.trim() ||
-      `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
-
-    await onCommitGithub({ owner, repo, path, branch, token, message, content });
-    setGhMsg("");
-  };
-
-  return (
-    <div className="syncPanel">
-      <div className="syncHeader">
-        <div className="syncTitle">Sync tools</div>
-        <div className="syncMeta muted">
-          Active: <span className="mono">{active ? active.ayah : "-"}</span> • t=
-          <span className="mono">{formatSec(currentTime)}</span>
-          <span className="muted"> (</span>
-          <span className="mono muted">{formatTime(currentTime)}</span>
-          <span className="muted">)</span>
-        </div>
-      </div>
-
-      <div className="syncGrid">
-        <div className="syncBlock">
-          <div className="syncRow">
-            <button className="btnSmall" type="button" onClick={setStartToT} disabled={!active}>
-              Set START = t (S)
-            </button>
-            <button className="btnSmall" type="button" onClick={setEndToT} disabled={!active}>
-              Set END = t (E)
-            </button>
-            <button className="btnSmall" type="button" onClick={setEndToTAndNext} disabled={!active}>
-              END=t + Next (N)
-            </button>
-          </div>
-
-          <div className="syncRow">
-            <div className="syncInputs">
-              <label className="miniLabel">
-                start
-                <input
-                  className="miniInput"
-                  value={startInput}
-                  onChange={(e) => setStartInput(e.target.value)}
-                  inputMode="decimal"
-                />
-              </label>
-
-              <label className="miniLabel">
-                end
-                <input
-                  className="miniInput"
-                  value={endInput}
-                  onChange={(e) => setEndInput(e.target.value)}
-                  inputMode="decimal"
-                />
-              </label>
-
-              <div className="syncMetaInline">
-                <div className="autoSaved muted">Auto-save</div>
-                <div className={`deltaPill ${deltaOk ? "" : "muted"}`}>
-                  Δ {deltaOk ? `${delta.toFixed(2)}s` : "—"}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="syncRow">
-            <div className="syncNudgeGroup">
-              <span className="muted">Start:</span>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.1)} disabled={!active}>
-                -0.1
-              </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.1)} disabled={!active}>
-                +0.1
-              </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.5)} disabled={!active}>
-                -0.5
-              </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.5)} disabled={!active}>
-                +0.5
-              </button>
-            </div>
-
-            <div className="syncNudgeGroup">
-              <span className="muted">End:</span>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.1)} disabled={!active}>
-                -0.1
-              </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.1)} disabled={!active}>
-                +0.1
-              </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.5)} disabled={!active}>
-                -0.5
-              </button>
-              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.5)} disabled={!active}>
-                +0.5
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="syncBlock">
-          <div className="syncRow">
-            <label className="miniLabel">
-              Jump ayah
-              <input
-                className="miniInput"
-                value={jumpAyah}
-                onChange={(e) => setJumpAyah(e.target.value)}
-                inputMode="numeric"
-              />
-            </label>
-            <button className="btnSmall" type="button" onClick={jumpToAyah}>
-              Go
-            </button>
-
-            <label className="miniLabel">
-              Jump time (s)
-              <input
-                className="miniInput"
-                value={jumpTime}
-                onChange={(e) => setJumpTime(e.target.value)}
-                inputMode="decimal"
-              />
-            </label>
-            <button className="btnSmall" type="button" onClick={jumpToTime}>
-              Seek
-            </button>
-          </div>
-
-          <div className="syncRow">
-            <button className="btnSmall" type="button" onClick={onJumpFirstUntimed}>
-              First untimed
-            </button>
-            <div className="divider" />
-            <button className="btnSmall" type="button" onClick={onSaveDraft}>
-              Save draft
-            </button>
-            <button className="btnSmall" type="button" onClick={onRestoreDraft}>
-              Restore draft
-            </button>
-            <button className="btnSmall" type="button" onClick={onClearDraft}>
-              Clear draft
-            </button>
-          </div>
-
-          <div className="syncRow">
-            <button className="btnSmall" type="button" onClick={onExportJson}>
-              Export JSON
-            </button>
-            <button className="btnSmall" type="button" onClick={() => fileRef.current?.click()}>
-              Import JSON
-            </button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="application/json"
-              className="hiddenFile"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) onImportJson(f);
-                e.target.value = "";
-              }}
-            />
-          </div>
-
-          <div className="syncRow">
-            <button className="btnSmall" type="button" onClick={() => setCommitOpen((x) => !x)}>
-              {commitOpen ? "Hide commit" : "Commit to GitHub"}
-            </button>
-
-            <button
-              className="btnSmall"
-              type="button"
-              onClick={async () => {
-                try {
-                  const r = await fetch("https://api.github.com/rate_limit");
-                  alert(`GitHub reachable ✅ (${r.status})`);
-                } catch {
-                  alert("GitHub not reachable ❌ (Failed to fetch). Check network/adblock/firewall.");
-                }
-              }}
-            >
-              Test GitHub
-            </button>
-          </div>
-
-          {commitOpen ? (
-            <>
-              <div className="syncRow">
-                <label className="miniLabel">
-                  Repo (owner/repo)
-                  <input
-                    className="miniInput"
-                    value={ghRepo}
-                    onChange={(e) => setGhRepo(e.target.value)}
-                    placeholder="yourname/yourrepo"
-                  />
-                </label>
-
-                <label className="miniLabel">
-                  Branch
-                  <input
-                    className="miniInput"
-                    value={ghBranch}
-                    onChange={(e) => setGhBranch(e.target.value)}
-                    placeholder="main"
-                  />
-                </label>
-              </div>
-
-              <div className="syncRow">
-                <label className="miniLabel">
-                  File path in repo
-                  <input
-                    className="miniInput"
-                    value={ghPath}
-                    onChange={(e) => setGhPath(e.target.value)}
-                    placeholder="public/data/yusuf.json"
-                  />
-                </label>
-
-                <label className="miniLabel">
-                  Commit message
-                  <input
-                    className="miniInput"
-                    value={ghMsg}
-                    onChange={(e) => setGhMsg(e.target.value)}
-                    placeholder="optional"
-                  />
-                </label>
-              </div>
-
-              <div className="syncRow">
-                <label className="miniLabel" style={{ minWidth: 290 }}>
-                  GitHub token (PAT)
-                  <input
-                    className="miniInput"
-                    value={ghToken}
-                    onChange={(e) => setGhToken(e.target.value)}
-                    placeholder="ghp_... / github_pat_..."
-                    type="password"
-                  />
-                </label>
-
-                <label className="chip" title="Store token in localStorage on this browser">
-                  <input
-                    type="checkbox"
-                    checked={ghRemember}
-                    onChange={(e) => setGhRemember(e.target.checked)}
-                  />
-                  Remember token
-                </label>
-
-                <button className="btnSmall" type="button" onClick={doCommit}>
-                  Commit now
-                </button>
-              </div>
-
-              <div className="syncRow muted">
-                Note: Needs PAT with <span className="mono">Contents: Read/Write</span> on that repo.
-              </div>
-            </>
-          ) : null}
-        </div>
-      </div>
-    </div>
-  );
+/* Buttons */
+.spBtn{
+  min-width: 66px;
+  height: 66px;
+  padding: 0 16px;
+  border-radius: 18px;
+  cursor:pointer;
+  font-weight: 950;
+  font-size: 26px;
+  color: rgba(10,14,22,0.98);
+  border: 1px solid rgba(255,255,255,0.22);
+  background: linear-gradient(180deg, rgba(210,235,255,1), rgba(145,205,250,1));
+  box-shadow:
+    0 10px 22px rgba(0,0,0,0.38),
+    0 3px 0 rgba(255,255,255,0.22) inset,
+    0 -6px 10px rgba(0,0,0,0.22) inset;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  touch-action: manipulation;
+}
+.spBtn:active{
+  transform: translateY(2px);
+  box-shadow:
+    0 6px 14px rgba(0,0,0,0.32),
+    0 2px 0 rgba(255,255,255,0.18) inset,
+    0 -4px 8px rgba(0,0,0,0.20) inset;
+}
+.spBtnPrimary{
+  min-width: 118px;
+  height: 74px;
+  font-size: 30px;
+  background: linear-gradient(180deg, rgba(200,255,220,1), rgba(110,230,165,1));
+}
+.spBtnClose{
+  background: linear-gradient(180deg, rgba(255,220,220,1), rgba(255,150,150,1));
 }
 
-function VersesTable({ verses, activeIndex, onRowClick, rowRefs }) {
-  return (
-    <div className="tableWrap" role="region" aria-label="Verses">
-      <div className="tableHeader">
-        <div className="colNo">No</div>
-        <div className="colAr">Arabic</div>
-        <div className="colDe">German</div>
-        <div className="colTr">Turkish</div>
-      </div>
-
-      <div className="tableBody" role="table">
-        {verses.map((v, idx) => {
-          const active = idx === activeIndex;
-          return (
-            <button
-              key={`${v.ayah}-${idx}`}
-              type="button"
-              className={`row ${active ? "active" : ""}`}
-              onClick={() => onRowClick(idx)}
-              ref={(el) => {
-                rowRefs.current[idx] = el;
-              }}
-            >
-              <div className="cell colNo">{v.ayah}</div>
-
-              {/* ONLY ARABIC gets snippet highlights */}
-              <div className="cell colAr" dir="rtl">
-                {renderArabicWithHighlights((v.ar || "").trimStart(), v.ayah)}
-              </div>
-
-              <div className="cell colDe">{v.de}</div>
-              <div className="cell colTr">{v.tr}</div>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
+@media (max-width:520px){
+  .spBtn{ min-width: 70px; height: 70px; font-size: 28px; }
+  .spBtnPrimary{ min-width: 124px; height: 78px; font-size: 32px; }
 }
 
-export default function App() {
-  const [query, setQuery] = useState("");
-  const [selectedSurah, setSelectedSurah] = useState(SURAHES[0]);
-  const [verses, setVerses] = useState([]);
-  const [error, setError] = useState("");
-
-  const audioRef = useRef(null);
-  const rowRefs = useRef([]);
-
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [activeIndex, setActiveIndex] = useState(-1);
-
-  const [loopAyah, setLoopAyah] = useState(false);
-  const [rate, setRate] = useState(1);
-  const [markersOn, setMarkersOn] = useState(true);
-  const [markerEvery, setMarkerEvery] = useState(2);
-
-  const [loopAB, setLoopAB] = useState(false);
-  const [aPoint, setAPoint] = useState(null);
-  const [bPoint, setBPoint] = useState(null);
-
-  const [toolsCollapsed, setToolsCollapsed] = useState(true);
-
-  // Sayfa single player ile yüklensin:
-  const [singleOn, setSingleOn] = useState(true);
-
-  // repeat: 0 off, 1 => 1 tekrar, 2 => 2 tekrar
-  const [repeatMode, setRepeatMode] = useState(0);
-  const repeatStateRef = useRef({ idx: -1, done: 0, armed: true, lastFire: 0 });
-
-  useEffect(() => {
-    document.title = "Türkçe-Almanca Kur’an Player";
-  }, []);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem("qatd:toolsCollapsed");
-      if (raw === "0") setToolsCollapsed(false);
-    } catch {}
-  }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("qatd:toolsCollapsed", toolsCollapsed ? "1" : "0");
-    } catch {}
-  }, [toolsCollapsed]);
-
-  const versesRef = useRef(verses);
-  const activeIndexRef = useRef(activeIndex);
-  const currentTimeRef = useRef(currentTime);
-  const durationRef = useRef(duration);
-
-  useEffect(() => {
-    versesRef.current = verses;
-    activeIndexRef.current = activeIndex;
-    currentTimeRef.current = currentTime;
-    durationRef.current = duration;
-  }, [verses, activeIndex, currentTime, duration]);
-
-  const draftKey = useMemo(() => `qatd:draft:${selectedSurah.slug}`, [selectedSurah.slug]);
-
-  const filteredSurahs = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return SURAHES;
-    return SURAHES.filter((s) => {
-      const idMatch = String(s.id) === q || String(s.id).includes(q);
-      const slugMatch = s.slug.toLowerCase().includes(q);
-      const tr = (s.nameTr || "").toLowerCase().includes(q);
-      const de = (s.nameDe || "").toLowerCase().includes(q);
-      const ar = (s.nameAr || "").includes(query.trim());
-      return idMatch || slugMatch || tr || de || ar;
-    });
-  }, [query]);
-
-  const audioSrc = useMemo(
-    () => (selectedSurah ? resolvePublicUrl(selectedSurah.audioUrl) : ""),
-    [selectedSurah]
-  );
-  const versesSrc = useMemo(
-    () => (selectedSurah ? resolvePublicUrl(selectedSurah.versesUrl) : ""),
-    [selectedSurah]
-  );
-
-  useEffect(() => {
-    let cancelled = false;
-
-    setError("");
-    setVerses([]);
-    setActiveIndex(-1);
-    setCurrentTime(0);
-    setDuration(0);
-    setIsPlaying(false);
-
-    // her sure değişince de single açık kalsın:
-    setSingleOn(true);
-
-    setRepeatMode(0);
-    repeatStateRef.current = { idx: -1, done: 0, armed: true, lastFire: 0 };
-
-    const a = audioRef.current;
-    if (a) {
-      a.pause();
-      a.currentTime = 0;
-    }
-
-    (async () => {
-      try {
-        const res = await fetch(versesSrc, { cache: "no-store" });
-        const text = await res.text();
-
-        if (!res.ok) {
-          throw new Error(
-            `Fetch failed: ${res.status} ${res.statusText} | url=${versesSrc} | body=${text.slice(0, 160)}`
-          );
-        }
-
-        const data = parseJsonTolerant(text, versesSrc);
-        if (!Array.isArray(data)) throw new Error(`Invalid verses JSON (expected array) | url=${versesSrc}`);
-
-        if (!cancelled) {
-          rowRefs.current = [];
-          setVerses(data);
-        }
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error("[verses] load failed:", e);
-        if (!cancelled) setError(`Verses could not be loaded: ${e.message}`);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [versesSrc]);
-
-  useEffect(() => {
-    const a = audioRef.current;
-    if (!a) return;
-
-    const onTime = () => setCurrentTime(a.currentTime || 0);
-    const onMeta = () => setDuration(a.duration || 0);
-    const onPlay = () => setIsPlaying(true);
-    const onPause = () => setIsPlaying(false);
-    const onErr = () => setError("Audio could not be played. Check console for details.");
-
-    a.addEventListener("timeupdate", onTime);
-    a.addEventListener("loadedmetadata", onMeta);
-    a.addEventListener("play", onPlay);
-    a.addEventListener("pause", onPause);
-    a.addEventListener("error", onErr);
-
-    return () => {
-      a.removeEventListener("timeupdate", onTime);
-      a.removeEventListener("loadedmetadata", onMeta);
-      a.removeEventListener("play", onPlay);
-      a.removeEventListener("pause", onPause);
-      a.removeEventListener("error", onErr);
-    };
-  }, []);
-
-  useEffect(() => {
-    const a = audioRef.current;
-    if (!a) return;
-    a.playbackRate = rate;
-  }, [rate]);
-
-  const seekTo = useCallback((t, autoPlay = false) => {
-    const a = audioRef.current;
-    if (!a || !Number.isFinite(t)) return;
-
-    const d = Number.isFinite(a.duration) ? a.duration : durationRef.current;
-    const nextT = Number.isFinite(d) && d > 0 ? clamp(t, 0, d - 0.01) : Math.max(0, t);
-
-    a.currentTime = nextT;
-    setCurrentTime(nextT);
-    if (autoPlay) a.play().catch(() => {});
-  }, []);
-
-  const seekVerse = useCallback(
-    (idx, autoPlay = true) => {
-      const v = versesRef.current[idx];
-      if (!v) return;
-      const start = Number(v.start);
-      if (!Number.isFinite(start)) return;
-
-      repeatStateRef.current = { idx, done: 0, armed: true, lastFire: 0 };
-      seekTo(start, autoPlay);
-    },
-    [seekTo]
-  );
-
-  // Single player açıkken: ayetler gelince 1. ayete konumlan (autoplay yok)
-  useEffect(() => {
-    if (!singleOn) return;
-    if (!verses.length) return;
-    if (activeIndexRef.current >= 0) return;
-    seekVerse(0, false);
-  }, [singleOn, verses.length, seekVerse]);
-
-  const onPlayPause = useCallback(() => {
-    const a = audioRef.current;
-    if (!a) return;
-    if (a.paused) a.play().catch(() => {});
-    else a.pause();
-  }, []);
-
-  const pause = useCallback(() => {
-    const a = audioRef.current;
-    if (!a) return;
-    a.pause();
-  }, []);
-
-  const nudge = useCallback(
-    (delta) => {
-      const a = audioRef.current;
-      if (!a) return;
-      seekTo((a.currentTime || 0) + delta, false);
-    },
-    [seekTo]
-  );
-
-  const prevAyah = useCallback(() => {
-    const vs = versesRef.current;
-    if (!vs.length) return;
-    const cur = activeIndexRef.current;
-    const idx = cur > 0 ? cur - 1 : 0;
-    seekVerse(idx, true);
-  }, [seekVerse]);
-
-  const nextAyah = useCallback(() => {
-    const vs = versesRef.current;
-    if (!vs.length) return;
-    const cur = activeIndexRef.current;
-    const idx = cur >= 0 ? Math.min(vs.length - 1, cur + 1) : 0;
-    seekVerse(idx, true);
-  }, [seekVerse]);
-
-  const updateVerse = useCallback((idx, patch) => {
-    setVerses((prev) => {
-      if (!prev[idx]) return prev;
-      const next = [...prev];
-      const v = { ...next[idx], ...patch };
-
-      const s = Number(v.start);
-      const e = Number(v.end);
-
-      if (Number.isFinite(s)) v.start = Math.max(0, s);
-      if (Number.isFinite(e)) v.end = Math.max(0, e);
-      if (Number.isFinite(v.start) && Number.isFinite(v.end) && v.end <= v.start) v.end = v.start + 0.01;
-
-      next[idx] = v;
-      return next;
-    });
-  }, []);
-
-  useEffect(() => {
-    const t = setTimeout(() => {
-      try {
-        localStorage.setItem(draftKey, JSON.stringify(versesRef.current));
-      } catch {}
-    }, 500);
-    return () => clearTimeout(t);
-  }, [draftKey, verses]);
-
-  const exportJson = useCallback(() => {
-    const blob = new Blob([JSON.stringify(versesRef.current, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${selectedSurah.slug}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  }, [selectedSurah.slug]);
-
-  const importJsonFile = useCallback((file) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const parsed = JSON.parse(String(reader.result || ""));
-        if (!Array.isArray(parsed)) throw new Error("Imported JSON must be an array");
-        setVerses(parsed);
-        setError("");
-      } catch (e) {
-        setError(`Import failed: ${e.message}`);
-      }
-    };
-    reader.readAsText(file);
-  }, []);
-
-  const saveDraft = useCallback(() => {
-    try {
-      localStorage.setItem(draftKey, JSON.stringify(versesRef.current));
-    } catch {}
-  }, [draftKey]);
-
-  const restoreDraft = useCallback(() => {
-    try {
-      const raw = localStorage.getItem(draftKey);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return;
-      setVerses(parsed);
-    } catch {}
-  }, [draftKey]);
-
-  const clearDraft = useCallback(() => {
-    try {
-      localStorage.removeItem(draftKey);
-    } catch {}
-  }, [draftKey]);
-
-  const jumpFirstUntimed = useCallback(() => {
-    const vs = versesRef.current;
-    const idx = vs.findIndex((v) => !Number.isFinite(Number(v?.start)) || !Number.isFinite(Number(v?.end)));
-    if (idx >= 0) seekVerse(idx, true);
-  }, [seekVerse]);
-
-  const toggleRepeat = useCallback(() => {
-    setRepeatMode((m) => {
-      const next = m === 0 ? 1 : m === 1 ? 2 : 0;
-
-      if (next <= 0) {
-        repeatStateRef.current = { idx: -1, done: 0, armed: true, lastFire: 0 };
-        return next;
-      }
-
-      const vs = versesRef.current;
-      if (!vs.length) return next;
-
-      let idx = activeIndexRef.current;
-      if (idx < 0) idx = findActiveVerseIndex(vs, currentTimeRef.current);
-      idx = clamp(idx, 0, vs.length - 1);
-
-      const v = vs[idx];
-      const s = Number(v?.start);
-      if (Number.isFinite(s)) {
-        repeatStateRef.current = { idx, done: 0, armed: true, lastFire: 0 };
-        tactilePulse(10);
-        seekTo(s, true);
-      }
-      return next;
-    });
-  }, [seekTo]);
-
-  useEffect(() => {
-    const a = audioRef.current;
-    const vs = versesRef.current;
-    if (!a || !vs.length) return;
-    if (repeatMode <= 0) return;
-
-    let idx = activeIndexRef.current;
-    if (idx < 0 || !vs[idx]) idx = findActiveVerseIndex(vs, currentTime);
-    if (idx < 0 || !vs[idx]) return;
-
-    const v = vs[idx];
-    const s = Number(v?.start);
-    const e = Number(v?.end);
-    if (!Number.isFinite(s) || !Number.isFinite(e) || e <= s) return;
-
-    const st = repeatStateRef.current;
-
-    if (st.idx !== idx) {
-      repeatStateRef.current = { idx, done: 0, armed: true, lastFire: 0 };
-      return;
-    }
-
-    if (currentTime < e - 0.12) {
-      repeatStateRef.current.armed = true;
-      return;
-    }
-
-    const nearEnd = currentTime >= e - 0.02;
-    if (!nearEnd || !repeatStateRef.current.armed) return;
-
-    const now = performance.now();
-    if (now - (repeatStateRef.current.lastFire || 0) < 350) return;
-    repeatStateRef.current.lastFire = now;
-
-    repeatStateRef.current.armed = false;
-
-    const done = repeatStateRef.current.done || 0;
-    if (done < repeatMode) {
-      repeatStateRef.current.done = done + 1;
-      a.currentTime = s;
-      a.play().catch(() => {});
-      return;
-    }
-
-    repeatStateRef.current.done = 0;
-    a.pause();
-    a.currentTime = s;
-    setCurrentTime(s);
-  }, [currentTime, repeatMode]);
-
-  useEffect(() => {
-    const a = audioRef.current;
-    if (!a) return;
-
-    if (loopAB && aPoint != null && bPoint != null) {
-      const lo = Math.min(aPoint, bPoint);
-      const hi = Math.max(aPoint, bPoint);
-      if (currentTime >= hi) {
-        a.currentTime = lo;
-        a.play().catch(() => {});
-      }
-      return;
-    }
-
-    if (loopAyah && verses.length) {
-      const idx = findActiveVerseIndex(verses, currentTime);
-      if (idx >= 0) {
-        const v = verses[idx];
-        const s = Number(v?.start);
-        const e = Number(v?.end);
-        if (Number.isFinite(s) && Number.isFinite(e) && e > s && currentTime >= e) {
-          a.currentTime = s;
-          a.play().catch(() => {});
-        }
-      }
-    }
-  }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint]);
-
-  useEffect(() => {
-    if (!verses.length) return;
-    const idx = findActiveVerseIndex(verses, currentTime);
-    if (idx === -1 || idx === activeIndex) return;
-
-    setActiveIndex(idx);
-
-    const el = rowRefs.current[idx];
-    if (el) ensureRowVisible(el, 10);
-  }, [currentTime, verses, activeIndex]);
-
-  const setA = useCallback(() => setAPoint(currentTimeRef.current), []);
-  const setB = useCallback(() => setBPoint(currentTimeRef.current), []);
-
-  useEffect(() => {
-    const onKey = (e) => {
-      const tag = document.activeElement?.tagName?.toLowerCase();
-      const typing = tag === "input" || tag === "textarea" || document.activeElement?.isContentEditable;
-      if (typing) return;
-
-      if (e.code === "Space") {
-        e.preventDefault();
-        onPlayPause();
-        return;
-      }
-      if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        nudge(e.shiftKey ? -0.1 : -1);
-        return;
-      }
-      if (e.key === "ArrowRight") {
-        e.preventDefault();
-        nudge(e.shiftKey ? 0.1 : 1);
-        return;
-      }
-      if (e.key === "ArrowUp") {
-        e.preventDefault();
-        prevAyah();
-        return;
-      }
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        nextAyah();
-        return;
-      }
-
-      const k = e.key.toLowerCase();
-      if (k === "l") {
-        if (e.shiftKey) setLoopAB((x) => !x);
-        else setLoopAyah((x) => !x);
-        return;
-      }
-      if (k === "a") setA();
-      if (k === "b") setB();
-
-      const idx = activeIndexRef.current;
-      const vs = versesRef.current;
-      const t = currentTimeRef.current;
-
-      if (idx >= 0 && vs[idx]) {
-        if (k === "s") updateVerse(idx, { start: t });
-        else if (k === "e") updateVerse(idx, { end: t });
-        else if (k === "n") {
-          updateVerse(idx, { end: t });
-          const nextIdx = Math.min(vs.length - 1, idx + 1);
-          seekVerse(nextIdx, true);
-        }
-      }
-    };
-
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onPlayPause, nudge, prevAyah, nextAyah, updateVerse, seekVerse, setA, setB]);
-
-  const commitGithub = useCallback(async ({ owner, repo, path, branch, token, message, content }) => {
-    try {
-      setError("");
-      const sha = await githubGetFileSha({ owner, repo, path, token, branch });
-      await githubPutFile({ owner, repo, path, token, branch, message, contentBase64: content, sha });
-      alert(`Committed ✅ ${owner}/${repo}:${branch}/${path}`);
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error(e);
-      alert(String(e?.message || e));
-    }
-  }, []);
-
-  const activeVerse = useMemo(() => (activeIndex >= 0 ? verses[activeIndex] : null), [activeIndex, verses]);
-
-  const closeSingle = useCallback(() => {
-    setSingleOn(false);
-    pause();
-  }, [pause]);
-
-  const toggleSingle = useCallback(() => {
-    setSingleOn((x) => {
-      const next = !x;
-      if (!next) pause();
-      return next;
-    });
-  }, [pause]);
-
-  const header = selectedSurah ? (
-    <div className="surahHeader">
-      <div className="surahHeaderLeft">
-        <h2 className="surahTitle">
-          #{selectedSurah.id} — {selectedSurah.nameTr}
-        </h2>
-        <div className="surahSub">{selectedSurah.nameDe}</div>
-      </div>
-      <div className="surahHeaderRight" dir="rtl">
-        {selectedSurah.nameAr}
-      </div>
-      <div className="surahBadges">
-        <span className="badge">Slug: {selectedSurah.slug}</span>
-        <span className="badge">Ayahs: {selectedSurah.ayahCount}</span>
-        <span className="badge">Loaded: {verses.length}</span>
-      </div>
-    </div>
-  ) : null;
-
-  const dialDisabled = !verses.length;
-
-  return (
-    <div className="appShell">
-      <SurahList
-        surahs={filteredSurahs}
-        selectedId={selectedSurah?.id}
-        query={query}
-        onQuery={setQuery}
-        onSelect={setSelectedSurah}
-      />
-
-      <main className="content">
-        {header}
-        {error ? <div className="errorBox">{error}</div> : null}
-
-        <SinglePlayerPanel
-          open={singleOn}
-          verse={activeVerse}
-          isPlaying={isPlaying}
-          onPlayPause={onPlayPause}
-          onPrev={prevAyah}
-          onNext={nextAyah}
-          onClose={closeSingle}
-          dialDisabled={dialDisabled}
-          onDialStep={(dir) => {
-            const vs = versesRef.current;
-            if (!vs.length) return;
-            const cur = activeIndexRef.current;
-            const base = cur >= 0 ? cur : 0;
-            const next = clamp(base + dir, 0, Math.max(0, vs.length - 1));
-            seekVerse(next, true);
-          }}
-          repeatMode={repeatMode}
-          onToggleRepeat={toggleRepeat}
-        />
-
-        <div className={`playerCard playerSticky ${toolsCollapsed ? "collapsed" : ""}`}>
-          <audio ref={audioRef} src={audioSrc} preload="metadata" />
-
-          <PlayerControls
-            isPlaying={isPlaying}
-            currentTime={currentTime}
-            duration={duration}
-            collapsed={toolsCollapsed}
-            onToggleCollapsed={() => setToolsCollapsed((x) => !x)}
-            onPlayPause={onPlayPause}
-            onPrev={prevAyah}
-            onNext={nextAyah}
-            onNudge={nudge}
-            loopAyah={loopAyah}
-            onToggleLoopAyah={() => setLoopAyah((x) => !x)}
-            loopAB={loopAB}
-            onToggleLoopAB={() => setLoopAB((x) => !x)}
-            rate={rate}
-            onRate={setRate}
-            markersOn={markersOn}
-            onToggleMarkers={() => setMarkersOn((x) => !x)}
-            markerEvery={markerEvery}
-            onMarkerEvery={setMarkerEvery}
-            aPoint={aPoint}
-            bPoint={bPoint}
-            onSetA={setA}
-            onSetB={setB}
-            singleOn={singleOn}
-            onToggleSingle={toggleSingle}
-          />
-
-          {toolsCollapsed ? null : (
-            <>
-              <Timeline
-                duration={duration}
-                currentTime={currentTime}
-                verses={verses}
-                activeIndex={activeIndex}
-                onSeek={(t) => seekTo(t, false)}
-                onSeekVerse={(idx) => seekVerse(idx, true)}
-                showMarkers={markersOn}
-                markerEvery={markerEvery}
-              />
-
-              <SyncPanel
-                verses={verses}
-                activeIndex={activeIndex}
-                currentTime={currentTime}
-                duration={duration}
-                onUpdateVerse={updateVerse}
-                onSeek={(t) => seekTo(t, false)}
-                onSeekVerse={(idx) => seekVerse(idx, true)}
-                onExportJson={() => {
-                  const blob = new Blob([JSON.stringify(versesRef.current, null, 2)], {
-                    type: "application/json",
-                  });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = `${selectedSurah.slug}.json`;
-                  document.body.appendChild(a);
-                  a.click();
-                  a.remove();
-                  URL.revokeObjectURL(url);
-                }}
-                onImportJson={importJsonFile}
-                onSaveDraft={saveDraft}
-                onRestoreDraft={restoreDraft}
-                onClearDraft={clearDraft}
-                onJumpFirstUntimed={jumpFirstUntimed}
-                onCommitGithub={commitGithub}
-              />
-            </>
-          )}
-        </div>
-
-        <VersesTable
-          verses={verses}
-          activeIndex={activeIndex}
-          onRowClick={(idx) => seekVerse(idx, true)}
-          rowRefs={rowRefs}
-        />
-      </main>
-    </div>
-  );
+/* Wheel */
+.spPicker3D{
+  width: 120px;
+  height: 160px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(0,0,0,0.18);
+  box-shadow:
+    0 14px 28px rgba(0,0,0,0.35),
+    0 3px 0 rgba(255,255,255,0.14) inset,
+    0 -10px 16px rgba(0,0,0,0.22) inset;
+  position: relative;
+  overflow: hidden;
+  touch-action: none;
+  flex: 0 0 auto;
+}
+.spPicker3D.disabled{ opacity: 0.55; pointer-events:none; }
+
+.spPickerViewport{
+  width: 100%;
+  height: 100%;
+  outline: none;
+  display:grid;
+  place-items:center;
+  perspective: 980px;
+}
+
+.spPickerItems3D{
+  width: 100%;
+  height: 100%;
+  display:grid;
+  place-items:center;
+  transform-style: preserve-3d;
+}
+
+.spPickerItem3D{
+  position:absolute;
+  width: 100%;
+  text-align:center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 950;
+  font-size: 34px;
+  letter-spacing: 0.6px;
+  color: rgba(255,255,255,0.20);
+  transform-origin: center center;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.25);
+}
+.spPickerItem3D.active{
+  color: rgba(255,255,255,0.96);
+  text-shadow: 0 2px 14px rgba(0,0,0,0.38);
+}
+
+.spPickerShine{
+  position:absolute;
+  inset:-10px;
+  background:
+    radial-gradient(120px 220px at 30% 45%, rgba(255,255,255,0.10), transparent 60%),
+    radial-gradient(120px 220px at 70% 55%, rgba(99,179,237,0.10), transparent 60%);
+  pointer-events:none;
+  mix-blend-mode: screen;
+  opacity: 0.9;
+}
+
+.spPickerBar{
+  position:absolute;
+  left: 10px;
+  right: 10px;
+  top: 50%;
+  height: 46px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.14);
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.18) inset,
+    0 10px 24px rgba(0,0,0,0.22);
+  pointer-events:none;
+}
+
+.spPickerFadeTop{
+  position:absolute;
+  left:0; right:0; top:0;
+  height: 46%;
+  background: linear-gradient(180deg, rgba(15,21,32,0.95), rgba(15,21,32,0.00));
+  pointer-events:none;
+}
+.spPickerFadeBottom{
+  position:absolute;
+  left:0; right:0; bottom:0;
+  height: 46%;
+  background: linear-gradient(0deg, rgba(15,21,32,0.95), rgba(15,21,32,0.00));
+  pointer-events:none;
+}
+
+/* Repeat */
+.spRBtn{
+  min-width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.18);
+  color: rgba(255,255,255,0.70);
+  font-weight: 950;
+  font-size: 18px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 10px 22px rgba(0,0,0,0.30),
+    0 3px 0 rgba(255,255,255,0.12) inset,
+    0 -6px 10px rgba(0,0,0,0.20) inset;
+}
+.spRBtn.off{ opacity: 0.55; }
+.spRBtn.on{
+  color: rgba(10,14,22,0.98);
+  background: linear-gradient(180deg, rgba(170,220,255,1), rgba(99,179,237,1));
+  border-color: rgba(255,255,255,0.22);
+}
+.spRBtn:active{ transform: translateY(1px); }
+
+/* === Bottom dock === */
+.singlePlayerDockBottom{
+  position: fixed !important;
+  right: 14px !important;
+  left: auto !important;
+  bottom: calc(14px + env(safe-area-inset-bottom)) !important;
+  top: auto !important;
+  transform: none !important;
+  z-index: 10001 !important;
+  width: min(640px, calc(100% - 28px)) !important;
+  max-width: calc(100% - 28px) !important;
+
+  padding: 10px !important;
+  border-radius: 18px !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  background: rgba(0,0,0,0.20) !important;
+
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  white-space: nowrap !important;
+}
+.singlePlayerDockRow{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+/* === Backdrop inertia === */
+@keyframes spBackdropInertiaIn{
+  0%   { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0px); }
+}
+.singlePlayerBackdrop{
+  animation: spBackdropInertiaIn 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  overflow: hidden;
+}
+.singlePlayerBackdrop::before{
+  content:"";
+  position:absolute;
+  inset:-60px;
+  pointer-events:none;
+  opacity: 0.22;
+  background:
+    radial-gradient(900px 650px at 30% 25%, rgba(120,120,255,0.14), transparent 60%),
+    radial-gradient(900px 650px at 70% 45%, rgba(255,120,120,0.12), transparent 60%);
+  filter: blur(10px);
+  animation: spBgFloat 7.5s ease-in-out infinite;
+}
+@keyframes spBgFloat{
+  0%   { transform: translate3d(0,0,0) scale(1); }
+  50%  { transform: translate3d(10px,-8px,0) scale(1.02); }
+  100% { transform: translate3d(0,0,0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce){
+  .singlePlayerBackdrop{ animation: none; }
+  .singlePlayerBackdrop::before{ animation: none; }
 }
