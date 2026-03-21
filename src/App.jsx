@@ -1,5 +1,5 @@
 // =========================
-// FILE: src/App.jsx (FULL - UPDATED / GÜNCEL)
+// FILE: src/App.jsx (FULL - MAX PERF, FUNCS SAFE)
 // =========================
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
@@ -53,9 +53,9 @@ const SEGMENTS = {
     de: "Und wenn Du ihre List von mir nicht abwendest, werde ich mich zu ihnen hingezogen fühlen und zu den Toren gehören.",
     tr: "“Eğer fendlerini bozup beni onlardan kurtarmazsan, kayıp onlara meyleder ve cahillerden (doğru nedir, yanlış nedir bilmeyen, bilseler bile yapmamaları gerekeni bile bile yapanlardan) olurum.”",
   },
-  34: {
+ 34: {
     color: "green",
-    ar: "إِنَّهُۥ هُوَ ٱلسَّمِيعُ ٱلْعَلِيمُ",
+    ar: "إِنَّهُۥ هُوَ ٱلسَّمِيعُ ٱلْعَلِيمُ",
     de: "Er ist ja der Allhörende und Allwissende.",
     tr: "Hiç şüphesiz O’dur Semî‘ (her şeyi, her duayı hakkıyla işiten); Alîm (her şeyi, herkesin durumunu hakkıyla bilen).”",
   },
@@ -65,7 +65,7 @@ const SEGMENTS = {
     de: "Das Urteil ist allein Allahs. Er hat befohlen, daß ihr nur Ihm dienen sollt. Das ist die richtige Religion. Aber die meisten Menschen wissen nicht.",
     tr: "“Şurası bir gerçek ki, mutlak manâda hükmetme yetkisi sadece Allah’a aittir. O, Kendisinden başka hiç bir varlığa ibadet etmemenizi emretmiştir. Budur doğru ve her bakımdan sağlam din. Ne var ki, insanların çoğu bilmemekte ve bilgisizce hareket etmektedir.”",
   },
-  // ✅ FIX: 12:53 correct segment (was wrong before)
+  // ✅ FIX: 12:53
   53: {
     color: "green",
     ar: "إِنَّ ٱلنَّفْسَ لَأَمَّارَةٌۢ بِٱلسُّوٓءِ إِلَّا مَا رَحِمَ رَبِّىٓ ۚ إِنَّ رَبِّى غَفُورٌۭ رَّحِيمٌۭ",
@@ -202,8 +202,45 @@ function tactilePulse(ms = 8) {
   } catch {}
 }
 
-// Overlap-safe
-function findActiveVerseIndex(verses, t) {
+/* =========================
+   Active verse index (FAST)
+   ========================= */
+
+function isMonotonicNonDecreasing(arr) {
+  for (let i = 1; i < arr.length; i += 1) {
+    if (!(arr[i] >= arr[i - 1])) return false;
+  }
+  return true;
+}
+
+function findActiveVerseIndexBinary(starts, ends, t) {
+  if (!Number.isFinite(t) || !starts.length || starts.length !== ends.length) return -1;
+
+  let lo = 0;
+  let hi = starts.length - 1;
+  let best = -1;
+
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    const s = starts[mid];
+    if (s <= t) {
+      best = mid;
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+
+  if (best < 0) return 0;
+  const e = ends[best];
+  if (Number.isFinite(e) && t < e) return best;
+
+  // If t is beyond end, still return closest start index (best)
+  return best;
+}
+
+// Fallback (overlap-safe)
+function findActiveVerseIndexLinearOverlapSafe(verses, t) {
   if (!Array.isArray(verses) || verses.length === 0 || !Number.isFinite(t)) return -1;
 
   let bestIdx = -1;
@@ -235,6 +272,9 @@ function findActiveVerseIndex(verses, t) {
   return closest;
 }
 
+/* =========================
+   Sticky scroll helper
+   ========================= */
 function getStickyOverlayTopPx() {
   const el = document.querySelector(".playerSticky");
   if (!el) return null;
@@ -260,6 +300,9 @@ function ensureRowVisible(el, padding = 10) {
   if (above || below) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
+/* =========================
+   JSON tolerant
+   ========================= */
 function parseJsonTolerant(text, urlForMsg = "") {
   const raw = String(text ?? "");
   let s = raw.replace(/^\uFEFF/, "").trim();
@@ -291,6 +334,9 @@ function parseJsonTolerant(text, urlForMsg = "") {
   }
 }
 
+/* =========================
+   GitHub commit
+   ========================= */
 function base64EncodeUtf8(text) {
   const bytes = new TextEncoder().encode(String(text ?? ""));
   let bin = "";
@@ -361,7 +407,7 @@ async function githubPutFile({ owner, repo, path, token, branch, message, conten
 }
 
 /* =========================
-   Segment marking (robust)
+   Segment marking (robust + cached)
    ========================= */
 
 function stripOuterQuotes(s) {
@@ -412,7 +458,6 @@ function buildArabicLooseRegex(snippet) {
   return new RegExp(parts.join(""), "g");
 }
 
-// ✅ NEW: Arabic normalized mapping (stronger than regex; fixes "not colored" cases)
 function isArabicIgnorable(ch) {
   return /[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/.test(ch);
 }
@@ -538,7 +583,7 @@ function splitAndMarkFirst(text, needle, className) {
   );
 }
 
-function markSegment(text, ayah, lang) {
+function markSegmentUncached(text, ayah, lang) {
   const s = String(text ?? "");
   const a = Number(ayah);
   const seg = SEGMENTS[a];
@@ -550,10 +595,8 @@ function markSegment(text, ayah, lang) {
 
   if (lang === "ar") {
     const cls = color === "green" ? "mark markGreen" : "mark markRed";
-
     const mapped = markArabicByNormalizedMapping(s, rawNeedle, cls);
     if (mapped) return mapped;
-
     const rx = buildArabicLooseRegex(rawNeedle);
     return applyRegexMarkFirst(s, rx, cls);
   }
@@ -571,12 +614,33 @@ function markSegment(text, ayah, lang) {
   const idxN = sN.indexOf(nN);
   if (idxN < 0) return s;
 
-  const prefix = nN.slice(0, Math.min(24, nN.length));
-  const prefixIdx = normalizeCommon(s).indexOf(prefix);
-  if (prefixIdx < 0) return s;
-
   return <span className={cls}>{s}</span>;
 }
+
+function useMarkSegmentCached() {
+  const cacheRef = useRef(new Map());
+
+  const clear = useCallback(() => {
+    cacheRef.current.clear();
+  }, []);
+
+  const markSegment = useCallback((text, ayah, lang) => {
+    const s = String(text ?? "");
+    const key = `${Number(ayah) || 0}|${lang}|${s}`;
+    const hit = cacheRef.current.get(key);
+    if (hit !== undefined) return hit;
+
+    const out = markSegmentUncached(s, ayah, lang);
+    cacheRef.current.set(key, out);
+    return out;
+  }, []);
+
+  return { markSegment, clearCache: clear };
+}
+
+/* =========================
+   UI Components
+   ========================= */
 
 function SurahList({ surahs, selectedId, query, onQuery, onSelect }) {
   return (
@@ -719,8 +783,6 @@ function Timeline({
 
 /**
  * iOS-like vertical wheel (3D)
- * - sensitivity increased
- * - inertia + haptic
  */
 function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const ref = useRef(null);
@@ -915,6 +977,7 @@ function SinglePlayerPanel({
   onDialStep,
   repeatMode,
   onToggleRepeat,
+  markSegment,
 }) {
   useEffect(() => {
     if (!open) return;
@@ -1343,12 +1406,7 @@ function SyncPanel({
             <button className="btnSmall" type="button" onClick={setEndToT} disabled={!active}>
               Set END = t (E)
             </button>
-            <button
-              className="btnSmall"
-              type="button"
-              onClick={setEndToTAndNext}
-              disabled={!active}
-            >
+            <button className="btnSmall" type="button" onClick={setEndToTAndNext} disabled={!active}>
               END=t + Next (N)
             </button>
           </div>
@@ -1387,72 +1445,32 @@ function SyncPanel({
           <div className="syncRow">
             <div className="syncNudgeGroup">
               <span className="muted">Start:</span>
-              <button
-                className="btnTiny"
-                type="button"
-                onClick={() => nudgeStart(-0.1)}
-                disabled={!active}
-              >
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.1)} disabled={!active}>
                 -0.1
               </button>
-              <button
-                className="btnTiny"
-                type="button"
-                onClick={() => nudgeStart(+0.1)}
-                disabled={!active}
-              >
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.1)} disabled={!active}>
                 +0.1
               </button>
-              <button
-                className="btnTiny"
-                type="button"
-                onClick={() => nudgeStart(-0.5)}
-                disabled={!active}
-              >
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.5)} disabled={!active}>
                 -0.5
               </button>
-              <button
-                className="btnTiny"
-                type="button"
-                onClick={() => nudgeStart(+0.5)}
-                disabled={!active}
-              >
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.5)} disabled={!active}>
                 +0.5
               </button>
             </div>
 
             <div className="syncNudgeGroup">
               <span className="muted">End:</span>
-              <button
-                className="btnTiny"
-                type="button"
-                onClick={() => nudgeEnd(-0.1)}
-                disabled={!active}
-              >
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.1)} disabled={!active}>
                 -0.1
               </button>
-              <button
-                className="btnTiny"
-                type="button"
-                onClick={() => nudgeEnd(+0.1)}
-                disabled={!active}
-              >
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.1)} disabled={!active}>
                 +0.1
               </button>
-              <button
-                className="btnTiny"
-                type="button"
-                onClick={() => nudgeEnd(-0.5)}
-                disabled={!active}
-              >
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.5)} disabled={!active}>
                 -0.5
               </button>
-              <button
-                className="btnTiny"
-                type="button"
-                onClick={() => nudgeEnd(+0.5)}
-                disabled={!active}
-              >
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.5)} disabled={!active}>
                 +0.5
               </button>
             </div>
@@ -1628,7 +1646,43 @@ function SyncPanel({
   );
 }
 
-function VersesTable({ verses, activeIndex, onRowClick, rowRefs }) {
+/* =========================
+   Verses Table (MEMO)
+   ========================= */
+
+const VerseRow = React.memo(function VerseRow({
+  v,
+  idx,
+  active,
+  onRowClick,
+  setRowRef,
+  markSegment,
+}) {
+  return (
+    <button
+      key={`${v.ayah}-${idx}`}
+      type="button"
+      className={`row ${active ? "active" : ""}`}
+      onClick={() => onRowClick(idx)}
+      ref={(el) => setRowRef(idx, el)}
+    >
+      <div className="cell colNo">{v.ayah}</div>
+      <div className="cell colAr" dir="rtl">
+        {markSegment((v.ar || "").trimStart(), v.ayah, "ar")}
+      </div>
+      <div className="cell colDe">{markSegment(v.de, v.ayah, "de")}</div>
+      <div className="cell colTr">{markSegment(v.tr, v.ayah, "tr")}</div>
+    </button>
+  );
+});
+
+const VersesTable = React.memo(function VersesTable({
+  verses,
+  activeIndex,
+  onRowClick,
+  setRowRef,
+  markSegment,
+}) {
   return (
     <div className="tableWrap" role="region" aria-label="Verses">
       <div className="tableHeader">
@@ -1639,31 +1693,21 @@ function VersesTable({ verses, activeIndex, onRowClick, rowRefs }) {
       </div>
 
       <div className="tableBody" role="table">
-        {verses.map((v, idx) => {
-          const active = idx === activeIndex;
-          return (
-            <button
-              key={`${v.ayah}-${idx}`}
-              type="button"
-              className={`row ${active ? "active" : ""}`}
-              onClick={() => onRowClick(idx)}
-              ref={(el) => {
-                rowRefs.current[idx] = el;
-              }}
-            >
-              <div className="cell colNo">{v.ayah}</div>
-              <div className="cell colAr" dir="rtl">
-                {markSegment((v.ar || "").trimStart(), v.ayah, "ar")}
-              </div>
-              <div className="cell colDe">{markSegment(v.de, v.ayah, "de")}</div>
-              <div className="cell colTr">{markSegment(v.tr, v.ayah, "tr")}</div>
-            </button>
-          );
-        })}
+        {verses.map((v, idx) => (
+          <VerseRow
+            key={`${v.ayah}-${idx}`}
+            v={v}
+            idx={idx}
+            active={idx === activeIndex}
+            onRowClick={onRowClick}
+            setRowRef={setRowRef}
+            markSegment={markSegment}
+          />
+        ))}
       </div>
     </div>
   );
-}
+});
 
 export default function App() {
   const [query, setQuery] = useState("");
@@ -1675,7 +1719,10 @@ export default function App() {
   const rowRefs = useRef([]);
 
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
+
+  // ✅ THROTTLED UI time (max perf)
+  const [uiTime, setUiTime] = useState(0);
+
   const [duration, setDuration] = useState(0);
   const [activeIndex, setActiveIndex] = useState(-1);
 
@@ -1695,6 +1742,22 @@ export default function App() {
   const [repeatMode, setRepeatMode] = useState(0);
   const repeatStateRef = useRef({ idx: -1, done: 0, armed: true, lastFire: 0 });
 
+  // Refs for zero-re-render logic
+  const versesRef = useRef(verses);
+  const activeIndexRef = useRef(activeIndex);
+  const durationRef = useRef(duration);
+  const isPlayingRef = useRef(isPlaying);
+
+  // Real time ref (never throttled) for precise sync
+  const currentTimeRef = useRef(0);
+
+  // UI throttle state
+  const rafRef = useRef(0);
+  const lastUiTsRef = useRef(0);
+  const UI_FPS = 12; // feels smooth; reduces renders
+
+  const { markSegment, clearCache } = useMarkSegmentCached();
+
   useEffect(() => {
     document.title = "Türkçe-Almanca Kur’an Player";
   }, []);
@@ -1712,19 +1775,12 @@ export default function App() {
     } catch {}
   }, [toolsCollapsed]);
 
-  const versesRef = useRef(verses);
-  const activeIndexRef = useRef(activeIndex);
-  const currentTimeRef = useRef(currentTime);
-  const durationRef = useRef(duration);
-  const isPlayingRef = useRef(isPlaying);
-
   useEffect(() => {
     versesRef.current = verses;
     activeIndexRef.current = activeIndex;
-    currentTimeRef.current = currentTime;
     durationRef.current = duration;
     isPlayingRef.current = isPlaying;
-  }, [verses, activeIndex, currentTime, duration, isPlaying]);
+  }, [verses, activeIndex, duration, isPlaying]);
 
   const draftKey = useMemo(() => `qatd:draft:${selectedSurah.slug}`, [selectedSurah.slug]);
 
@@ -1750,19 +1806,39 @@ export default function App() {
     [selectedSurah]
   );
 
+  // Precompute starts/ends for binary search
+  const { starts, ends, monotonic } = useMemo(() => {
+    const s = [];
+    const e = [];
+    for (const v of verses) {
+      s.push(Number(v?.start));
+      e.push(Number(v?.end));
+    }
+    const ok =
+      s.length > 0 &&
+      s.every((x) => Number.isFinite(x)) &&
+      e.every((x) => Number.isFinite(x)) &&
+      isMonotonicNonDecreasing(s);
+    return { starts: s, ends: e, monotonic: ok };
+  }, [verses]);
+
+  // Load verses
   useEffect(() => {
     let cancelled = false;
 
     setError("");
     setVerses([]);
     setActiveIndex(-1);
-    setCurrentTime(0);
+    setUiTime(0);
     setDuration(0);
     setIsPlaying(false);
     setSingleOn(true);
 
     setRepeatMode(0);
     repeatStateRef.current = { idx: -1, done: 0, armed: true, lastFire: 0 };
+
+    currentTimeRef.current = 0;
+    clearCache();
 
     const a = audioRef.current;
     if (a) {
@@ -1777,10 +1853,7 @@ export default function App() {
 
         if (!res.ok) {
           throw new Error(
-            `Fetch failed: ${res.status} ${res.statusText} | url=${versesSrc} | body=${text.slice(
-              0,
-              160
-            )}`
+            `Fetch failed: ${res.status} ${res.statusText} | url=${versesSrc} | body=${text.slice(0, 160)}`
           );
         }
 
@@ -1801,13 +1874,29 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [versesSrc]);
+  }, [versesSrc, clearCache]);
 
+  // Audio listeners + throttled UI time updates
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
 
-    const onTime = () => setCurrentTime(a.currentTime || 0);
+    const scheduleUi = () => {
+      if (rafRef.current) return;
+      rafRef.current = requestAnimationFrame((ts) => {
+        rafRef.current = 0;
+        const minDt = 1000 / UI_FPS;
+        if (ts - (lastUiTsRef.current || 0) < minDt) return;
+        lastUiTsRef.current = ts;
+        setUiTime(currentTimeRef.current);
+      });
+    };
+
+    const onTime = () => {
+      currentTimeRef.current = a.currentTime || 0;
+      scheduleUi();
+    };
+
     const onMeta = () => setDuration(a.duration || 0);
     const onPlay = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
@@ -1825,6 +1914,8 @@ export default function App() {
       a.removeEventListener("play", onPlay);
       a.removeEventListener("pause", onPause);
       a.removeEventListener("error", onErr);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = 0;
     };
   }, []);
 
@@ -1842,7 +1933,9 @@ export default function App() {
     const nextT = Number.isFinite(d) && d > 0 ? clamp(t, 0, d - 0.01) : Math.max(0, t);
 
     a.currentTime = nextT;
-    setCurrentTime(nextT);
+    currentTimeRef.current = nextT;
+    setUiTime(nextT);
+
     if (autoPlay) a.play().catch(() => {});
   }, []);
 
@@ -1904,24 +1997,30 @@ export default function App() {
     seekVerse(idx, true);
   }, [seekVerse]);
 
-  const updateVerse = useCallback((idx, patch) => {
-    setVerses((prev) => {
-      if (!prev[idx]) return prev;
-      const next = [...prev];
-      const v = { ...next[idx], ...patch };
+  const updateVerse = useCallback(
+    (idx, patch) => {
+      setVerses((prev) => {
+        if (!prev[idx]) return prev;
+        const next = [...prev];
+        const v = { ...next[idx], ...patch };
 
-      const s = Number(v.start);
-      const e = Number(v.end);
+        const s = Number(v.start);
+        const e = Number(v.end);
 
-      if (Number.isFinite(s)) v.start = Math.max(0, s);
-      if (Number.isFinite(e)) v.end = Math.max(0, e);
-      if (Number.isFinite(v.start) && Number.isFinite(v.end) && v.end <= v.start)
-        v.end = v.start + 0.01;
+        if (Number.isFinite(s)) v.start = Math.max(0, s);
+        if (Number.isFinite(e)) v.end = Math.max(0, e);
+        if (Number.isFinite(v.start) && Number.isFinite(v.end) && v.end <= v.start)
+          v.end = v.start + 0.01;
 
-      next[idx] = v;
-      return next;
-    });
-  }, []);
+        next[idx] = v;
+        return next;
+      });
+
+      // Verses changed => caches invalid
+      clearCache();
+    },
+    [clearCache]
+  );
 
   // Draft auto-save
   useEffect(() => {
@@ -1947,20 +2046,25 @@ export default function App() {
     URL.revokeObjectURL(url);
   }, [selectedSurah.slug]);
 
-  const importJsonFile = useCallback((file) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const parsed = JSON.parse(String(reader.result || ""));
-        if (!Array.isArray(parsed)) throw new Error("Imported JSON must be an array");
-        setVerses(parsed);
-        setError("");
-      } catch (e) {
-        setError(`Import failed: ${e.message}`);
-      }
-    };
-    reader.readAsText(file);
-  }, []);
+  const importJsonFile = useCallback(
+    (file) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(String(reader.result || ""));
+          if (!Array.isArray(parsed)) throw new Error("Imported JSON must be an array");
+          setVerses(parsed);
+          versesRef.current = parsed;
+          clearCache();
+          setError("");
+        } catch (e) {
+          setError(`Import failed: ${e.message}`);
+        }
+      };
+      reader.readAsText(file);
+    },
+    [clearCache]
+  );
 
   const saveDraft = useCallback(() => {
     try {
@@ -1968,15 +2072,20 @@ export default function App() {
     } catch {}
   }, [draftKey]);
 
-  const restoreDraft = useCallback(() => {
-    try {
-      const raw = localStorage.getItem(draftKey);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return;
-      setVerses(parsed);
-    } catch {}
-  }, [draftKey]);
+  const restoreDraft = useCallback(
+    () => {
+      try {
+        const raw = localStorage.getItem(draftKey);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return;
+        setVerses(parsed);
+        versesRef.current = parsed;
+        clearCache();
+      } catch {}
+    },
+    [draftKey, clearCache]
+  );
 
   const clearDraft = useCallback(() => {
     try {
@@ -1992,7 +2101,6 @@ export default function App() {
     if (idx >= 0) seekVerse(idx, true);
   }, [seekVerse]);
 
-  // repeat toggle: off -> 1 -> 2 -> off
   const toggleRepeat = useCallback(() => {
     setRepeatMode((m) => {
       const next = m === 0 ? 1 : m === 1 ? 2 : 0;
@@ -2006,7 +2114,11 @@ export default function App() {
       if (!vs.length) return next;
 
       let idx = activeIndexRef.current;
-      if (idx < 0) idx = findActiveVerseIndex(vs, currentTimeRef.current);
+      if (idx < 0) {
+        idx = monotonic
+          ? findActiveVerseIndexBinary(starts, ends, currentTimeRef.current)
+          : findActiveVerseIndexLinearOverlapSafe(vs, currentTimeRef.current);
+      }
       idx = clamp(idx, 0, vs.length - 1);
 
       const v = vs[idx];
@@ -2018,9 +2130,9 @@ export default function App() {
       }
       return next;
     });
-  }, [seekTo]);
+  }, [seekTo, monotonic, starts, ends]);
 
-  // Repeat engine
+  // Repeat engine (uses real time ref)
   useEffect(() => {
     const a = audioRef.current;
     const vs = versesRef.current;
@@ -2028,7 +2140,13 @@ export default function App() {
     if (repeatMode <= 0) return;
 
     let idx = activeIndexRef.current;
-    if (idx < 0 || !vs[idx]) idx = findActiveVerseIndex(vs, currentTime);
+    const t = currentTimeRef.current;
+
+    if (idx < 0 || !vs[idx]) {
+      idx = monotonic
+        ? findActiveVerseIndexBinary(starts, ends, t)
+        : findActiveVerseIndexLinearOverlapSafe(vs, t);
+    }
     if (idx < 0 || !vs[idx]) return;
 
     const v = vs[idx];
@@ -2043,12 +2161,12 @@ export default function App() {
       return;
     }
 
-    if (currentTime < e - 0.12) {
+    if (t < e - 0.12) {
       repeatStateRef.current.armed = true;
       return;
     }
 
-    const nearEnd = currentTime >= e - 0.02;
+    const nearEnd = t >= e - 0.02;
     if (!nearEnd || !repeatStateRef.current.armed) return;
 
     const now = performance.now();
@@ -2061,6 +2179,8 @@ export default function App() {
     if (done < repeatMode) {
       repeatStateRef.current.done = done + 1;
       a.currentTime = s;
+      currentTimeRef.current = s;
+      setUiTime(s);
       a.play().catch(() => {});
       return;
     }
@@ -2068,54 +2188,70 @@ export default function App() {
     repeatStateRef.current.done = 0;
     a.pause();
     a.currentTime = s;
-    setCurrentTime(s);
-  }, [currentTime, repeatMode]);
+    currentTimeRef.current = s;
+    setUiTime(s);
+  }, [uiTime, repeatMode, monotonic, starts, ends]);
 
+  // Loop AB / Loop ayah (uses real time ref)
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
 
+    const t = currentTimeRef.current;
+
     if (loopAB && aPoint != null && bPoint != null) {
       const lo = Math.min(aPoint, bPoint);
       const hi = Math.max(aPoint, bPoint);
-      if (currentTime >= hi) {
+      if (t >= hi) {
         a.currentTime = lo;
+        currentTimeRef.current = lo;
+        setUiTime(lo);
         a.play().catch(() => {});
       }
       return;
     }
 
     if (loopAyah && verses.length) {
-      const idx = findActiveVerseIndex(verses, currentTime);
+      const idx = monotonic
+        ? findActiveVerseIndexBinary(starts, ends, t)
+        : findActiveVerseIndexLinearOverlapSafe(verses, t);
       if (idx >= 0) {
         const v = verses[idx];
         const s = Number(v?.start);
         const e = Number(v?.end);
-        if (Number.isFinite(s) && Number.isFinite(e) && e > s && currentTime >= e) {
+        if (Number.isFinite(s) && Number.isFinite(e) && e > s && t >= e) {
           a.currentTime = s;
+          currentTimeRef.current = s;
+          setUiTime(s);
           a.play().catch(() => {});
         }
       }
     }
-  }, [currentTime, verses, loopAyah, loopAB, aPoint, bPoint]);
+  }, [uiTime, verses, loopAyah, loopAB, aPoint, bPoint, monotonic, starts, ends]);
 
+  // Active index update (only when changes)
   useEffect(() => {
     if (!verses.length) return;
-    const idx = findActiveVerseIndex(verses, currentTime);
-    if (idx === -1 || idx === activeIndex) return;
+
+    const t = currentTimeRef.current;
+    const idx = monotonic
+      ? findActiveVerseIndexBinary(starts, ends, t)
+      : findActiveVerseIndexLinearOverlapSafe(verses, t);
+
+    if (idx === -1 || idx === activeIndexRef.current) return;
 
     setActiveIndex(idx);
 
     const el = rowRefs.current[idx];
     if (el) ensureRowVisible(el, 10);
-  }, [currentTime, verses, activeIndex]);
+  }, [uiTime, verses, monotonic, starts, ends]);
 
   const setA = useCallback(() => setAPoint(currentTimeRef.current), []);
   const setB = useCallback(() => setBPoint(currentTimeRef.current), []);
 
+  // App hotkeys (disabled while single player open)
   useEffect(() => {
     const onKey = (e) => {
-      // ✅ Single Player açıkken App hotkey'leri devre dışı (double-fire engel)
       if (singleOn) return;
 
       const tag = document.activeElement?.tagName?.toLowerCase();
@@ -2181,16 +2317,7 @@ export default function App() {
     try {
       setError("");
       const sha = await githubGetFileSha({ owner, repo, path, token, branch });
-      await githubPutFile({
-        owner,
-        repo,
-        path,
-        token,
-        branch,
-        message,
-        contentBase64: content,
-        sha,
-      });
+      await githubPutFile({ owner, repo, path, token, branch, message, contentBase64: content, sha });
       alert(`Committed ✅ ${owner}/${repo}:${branch}/${path}`);
     } catch (e) {
       console.error(e);
@@ -2237,6 +2364,17 @@ export default function App() {
 
   const dialDisabled = !verses.length;
 
+  const onRowClick = useCallback(
+    (idx) => {
+      seekVerse(idx, true);
+    },
+    [seekVerse]
+  );
+
+  const setRowRef = useCallback((idx, el) => {
+    rowRefs.current[idx] = el;
+  }, []);
+
   return (
     <div className="appShell">
       <SurahList
@@ -2270,6 +2408,7 @@ export default function App() {
           }}
           repeatMode={repeatMode}
           onToggleRepeat={toggleRepeat}
+          markSegment={markSegment}
         />
 
         <div className={`playerCard playerSticky ${toolsCollapsed ? "collapsed" : ""}`}>
@@ -2277,7 +2416,7 @@ export default function App() {
 
           <PlayerControls
             isPlaying={isPlaying}
-            currentTime={currentTime}
+            currentTime={uiTime}
             duration={duration}
             collapsed={toolsCollapsed}
             onToggleCollapsed={() => setToolsCollapsed((x) => !x)}
@@ -2307,7 +2446,7 @@ export default function App() {
             <>
               <Timeline
                 duration={duration}
-                currentTime={currentTime}
+                currentTime={uiTime}
                 verses={verses}
                 activeIndex={activeIndex}
                 onSeek={(t) => seekTo(t, false)}
@@ -2319,7 +2458,7 @@ export default function App() {
               <SyncPanel
                 verses={verses}
                 activeIndex={activeIndex}
-                currentTime={currentTime}
+                currentTime={currentTimeRef.current}
                 duration={duration}
                 onUpdateVerse={updateVerse}
                 onSeek={(t) => seekTo(t, false)}
@@ -2339,8 +2478,9 @@ export default function App() {
         <VersesTable
           verses={verses}
           activeIndex={activeIndex}
-          onRowClick={(idx) => seekVerse(idx, true)}
-          rowRefs={rowRefs}
+          onRowClick={onRowClick}
+          setRowRef={setRowRef}
+          markSegment={markSegment}
         />
       </main>
     </div>
