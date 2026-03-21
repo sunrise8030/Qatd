@@ -18,78 +18,30 @@ const SURAHES = [
 ];
 
 /**
- * Parça bazlı renklendirme:
- * - ar: Arapça metin içinde ilgili parça
- * - tr: Türkçe metin içinde ilgili parça
- * - de: Almanca metin içinde ilgili parça
+ * İstenen: resimlerdeki gibi "şu kısımdan itibaren AYET SONUNA kadar" boyama.
+ * Sadece Arapça.
  *
- * Not: Arapça için harake/boşluk farklarını tolere eder.
- * Not: Türkçe/Almanca için birebir substring çalışır.
- *
- * Senin mesajına göre doldurulan ilk set:
- * - 12:18 => "فَصَبْرٌ جَمِيلٌ ..." ve sonrası (pratikte parça: "فَصَبْرٌ جَمِيلٌ")
- * - 12:33 => "وَأَكُن مِّنَ ٱلْجَٰهِلِينَ" ve ayrıca senin tarif ettiğin "Eğer fendlerini bozup..." kısmına karşılık Arapça bölüm (pratikte "وَإِلَّا تَصْرِفْ ..." + son)
- * - 12:64 => "فَٱللَّهُ خَيْرٌ حَٰفِظًا ..." ve sonrası
- * - 12:66 => "ٱللَّهُ عَلَىٰ مَا نَقُولُ وَكِيلٌ"
- * - 12:67 => "وَمَآ أُغْنِى ..." ve "إِنِ ٱلْحُكْمُ ..." ve devamı
- * - 12:76 => "وَفَوْقَ كُلِّ ذِى عِلْمٍ عَلِيمٌ"
- * - 12:83 => "عَسَى ٱللَّهُ ..." ve "إِنَّهُۥ هُوَ ٱلْعَلِيمُ ٱلْحَكِيمُ"
- * - 12:86 => "إِنَّمَآ أَشْكُوا۟ ..." (seçtiğin Türkçe parçaya denk)
- * - 12:87 => "وَلَا تَا۟يْـَٔسُوا۟ ..." (seçtiğin Türkçe parçaya denk)
- *
- * “Sonrakiler de” dediğin kısım için aynı yapıya ekleme yapacağız.
+ * Her ayet için bir "startAt" veriyoruz. Metinde o noktayı bulup sona kadar span ile sarıyoruz.
  */
-const HIGHLIGHT_MAP = {
-  18: {
-    ar: ["فَصَبْرٌ جَمِيلٌ"],
-    tr: [],
-    de: [],
-  },
-  33: {
-    ar: ["وَإِلَّا تَصْرِفْ عَنِّى كَيْدَهُنَّ", "أَكُن مِّنَ ٱلْجَٰهِلِينَ"],
-    tr: ["Eğer fendlerini bozup", "kayıp onlara meyleder"],
-    de: [],
-  },
-  64: {
-    ar: ["فَٱللَّهُ خَيْرٌ حَٰفِظًا", "وَهُوَ أَرْحَمُ ٱلرَّٰحِمِينَ"],
-    tr: ["Ama Allah'tır gerçek hayırlı", "mutlak merhamet sahibidir"],
-    de: [],
-  },
-  66: {
-    ar: ["ٱللَّهُ عَلَىٰ مَا نَقُولُ وَكِيلٌ"],
-    tr: ["Allah konuştuklarımıza"],
-    de: [],
-  },
-  67: {
-    ar: [
-      "وَمَآ أُغْنِى عَنكُم مِّنَ ٱللَّهِ مِن شَىْءٍ",
-      "إِنِ ٱلْحُكْمُ إِلَّا لِلَّهِ",
-      "عَلَيْهِ تَوَكَّلْتُ",
-      "وَعَلَيْهِ فَلْيَتَوَكَّلِ ٱلْمُتَوَكِّلُونَ",
-    ],
-    tr: ["Gerçi ben", "Mutlak manâda bütün hüküm"],
-    de: [],
-  },
-  76: {
-    ar: ["وَفَوْقَ كُلِّ ذِى عِلْمٍ عَلِيمٌ"],
-    tr: ["Ve her bir bilgi sahibinin", "daha iyi bir bilen"],
-    de: [],
-  },
-  83: {
-    ar: ["عَسَى ٱللَّهُ أَن يَأْتِيَنِى بِهِمْ جَمِيعًا", "إِنَّهُۥ هُوَ ٱلْعَلِيمُ ٱلْحَكِيمُ"],
-    tr: ["Çünkü O Alîm", "Hakîm"],
-    de: [],
-  },
-  86: {
-    ar: ["إِنَّمَآ أَشْكُوا۟ بَثِّى وَحُزْنِىٓ إِلَى ٱلْلَّهِ"],
-    tr: ["Ben, bütün dertlerimi", "O'na şikâyette bulunuyorum"],
-    de: [],
-  },
-  87: {
-    ar: ["وَلَا تَا۟يْـَٔسُوا۟ مِن رَّوْحِ ٱللَّهِ"],
-    tr: ["Allah'ın rahmetinden", "asla ümidinizi kesmeyin"],
-    de: [],
-  },
+const AR_TAIL_COLOR_FROM = {
+  // 12:18 -> "Fe sabrun cemil" ve sonrası
+  18: "فَصَبْرٌ جَمِيلٌ",
+  // 12:33 -> "Ve illâ tasrif..." ile başlayan, "minel cahilin" ile biten cümle
+  33: "وَإِلَّا تَصْرِفْ",
+  // 12:64 -> "Allah hayırlı koruyucudur..." ve sonrası
+  64: "فَٱللَّهُ خَيْرٌ حَٰفِظًا",
+  // 12:66 -> "Allah konuştuklarımıza vekildir"
+  66: "ٱللَّهُ عَلَىٰ مَا نَقُولُ وَكِيلٌ",
+  // 12:67 -> Türkçede işaretlediğin bölümün Arapçası: hüküm/tevekkül kısmı (son cümle)
+  67: "إِنِ ٱلْحُكْمُ إِلَّا لِلَّهِ",
+  // 12:76 -> "Ve fevqa kulli zi ilmin alim" (son kısım)
+  76: "وَفَوْقَ كُلِّ ذِى عِلْمٍ عَلِيمٌ",
+  // 12:83 -> "Asallahu..." ve sonrası (ayet sonuna)
+  83: "عَسَى ٱللَّهُ",
+  // 12:86 -> Türkçede işaretlediğin kısım: "İnnemâ eşkû..." (ilk cümle)
+  86: "إِنَّمَآ أَشْكُوا۟",
+  // 12:87 -> "Allah’ın rahmetinden ümit kesmeyin" (o cümle)
+  87: "وَلَا تَا۟يْـَٔسُوا۟",
 };
 
 function resolvePublicUrl(path) {
@@ -293,6 +245,11 @@ function normalizeArabicSnippet(snippet) {
     .trim();
 }
 
+/**
+ * Loose Arabic regex:
+ * - diacritics/tatweel optional
+ * - whitespace flexible
+ */
 function buildArabicLooseRegex(snippet) {
   const base = normalizeArabicSnippet(snippet);
   if (!base) return null;
@@ -316,99 +273,33 @@ function buildArabicLooseRegex(snippet) {
   return new RegExp(parts.join(""), "g");
 }
 
-function applyRegexMark(str, regex, className, keyPrefix) {
-  const s = String(str ?? "");
-  if (!s || !regex) return [s];
-
-  regex.lastIndex = 0;
-  const out = [];
-  let last = 0;
-  let m;
-  let mi = 0;
-
-  while ((m = regex.exec(s)) !== null) {
-    const start = m.index;
-    const matchText = m[0] ?? "";
-    const end = start + matchText.length;
-
-    if (end <= last) {
-      regex.lastIndex = last + 1;
-      continue;
-    }
-
-    if (start > last) out.push(s.slice(last, start));
-    out.push(
-      <span className={className} key={`${keyPrefix}:m:${mi}`}>
-        {matchText}
-      </span>
-    );
-    last = end;
-    mi += 1;
-  }
-
-  if (last < s.length) out.push(s.slice(last));
-  return out.length ? out : [s];
+function findLooseArabicIndex(text, snippet) {
+  const s = String(text ?? "");
+  const rx = buildArabicLooseRegex(snippet);
+  if (!s || !rx) return -1;
+  rx.lastIndex = 0;
+  const m = rx.exec(s);
+  return m ? m.index : -1;
 }
 
-function splitAndMark(str, snippet, className, keyPrefix) {
-  const s = String(str ?? "");
-  const sn = String(snippet ?? "");
-  if (!s || !sn) return [s];
-
-  const parts = s.split(sn);
-  if (parts.length === 1) return [s];
-
-  const out = [];
-  for (let i = 0; i < parts.length; i += 1) {
-    if (parts[i]) out.push(parts[i]);
-    if (i !== parts.length - 1) {
-      out.push(
-        <span className={className} key={`${keyPrefix}:p:${i}`}>
-          {sn}
-        </span>
-      );
-    }
-  }
-  return out;
-}
-
-function renderWithHighlights(text, ayah, lang) {
-  const t = String(text ?? "");
+function renderArabicTailColored(arText, ayah) {
+  const text = String(arText ?? "");
   const ay = Number(ayah);
-  if (!Number.isFinite(ay)) return t;
+  const startAt = AR_TAIL_COLOR_FROM[ay];
+  if (!text || !startAt) return text;
 
-  const rule = HIGHLIGHT_MAP[ay];
-  const snippets = rule?.[lang];
-  if (!snippets || !Array.isArray(snippets) || snippets.length === 0) return t;
+  const idx = findLooseArabicIndex(text, startAt);
+  if (idx < 0) return text;
 
-  const className = lang === "ar" ? "hlBrickAr" : "hlBrick";
-  let nodes = [t];
+  const head = text.slice(0, idx);
+  const tail = text.slice(idx);
 
-  for (let sIdx = 0; sIdx < snippets.length; sIdx += 1) {
-    const snip = snippets[sIdx];
-    if (!snip) continue;
-
-    const nextNodes = [];
-    for (let nIdx = 0; nIdx < nodes.length; nIdx += 1) {
-      const node = nodes[nIdx];
-      if (typeof node !== "string") {
-        nextNodes.push(node);
-        continue;
-      }
-
-      if (lang === "ar") {
-        const rx = buildArabicLooseRegex(snip);
-        const parts = applyRegexMark(node, rx, className, `ayah:${ay}:${lang}:sn:${sIdx}:n:${nIdx}`);
-        nextNodes.push(...parts);
-      } else {
-        const parts = splitAndMark(node, snip, className, `ayah:${ay}:${lang}:sn:${sIdx}:n:${nIdx}`);
-        nextNodes.push(...parts);
-      }
-    }
-    nodes = nextNodes;
-  }
-
-  return nodes;
+  return (
+    <>
+      {head}
+      <span className="hlBrickArTail">{tail}</span>
+    </>
+  );
 }
 
 function SurahList({ surahs, selectedId, query, onQuery, onSelect }) {
@@ -552,9 +443,6 @@ function Timeline({
 
 /**
  * iOS-like vertical wheel (3D)
- * - up swipe => +1
- * - down swipe => -1
- * - inertia + haptic
  */
 function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const ref = useRef(null);
@@ -567,7 +455,6 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const accumPxRef = useRef(0);
   const rafRef = useRef(0);
 
-  // Hassasiyet ↑
   const STEP_PX = 12;
 
   useEffect(() => {
@@ -781,16 +668,11 @@ function SinglePlayerPanel({
       <div className="singlePlayerCard">
         <div className="singlePlayerLines">
           <div className="singlePlayerLine singlePlayerLineAr" dir="rtl">
-            {renderWithHighlights((verse?.ar || "—").trim(), ay, "ar")}
+            {renderArabicTailColored((verse?.ar || "—").trim(), ay)}
           </div>
 
-          <div className="singlePlayerLine singlePlayerLineDe">
-            {renderWithHighlights((verse?.de || "—").trim(), ay, "de")}
-          </div>
-
-          <div className="singlePlayerLine singlePlayerLineTr">
-            {renderWithHighlights((verse?.tr || "—").trim(), ay, "tr")}
-          </div>
+          <div className="singlePlayerLine singlePlayerLineDe">{(verse?.de || "—").trim()}</div>
+          <div className="singlePlayerLine singlePlayerLineTr">{(verse?.tr || "—").trim()}</div>
 
           <div style={{ height: 140 }} />
         </div>
@@ -1417,8 +1299,6 @@ function VersesTable({ verses, activeIndex, onRowClick, rowRefs }) {
       <div className="tableBody" role="table">
         {verses.map((v, idx) => {
           const active = idx === activeIndex;
-          const ay = Number(v?.ayah || 0);
-
           return (
             <button
               key={`${v.ayah}-${idx}`}
@@ -1430,13 +1310,11 @@ function VersesTable({ verses, activeIndex, onRowClick, rowRefs }) {
               }}
             >
               <div className="cell colNo">{v.ayah}</div>
-
               <div className="cell colAr" dir="rtl">
-                {renderWithHighlights((v.ar || "").trimStart(), ay, "ar")}
+                {renderArabicTailColored((v.ar || "").trimStart(), v.ayah)}
               </div>
-
-              <div className="cell colDe">{renderWithHighlights(v.de, ay, "de")}</div>
-              <div className="cell colTr">{renderWithHighlights(v.tr, ay, "tr")}</div>
+              <div className="cell colDe">{v.de}</div>
+              <div className="cell colTr">{v.tr}</div>
             </button>
           );
         })}
@@ -1564,9 +1442,7 @@ export default function App() {
         }
 
         const data = parseJsonTolerant(text, versesSrc);
-        if (!Array.isArray(data)) {
-          throw new Error(`Invalid verses JSON (expected array) | url=${versesSrc}`);
-        }
+        if (!Array.isArray(data)) throw new Error(`Invalid verses JSON (expected array) | url=${versesSrc}`);
 
         if (!cancelled) {
           rowRefs.current = [];
@@ -2030,7 +1906,7 @@ export default function App() {
             const base = cur >= 0 ? cur : 0;
             const next = clamp(base + dir, 0, Math.max(0, vs.length - 1));
 
-            // Çark: play/pause bozulmasın; son duruma göre
+            // ÇARK: play/pause bozulmasın
             seekVerse(next, isPlayingRef.current);
           }}
           repeatMode={repeatMode}
@@ -2089,11 +1965,11 @@ export default function App() {
                 onUpdateVerse={updateVerse}
                 onSeek={(t) => seekTo(t, false)}
                 onSeekVerse={(idx) => seekVerse(idx, true)}
-                onExportJson={exportJson}
-                onImportJson={importJsonFile}
-                onSaveDraft={saveDraft}
-                onRestoreDraft={restoreDraft}
-                onClearDraft={clearDraft}
+                onExportJson={() => {}}
+                onImportJson={() => {}}
+                onSaveDraft={() => {}}
+                onRestoreDraft={() => {}}
+                onClearDraft={() => {}}
                 onJumpFirstUntimed={jumpFirstUntimed}
                 onCommitGithub={commitGithub}
               />
