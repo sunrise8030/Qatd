@@ -26,9 +26,27 @@ const SURAHES = [
  * 2) Buradan kural:
  *    - ayahNo: { color, className }
  */
+// App.jsx içinde, HIGHLIGHT_RULES = { ... } yerine bunu koy:
 const HIGHLIGHT_RULES = {
-  // 1: { color: "#f5d76e", className: "hlGold" },
-  // 5: { color: "#63b3ed", className: "hlBlue" },
+  // 1) Yusuf (a.s.) sözleri / dua
+  33:  { color: "#f5d76e", className: "hlYusuf" },
+  101: { color: "#f5d76e", className: "hlYusuf" },
+
+  // 2) Yakub (a.s.) sözleri / teselli / tevekkül
+  18: { color: "#63f2d1", className: "hlYakub" },
+  64: { color: "#63f2d1", className: "hlYakub" },
+  66: { color: "#63f2d1", className: "hlYakub" },
+  67: { color: "#63f2d1", className: "hlYakub" },
+  83: { color: "#63f2d1", className: "hlYakub" },
+  86: { color: "#63f2d1", className: "hlYakub" },
+  87: { color: "#63f2d1", className: "hlYakub" },
+  98: { color: "#63f2d1", className: "hlYakub" },
+
+  // 3) Allah’ın ilke/öğüt cümleleri
+  21: { color: "#63b3ed", className: "hlIlke" },
+  76: { color: "#63b3ed", className: "hlIlke" },
+  90: { color: "#63b3ed", className: "hlIlke" },
+  92: { color: "#63b3ed", className: "hlIlke" },
 };
 
 function resolvePublicUrl(path) {
