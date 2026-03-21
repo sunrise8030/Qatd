@@ -1667,12 +1667,19 @@ const VerseRow = React.memo(function VerseRow({
       ref={(el) => setRowRef(idx, el)}
     >
       <div className="cell colNo">{v.ayah}</div>
-      <div className="cell colAr" dir="rtl">
-        {markSegment((v.ar || "").trimStart(), v.ayah, "ar")}
-      </div>
-      <div className="cell colDe">{markSegment(v.de, v.ayah, "de")}</div>
-      <div className="cell colTr">{markSegment(v.tr, v.ayah, "tr")}</div>
-    </button>
+     const arText = (v.ar || "").trimStart();
+const deText = (v.de || "");
+const trText = (v.tr || "");
+
+<div className="cell colAr" dir="rtl">
+  {active ? markSegment(arText, v.ayah, "ar") : arText}
+</div>
+<div className="cell colDe">
+  {active ? markSegment(deText, v.ayah, "de") : deText}
+</div>
+<div className="cell colTr">
+  {active ? markSegment(trText, v.ayah, "tr") : trText}
+</div>
   );
 });
 
@@ -1762,6 +1769,15 @@ export default function App() {
     document.title = "Türkçe-Almanca Kur’an Player";
   }, []);
 
+  useEffect(() => {
+  try {
+    const ua = navigator.userAgent || "";
+    const isSafari =
+      /safari/i.test(ua) && !/chrome|crios|chromium|android/i.test(ua);
+    document.documentElement.classList.toggle("isSafari", isSafari);
+  } catch {}
+}, []);
+  
   useEffect(() => {
     try {
       const raw = localStorage.getItem("qatd:toolsCollapsed");
