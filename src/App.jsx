@@ -461,15 +461,17 @@ function renderSegment(text, ayah, lang) {
   if (!seg) return s;
 
   const color = seg.color === "green" ? "green" : "red";
-  const needle = String(seg?.[lang] ?? "").trim();
-  if (!needle) return s;
 
+  // AR: highlight + renk
   if (lang === "ar") {
-    // Arabic: background + colored font
     const className = color === "green" ? "mark markGreen" : "mark markRed";
-    const rx = buildArabicLooseRegex(needle);
-    return applyRegexMark(s, rx, className, `seg:${a}:${lang}`);
+    return <span className={className}>{s}</span>;
   }
+
+  // TR/DE: sadece renkli font, highlight yok
+  const className = color === "green" ? "fontGreen" : "fontRed";
+  return <span className={className}>{s}</span>;
+}
 
   // TR/DE: ONLY colored font, no highlight background
   const className = color === "green" ? "fontGreen" : "fontRed";
