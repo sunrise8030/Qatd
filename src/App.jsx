@@ -17,8 +17,80 @@ const SURAHES = [
   },
 ];
 
-// Parlak kiremit kırmızısı uygulanacak ayetler (sadece Arapça satır)
-const HOT_AYAH_SET = new Set([33, 101, 18, 64, 66, 67, 83, 86, 87, 98, 21, 76, 90, 92]);
+/**
+ * Parça bazlı renklendirme:
+ * - ar: Arapça metin içinde ilgili parça
+ * - tr: Türkçe metin içinde ilgili parça
+ * - de: Almanca metin içinde ilgili parça
+ *
+ * Not: Arapça için harake/boşluk farklarını tolere eder.
+ * Not: Türkçe/Almanca için birebir substring çalışır.
+ *
+ * Senin mesajına göre doldurulan ilk set:
+ * - 12:18 => "فَصَبْرٌ جَمِيلٌ ..." ve sonrası (pratikte parça: "فَصَبْرٌ جَمِيلٌ")
+ * - 12:33 => "وَأَكُن مِّنَ ٱلْجَٰهِلِينَ" ve ayrıca senin tarif ettiğin "Eğer fendlerini bozup..." kısmına karşılık Arapça bölüm (pratikte "وَإِلَّا تَصْرِفْ ..." + son)
+ * - 12:64 => "فَٱللَّهُ خَيْرٌ حَٰفِظًا ..." ve sonrası
+ * - 12:66 => "ٱللَّهُ عَلَىٰ مَا نَقُولُ وَكِيلٌ"
+ * - 12:67 => "وَمَآ أُغْنِى ..." ve "إِنِ ٱلْحُكْمُ ..." ve devamı
+ * - 12:76 => "وَفَوْقَ كُلِّ ذِى عِلْمٍ عَلِيمٌ"
+ * - 12:83 => "عَسَى ٱللَّهُ ..." ve "إِنَّهُۥ هُوَ ٱلْعَلِيمُ ٱلْحَكِيمُ"
+ * - 12:86 => "إِنَّمَآ أَشْكُوا۟ ..." (seçtiğin Türkçe parçaya denk)
+ * - 12:87 => "وَلَا تَا۟يْـَٔسُوا۟ ..." (seçtiğin Türkçe parçaya denk)
+ *
+ * “Sonrakiler de” dediğin kısım için aynı yapıya ekleme yapacağız.
+ */
+const HIGHLIGHT_MAP = {
+  18: {
+    ar: ["فَصَبْرٌ جَمِيلٌ"],
+    tr: [],
+    de: [],
+  },
+  33: {
+    ar: ["وَإِلَّا تَصْرِفْ عَنِّى كَيْدَهُنَّ", "أَكُن مِّنَ ٱلْجَٰهِلِينَ"],
+    tr: ["Eğer fendlerini bozup", "kayıp onlara meyleder"],
+    de: [],
+  },
+  64: {
+    ar: ["فَٱللَّهُ خَيْرٌ حَٰفِظًا", "وَهُوَ أَرْحَمُ ٱلرَّٰحِمِينَ"],
+    tr: ["Ama Allah'tır gerçek hayırlı", "mutlak merhamet sahibidir"],
+    de: [],
+  },
+  66: {
+    ar: ["ٱللَّهُ عَلَىٰ مَا نَقُولُ وَكِيلٌ"],
+    tr: ["Allah konuştuklarımıza"],
+    de: [],
+  },
+  67: {
+    ar: [
+      "وَمَآ أُغْنِى عَنكُم مِّنَ ٱللَّهِ مِن شَىْءٍ",
+      "إِنِ ٱلْحُكْمُ إِلَّا لِلَّهِ",
+      "عَلَيْهِ تَوَكَّلْتُ",
+      "وَعَلَيْهِ فَلْيَتَوَكَّلِ ٱلْمُتَوَكِّلُونَ",
+    ],
+    tr: ["Gerçi ben", "Mutlak manâda bütün hüküm"],
+    de: [],
+  },
+  76: {
+    ar: ["وَفَوْقَ كُلِّ ذِى عِلْمٍ عَلِيمٌ"],
+    tr: ["Ve her bir bilgi sahibinin", "daha iyi bir bilen"],
+    de: [],
+  },
+  83: {
+    ar: ["عَسَى ٱللَّهُ أَن يَأْتِيَنِى بِهِمْ جَمِيعًا", "إِنَّهُۥ هُوَ ٱلْعَلِيمُ ٱلْحَكِيمُ"],
+    tr: ["Çünkü O Alîm", "Hakîm"],
+    de: [],
+  },
+  86: {
+    ar: ["إِنَّمَآ أَشْكُوا۟ بَثِّى وَحُزْنِىٓ إِلَى ٱلْلَّهِ"],
+    tr: ["Ben, bütün dertlerimi", "O'na şikâyette bulunuyorum"],
+    de: [],
+  },
+  87: {
+    ar: ["وَلَا تَا۟يْـَٔسُوا۟ مِن رَّوْحِ ٱللَّهِ"],
+    tr: ["Allah'ın rahmetinden", "asla ümidinizi kesmeyin"],
+    de: [],
+  },
+};
 
 function resolvePublicUrl(path) {
   const base = import.meta.env.BASE_URL || "/";
@@ -208,6 +280,135 @@ async function githubPutFile({ owner, repo, path, token, branch, message, conten
     throw new Error(`GitHub PUT failed: ${res.status} ${res.statusText} :: ${t}`);
   }
   return res.json();
+}
+
+function escapeRegexLiteral(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function normalizeArabicSnippet(snippet) {
+  return String(snippet || "")
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, "")
+    .replace(/\u0640/g, "")
+    .trim();
+}
+
+function buildArabicLooseRegex(snippet) {
+  const base = normalizeArabicSnippet(snippet);
+  if (!base) return null;
+
+  const DIACR = "[\\u064B-\\u065F\\u0670\\u06D6-\\u06ED]*";
+  const TAT = "\\u0640*";
+  const WS = "\\s*";
+
+  const chars = Array.from(base);
+  const parts = [];
+
+  for (const ch of chars) {
+    if (/\s/.test(ch)) {
+      parts.push(WS);
+      continue;
+    }
+    const esc = escapeRegexLiteral(ch);
+    parts.push(`${TAT}${esc}${DIACR}`);
+  }
+
+  return new RegExp(parts.join(""), "g");
+}
+
+function applyRegexMark(str, regex, className, keyPrefix) {
+  const s = String(str ?? "");
+  if (!s || !regex) return [s];
+
+  regex.lastIndex = 0;
+  const out = [];
+  let last = 0;
+  let m;
+  let mi = 0;
+
+  while ((m = regex.exec(s)) !== null) {
+    const start = m.index;
+    const matchText = m[0] ?? "";
+    const end = start + matchText.length;
+
+    if (end <= last) {
+      regex.lastIndex = last + 1;
+      continue;
+    }
+
+    if (start > last) out.push(s.slice(last, start));
+    out.push(
+      <span className={className} key={`${keyPrefix}:m:${mi}`}>
+        {matchText}
+      </span>
+    );
+    last = end;
+    mi += 1;
+  }
+
+  if (last < s.length) out.push(s.slice(last));
+  return out.length ? out : [s];
+}
+
+function splitAndMark(str, snippet, className, keyPrefix) {
+  const s = String(str ?? "");
+  const sn = String(snippet ?? "");
+  if (!s || !sn) return [s];
+
+  const parts = s.split(sn);
+  if (parts.length === 1) return [s];
+
+  const out = [];
+  for (let i = 0; i < parts.length; i += 1) {
+    if (parts[i]) out.push(parts[i]);
+    if (i !== parts.length - 1) {
+      out.push(
+        <span className={className} key={`${keyPrefix}:p:${i}`}>
+          {sn}
+        </span>
+      );
+    }
+  }
+  return out;
+}
+
+function renderWithHighlights(text, ayah, lang) {
+  const t = String(text ?? "");
+  const ay = Number(ayah);
+  if (!Number.isFinite(ay)) return t;
+
+  const rule = HIGHLIGHT_MAP[ay];
+  const snippets = rule?.[lang];
+  if (!snippets || !Array.isArray(snippets) || snippets.length === 0) return t;
+
+  const className = lang === "ar" ? "hlBrickAr" : "hlBrick";
+  let nodes = [t];
+
+  for (let sIdx = 0; sIdx < snippets.length; sIdx += 1) {
+    const snip = snippets[sIdx];
+    if (!snip) continue;
+
+    const nextNodes = [];
+    for (let nIdx = 0; nIdx < nodes.length; nIdx += 1) {
+      const node = nodes[nIdx];
+      if (typeof node !== "string") {
+        nextNodes.push(node);
+        continue;
+      }
+
+      if (lang === "ar") {
+        const rx = buildArabicLooseRegex(snip);
+        const parts = applyRegexMark(node, rx, className, `ayah:${ay}:${lang}:sn:${sIdx}:n:${nIdx}`);
+        nextNodes.push(...parts);
+      } else {
+        const parts = splitAndMark(node, snip, className, `ayah:${ay}:${lang}:sn:${sIdx}:n:${nIdx}`);
+        nextNodes.push(...parts);
+      }
+    }
+    nodes = nextNodes;
+  }
+
+  return nodes;
 }
 
 function SurahList({ surahs, selectedId, query, onQuery, onSelect }) {
@@ -407,7 +608,7 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
       return;
     }
 
-    const DECAY = 0.0045; // inertia biraz daha uzun
+    const DECAY = 0.0045;
     const MAX_MS = 1100;
     const startTs = performance.now();
     let last = performance.now();
@@ -537,10 +738,6 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   );
 }
 
-/**
- * Single Player
- * - Bottom dock (fixed)
- */
 function SinglePlayerPanel({
   open,
   verse,
@@ -578,21 +775,22 @@ function SinglePlayerPanel({
   if (!open) return null;
 
   const ay = Number(verse?.ayah || 0);
-  const isHot = HOT_AYAH_SET.has(ay);
 
   return (
     <div className="singlePlayerBackdrop" role="dialog" aria-modal="true" aria-label="Single Player">
       <div className="singlePlayerCard">
         <div className="singlePlayerLines">
-          <div
-            className={`singlePlayerLine singlePlayerLineAr ${isHot ? "arVerseHot" : ""}`}
-            dir="rtl"
-          >
-            {(verse?.ar || "—").trim()}
+          <div className="singlePlayerLine singlePlayerLineAr" dir="rtl">
+            {renderWithHighlights((verse?.ar || "—").trim(), ay, "ar")}
           </div>
 
-          <div className="singlePlayerLine singlePlayerLineDe">{(verse?.de || "—").trim()}</div>
-          <div className="singlePlayerLine singlePlayerLineTr">{(verse?.tr || "—").trim()}</div>
+          <div className="singlePlayerLine singlePlayerLineDe">
+            {renderWithHighlights((verse?.de || "—").trim(), ay, "de")}
+          </div>
+
+          <div className="singlePlayerLine singlePlayerLineTr">
+            {renderWithHighlights((verse?.tr || "—").trim(), ay, "tr")}
+          </div>
 
           <div style={{ height: 140 }} />
         </div>
@@ -604,12 +802,7 @@ function SinglePlayerPanel({
             ◀
           </button>
 
-          <button
-            className="spBtn spBtnPrimary"
-            type="button"
-            onClick={onPlayPause}
-            aria-label="Play/Pause"
-          >
+          <button className="spBtn spBtnPrimary" type="button" onClick={onPlayPause} aria-label="Play/Pause">
             {isPlaying ? "⏸" : "▶"}
           </button>
 
@@ -1224,7 +1417,7 @@ function VersesTable({ verses, activeIndex, onRowClick, rowRefs }) {
       <div className="tableBody" role="table">
         {verses.map((v, idx) => {
           const active = idx === activeIndex;
-          const isHot = HOT_AYAH_SET.has(Number(v?.ayah));
+          const ay = Number(v?.ayah || 0);
 
           return (
             <button
@@ -1237,11 +1430,13 @@ function VersesTable({ verses, activeIndex, onRowClick, rowRefs }) {
               }}
             >
               <div className="cell colNo">{v.ayah}</div>
-              <div className={`cell colAr ${isHot ? "arVerseHot" : ""}`} dir="rtl">
-                {(v.ar || "").trimStart()}
+
+              <div className="cell colAr" dir="rtl">
+                {renderWithHighlights((v.ar || "").trimStart(), ay, "ar")}
               </div>
-              <div className="cell colDe">{v.de}</div>
-              <div className="cell colTr">{v.tr}</div>
+
+              <div className="cell colDe">{renderWithHighlights(v.de, ay, "de")}</div>
+              <div className="cell colTr">{renderWithHighlights(v.tr, ay, "tr")}</div>
             </button>
           );
         })}
@@ -1275,7 +1470,7 @@ export default function App() {
 
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
 
-  // Sayfa single player ile yüklensin
+  // Sayfa Single Player ile yüklensin
   const [singleOn, setSingleOn] = useState(true);
 
   // repeat: 0 off, 1 => 1 tekrar, 2 => 2 tekrar
@@ -1369,7 +1564,9 @@ export default function App() {
         }
 
         const data = parseJsonTolerant(text, versesSrc);
-        if (!Array.isArray(data)) throw new Error(`Invalid verses JSON (expected array) | url=${versesSrc}`);
+        if (!Array.isArray(data)) {
+          throw new Error(`Invalid verses JSON (expected array) | url=${versesSrc}`);
+        }
 
         if (!cancelled) {
           rowRefs.current = [];
@@ -1442,7 +1639,7 @@ export default function App() {
     [seekTo]
   );
 
-  // Single Player açıkken: ayetler gelince 1. ayete konumlan (autoplay YOK)
+  // Single Player açıkken: ayetler gelince 1. ayete konumlan (autoplay yok)
   useEffect(() => {
     if (!singleOn) return;
     if (!verses.length) return;
@@ -1622,7 +1819,6 @@ export default function App() {
       return;
     }
 
-    // re-arm
     if (currentTime < e - 0.12) {
       repeatStateRef.current.armed = true;
       return;
@@ -1631,7 +1827,6 @@ export default function App() {
     const nearEnd = currentTime >= e - 0.02;
     if (!nearEnd || !repeatStateRef.current.armed) return;
 
-    // spam guard
     const now = performance.now();
     if (now - (repeatStateRef.current.lastFire || 0) < 350) return;
     repeatStateRef.current.lastFire = now;
@@ -1835,7 +2030,7 @@ export default function App() {
             const base = cur >= 0 ? cur : 0;
             const next = clamp(base + dir, 0, Math.max(0, vs.length - 1));
 
-            // ÇARK: play/pause bozulmasın; son duruma göre hareket etsin
+            // Çark: play/pause bozulmasın; son duruma göre
             seekVerse(next, isPlayingRef.current);
           }}
           repeatMode={repeatMode}
