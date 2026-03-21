@@ -1,7 +1,6 @@
 /* =========================
-   FILE: src/styles.css (FULL - ORIJINAL + EKLER)
+   FILE: src/styles.css (FULL)
    ========================= */
-/* src/styles.css */
 :root{
   --bg:#0b0f16;
   --panel:#0f1520;
@@ -16,10 +15,10 @@
   --w-de: 1fr;
   --w-tr: 1fr;
 
-  /* Parlak kiremit kırmızısı */
-  --brick: rgba(220, 70, 58, 1);
-  --brickBg: rgba(220, 70, 58, 0.18);
-  --brickLine: rgba(255, 120, 105, 0.55);
+  /* PARLAK KİREMİT KIRMIZISI */
+  --brick: rgba(235, 78, 62, 1);
+  --brickBg: rgba(235, 78, 62, 0.16);
+  --brickLine: rgba(255, 140, 120, 0.55);
 }
 
 *{ box-sizing:border-box; }
@@ -232,151 +231,17 @@ html,body{
 .mono{ font-variant-numeric:tabular-nums; }
 .muted{ color:var(--muted); }
 
-/* Single Player button */
-.btnSinglePlayer{
-  padding: 14px 16px;
-  border-radius: 14px;
-  font-size: 15px;
-  font-weight: 950;
-  cursor: pointer;
-  color: rgba(10,14,22,0.98);
-  border: 1px solid rgba(255,255,255,0.18);
-  background: linear-gradient(180deg, rgba(170,220,255,1), rgba(99,179,237,1));
-  box-shadow:
-    0 10px 22px rgba(0,0,0,0.35),
-    0 3px 0 rgba(255,255,255,0.22) inset,
-    0 -6px 10px rgba(0,0,0,0.25) inset;
-  transform: translateY(0);
-}
-.btnSinglePlayer:hover{ filter: brightness(1.06); }
-.btnSinglePlayer:active{
-  transform: translateY(2px);
-  box-shadow:
-    0 6px 14px rgba(0,0,0,0.30),
-    0 2px 0 rgba(255,255,255,0.18) inset,
-    0 -4px 8px rgba(0,0,0,0.22) inset;
-}
-.btnSinglePlayer.on{
-  background: linear-gradient(180deg, rgba(195,255,215,1), rgba(90,210,150,1));
-}
-
-/* === Highlight (parça bazlı) === */
-.hlBrickAr, .hlBrick{
-  display:inline;
-  padding: 0.06em 0.18em;
-  margin: 0 0.03em;
-  border-radius: 0.45em;
+/* === ARAPÇA: ŞURADAN SONRAKİ HER ŞEYİ BOYA === */
+.hlBrickArTail{
+  color: var(--brick) !important;
   background: var(--brickBg);
+  border-radius: 12px;
+  padding: 0.08em 0.22em 0.14em;
   box-shadow:
-    0 0 0 1px rgba(255, 120, 105, 0.20) inset,
-    0 16px 40px rgba(220, 70, 58, 0.10);
+    0 0 0 1px rgba(255, 140, 120, 0.20) inset,
+    0 18px 44px rgba(235, 78, 62, 0.12);
   text-shadow: 0 2px 14px rgba(0,0,0,0.35);
 }
-
-.hlBrickAr{
-  color: var(--brick) !important;
-}
-
-.hlBrick{
-  color: rgba(255,255,255,0.98);
-  border-left: 2px solid rgba(220, 70, 58, 0.55);
-}
-
-/* Timeline */
-.timeline{
-  margin-top:10px;
-  border:1px solid var(--border);
-  background:rgba(0,0,0,0.18);
-  border-radius:14px;
-  padding:10px;
-}
-.timelineTop{
-  display:flex;
-  justify-content:space-between;
-  gap:10px;
-  flex-wrap:wrap;
-  margin-bottom:8px;
-}
-.timelineTrack{
-  position:relative;
-  height:10px;
-  border-radius:999px;
-  background:rgba(255,255,255,0.08);
-  overflow:hidden;
-  cursor:pointer;
-}
-.timelineProgress{ height:100%; background:rgba(99,179,237,0.65); width:0%; }
-.timelineMarker{
-  position:absolute;
-  top:-4px;
-  width:6px;
-  height:18px;
-  border-radius:999px;
-  border:1px solid rgba(255,255,255,0.22);
-  background:rgba(255,255,255,0.08);
-  transform:translateX(-50%);
-  cursor:pointer;
-}
-.timelineMarker.active{ background:rgba(99,179,237,0.55); border-color:rgba(99,179,237,0.9); }
-.timelineSlider{ width:100%; margin-top:10px; }
-
-/* Sync panel */
-.syncPanel{
-  margin-top:10px;
-  border:1px solid var(--border);
-  background:rgba(0,0,0,0.18);
-  border-radius:14px;
-  padding:12px;
-}
-.syncHeader{
-  display:flex;
-  justify-content:space-between;
-  gap:10px;
-  flex-wrap:wrap;
-  margin-bottom:10px;
-}
-.syncTitle{ font-weight:650; }
-.syncMeta{ font-size:12px; }
-.syncGrid{ display:grid; grid-template-columns:1.2fr 1fr; gap:10px; }
-@media (max-width:980px){ .syncGrid{ grid-template-columns:1fr; } }
-.syncBlock{
-  border:1px solid rgba(255,255,255,0.06);
-  border-radius:12px;
-  padding:10px;
-  background:rgba(255,255,255,0.02);
-}
-.syncRow{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:8px; }
-.syncInputs{ display:flex; gap:8px; flex-wrap:wrap; align-items:end; }
-.miniLabel{ display:grid; gap:6px; font-size:12px; color:var(--muted); }
-.miniInput{
-  width:140px;
-  padding:8px 10px;
-  border-radius:10px;
-  border:1px solid var(--border);
-  background:rgba(0,0,0,0.25);
-  color:var(--text);
-  outline:none;
-}
-.syncMetaInline{ display:flex; align-items:end; gap:10px; padding:0 2px 2px; }
-.autoSaved{ align-self:end; font-size:12px; padding:8px 6px; }
-.deltaPill{
-  font-variant-numeric:tabular-nums;
-  font-size:12px;
-  border:1px solid var(--border);
-  background:rgba(0,0,0,0.18);
-  padding:6px 10px;
-  border-radius:999px;
-}
-.syncNudgeGroup{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  border:1px solid rgba(255,255,255,0.06);
-  border-radius:999px;
-  padding:6px 8px;
-  background:rgba(0,0,0,0.14);
-}
-.hiddenFile{ display:none; }
 
 /* Table */
 .tableWrap{
@@ -576,105 +441,6 @@ html,body{
   background: linear-gradient(180deg, rgba(255,220,220,1), rgba(255,150,150,1));
 }
 
-@media (max-width:520px){
-  .spBtn{ min-width: 70px; height: 70px; font-size: 28px; }
-  .spBtnPrimary{ min-width: 124px; height: 78px; font-size: 32px; }
-}
-
-/* Wheel */
-.spPicker3D{
-  width: 120px;
-  height: 160px;
-  border-radius: 18px;
-  border: 1px solid rgba(255,255,255,0.16);
-  background: rgba(0,0,0,0.18);
-  box-shadow:
-    0 14px 28px rgba(0,0,0,0.35),
-    0 3px 0 rgba(255,255,255,0.14) inset,
-    0 -10px 16px rgba(0,0,0,0.22) inset;
-  position: relative;
-  overflow: hidden;
-  touch-action: none;
-  flex: 0 0 auto;
-}
-.spPicker3D.disabled{ opacity: 0.55; pointer-events:none; }
-
-.spPickerViewport{
-  width: 100%;
-  height: 100%;
-  outline: none;
-  display:grid;
-  place-items:center;
-  perspective: 980px;
-}
-
-.spPickerItems3D{
-  width: 100%;
-  height: 100%;
-  display:grid;
-  place-items:center;
-  transform-style: preserve-3d;
-}
-
-.spPickerItem3D{
-  position:absolute;
-  width: 100%;
-  text-align:center;
-  font-variant-numeric: tabular-nums;
-  font-weight: 950;
-  font-size: 34px;
-  letter-spacing: 0.6px;
-  color: rgba(255,255,255,0.20);
-  transform-origin: center center;
-  text-shadow: 0 2px 10px rgba(0,0,0,0.25);
-}
-.spPickerItem3D.active{
-  color: rgba(255,255,255,0.96);
-  text-shadow: 0 2px 14px rgba(0,0,0,0.38);
-}
-
-.spPickerShine{
-  position:absolute;
-  inset:-10px;
-  background:
-    radial-gradient(120px 220px at 30% 45%, rgba(255,255,255,0.10), transparent 60%),
-    radial-gradient(120px 220px at 70% 55%, rgba(99,179,237,0.10), transparent 60%);
-  pointer-events:none;
-  mix-blend-mode: screen;
-  opacity: 0.9;
-}
-
-.spPickerBar{
-  position:absolute;
-  left: 10px;
-  right: 10px;
-  top: 50%;
-  height: 46px;
-  transform: translateY(-50%);
-  border-radius: 999px;
-  background: rgba(255,255,255,0.10);
-  border: 1px solid rgba(255,255,255,0.14);
-  box-shadow:
-    0 0 0 1px rgba(0,0,0,0.18) inset,
-    0 10px 24px rgba(0,0,0,0.22);
-  pointer-events:none;
-}
-
-.spPickerFadeTop{
-  position:absolute;
-  left:0; right:0; top:0;
-  height: 46%;
-  background: linear-gradient(180deg, rgba(15,21,32,0.95), rgba(15,21,32,0.00));
-  pointer-events:none;
-}
-.spPickerFadeBottom{
-  position:absolute;
-  left:0; right:0; bottom:0;
-  height: 46%;
-  background: linear-gradient(0deg, rgba(15,21,32,0.95), rgba(15,21,32,0.00));
-  pointer-events:none;
-}
-
 /* Repeat */
 .spRBtn{
   min-width: 56px;
@@ -703,7 +469,7 @@ html,body{
 }
 .spRBtn:active{ transform: translateY(1px); }
 
-/* === Bottom dock === */
+/* Bottom dock */
 .singlePlayerDockBottom{
   position: fixed !important;
   right: 14px !important;
@@ -714,12 +480,10 @@ html,body{
   z-index: 10001 !important;
   width: min(640px, calc(100% - 28px)) !important;
   max-width: calc(100% - 28px) !important;
-
   padding: 10px !important;
   border-radius: 18px !important;
   border: 1px solid rgba(255,255,255,0.12) !important;
   background: rgba(0,0,0,0.20) !important;
-
   overflow-x: auto !important;
   overflow-y: hidden !important;
   -webkit-overflow-scrolling: touch !important;
@@ -733,7 +497,7 @@ html,body{
   white-space: nowrap;
 }
 
-/* === Backdrop inertia === */
+/* Backdrop inertia */
 @keyframes spBackdropInertiaIn{
   0%   { opacity: 0; transform: translateY(10px); }
   100% { opacity: 1; transform: translateY(0px); }
