@@ -17,6 +17,51 @@ const SURAHES = [
   },
 ];
 
+// AYAH -> COLOR (from your full list)
+// green ✅ / red ❌
+const SEGMENT_COLOR = {
+  6: "green",
+  18: "green",
+  21: "green",
+  22: "green",
+  33: "red",
+  34: "green",
+  40: "green",
+  53: "green",
+  56: "green",
+  64: "green",
+  66: "green",
+  67: "green",
+  76: "green",
+  80: "green",
+  86: "red",
+  87: "green",
+  88: "green",
+  90: "green",
+  91: "green",
+  92: "green",
+  98: "green",
+  100: "green",
+  101: "red",
+  108: "green",
+};
+
+function renderColoredLine(text, ayah, lang) {
+  const s = String(text ?? "");
+  const a = Number(ayah);
+  const color = SEGMENT_COLOR[a];
+
+  if (!color) return s;
+
+  if (lang === "ar") {
+    const cls = color === "green" ? "mark markGreen" : "mark markRed";
+    return <span className={cls}>{s}</span>;
+  }
+
+  const cls = color === "green" ? "fontGreen" : "fontRed";
+  return <span className={cls}>{s}</span>;
+}
+
 function resolvePublicUrl(path) {
   const base = import.meta.env.BASE_URL || "/";
   const p = String(path || "").replace(/^\//, "");
@@ -207,277 +252,6 @@ async function githubPutFile({ owner, repo, path, token, branch, message, conten
   return res.json();
 }
 
-/* =========================
-   Segments list (NO JSON, NO separate files)
-   ========================= */
-
-const SEGMENTS = {
-  6: {
-    color: "green",
-    tr: "Şüphesiz ki Rabbin, (her şeyi) hakkıyla bilendir; her hüküm ve icraatında pek çok hikmetler bulunandır.",
-    ar: "إِنَّ رَبَّكَ عَلِيمٌ حَكِيمٌۭ",
-    de: "Gewiß, dein Herr ist Allwissend und Allweise.",
-  },
-  18: {
-    color: "green",
-    tr: "Artık bana düşen, güzelce sabretmektir. Sizin bu anlattıklarınız karşısında yardımına müracaat edilecek sadece Allah var.",
-    ar: "فَصَبْرٌۭ جَمِيلٌۭ ۖ وَٱللَّهُ ٱلْمُسْتَعَانُ عَلَىٰ مَا تَصِفُونَ",
-    de: "(So gilt es,) schöne Geduld (zu üben). Allah ist Derjenige, bei Dem Hilfe zu suchen ist gegen das, was ihr beschreibt.",
-  },
-  21: {
-    color: "green",
-    tr: "Allah, neyi diler, neye hükmederse onu muhakkak yerine getirir. Ne var ki, insanların çoğu bunu bilmez.",
-    ar: "وَٱللَّهُ غَالِبٌ عَلَىٰٓ أَمْرِهِۦ وَلَٰكِنَّ أَكْثَرَ ٱلنَّاسِ لَا يَعْلَمُونَ",
-    de: "Und Allah ist in Seiner Angelegenheit überlegen. Aber die meisten Menschen wissen nicht.",
-  },
-  22: {
-    color: "green",
-    tr: "Kendilerini iyiliğe adamış, daima Allah’ı görüyormuşçasına ve Allah’ın kendilerini gördüğünün şuuru içinde davrananları işte böyle mükâfatlandırırız.",
-    ar: "وَكَذَٰلِكَ نَجْزِى ٱلْمُحْسِنِينَ",
-    de: "So vergelten Wir den Gutes Tuenden.",
-  },
-  33: {
-    color: "red",
-    tr: "Eğer fendlerini bozup beni onlardan kurtarmazsan, kayıp onlara meyleder ve cahillerden (doğru nedir, yanlış nedir bilmeyen, bilseler bile yapmamaları gerekeni bile bile yapanlardan) olurum.",
-    ar: "وَإِلَّا تَصْرِفْ عَنِّى كَيْدَهُنَّ أَصْبُ إِلَيْهِنَّ وَأَكُن مِّنَ ٱلْجَٰهِلِينَ",
-    de: "Und wenn Du ihre List von mir nicht abwendest, werde ich mich zu ihnen hingezogen fühlen und zu den Toren gehören.",
-  },
-  34: {
-    color: "green",
-    tr: "Rabbisi duasını kabul buyurup kadınların fendini O’nun üzerinden çekti. Hiç şüphesiz O’dur Semî‘ (her şeyi, her duayı hakkıyla işiten); Alîm (her şeyi, herkesin durumunu hakkıyla bilen).",
-    ar: "فَٱسْتَجَابَ لَهُۥ رَبُّهُۥ فَصَرَفَ عَنْهُ كَيْدَهُنَّ ۚ إِنَّهُۥ هُوَ ٱلسَّمِيعُ ٱلْعَلِيمُ",
-    de: "Da erhörte ihn sein Herr und wendete ihre List von ihm ab. Er ist ja der Allhörende und Allwissende.",
-  },
-  40: {
-    color: "green",
-    tr: "Şurası bir gerçek ki, mutlak manâda hükmetme yetkisi sadece Allah’a aittir. O, Kendisinden başka hiç bir varlığa ibadet etmemenizi emretmiştir. Budur doğru ve her bakımdan sağlam din. Ne var ki, insanların çoğu bilmemekte ve bilgisizce hareket etmektedir.",
-    ar: "إِنِ ٱلْحُكْمُ إِلَّا لِلَّهِ ۚ أَمَرَ أَلَّا تَعْبُدُوٓا۟ إِلَّآ إِيَّاهُ ۚ ذَٰلِكَ ٱلدِّينُ ٱلْقَيِّمُ وَلَٰكِنَّ أَكْثَرَ ٱلنَّاسِ لَا يَعْلَمُونَ",
-    de: "Das Urteil ist allein Allahs. Er hat befohlen, daß ihr nur Ihm dienen sollt. Das ist die richtige Religion. Aber die meisten Menschen wissen nicht.",
-  },
-  53: {
-    color: "green",
-    tr: "Bununla birlikte, hiç bir zaman nefsimi de temize çıkarmam.",
-    ar: "وَمَآ أُبَرِّئُ نَفْسِىٓ",
-    de: "Und ich spreche mich nicht selbst frei.",
-  },
-  56: {
-    color: "green",
-    tr: "Kimi dilersek ona bu şekilde hususî rahmetimizle muamele eder ve bütünüyle iyiliğe adanmış olarak, Allah’ı görür gibi, en azından O’nun kendilerini gördüğünün şuuru içinde davrananların mükâfatını asla zayi etmeyiz.",
-    ar: "نُصِيبُ بِرَحْمَتِنَا مَن نَّشَآءُ ۖ وَلَا نُضِيعُ أَجْرَ ٱلْمُحْسِنِينَ",
-    de: "Wir treffen mit Unserer Barmherzigkeit, wen Wir wollen, und Wir lassen den Lohn der Gutes Tuenden nicht verlorengehen.",
-  },
-  64: {
-    color: "green",
-    tr: "Ama Allah’tır gerçek hayırlı koruyucu ve O, bütün merhamet edenlerin üstünde mutlak merhamet sahibidir.",
-    ar: "فَٱللَّهُ خَيْرٌ حَٰفِظًۭا ۖ وَهُوَ أَرْحَمُ ٱلرَّٰحِمِينَ",
-    de: "Allah ist besser als Behütender, und Er ist der Barmherzigste der Barmherzigen.",
-  },
-  66: {
-    color: "green",
-    tr: "Allah konuştuklarımıza şahit ve gözeticidir; verilen sözlerin yerine gelip gelmemesi nihayette yine O’nun iznine ve kudretine bağlıdır.",
-    ar: "قَالَ ٱللَّهُ عَلَىٰ مَا نَقُولُ وَكِيلٌۭ",
-    de: "Allah ist Sachwalter über das, was wir (hier) sagen.",
-  },
-  67: {
-    color: "green",
-    tr: "Mutlak manâda bütün hüküm ve hakimiyet ancak Allah’ındır. Ancak O’na dayanır, O’na güvenirim. Kendisine dayanıp güvenecek bir güç ve makam arayan herkes (bütün insanlar), ancak O’na dayanıp güvenmelidirler.",
-    ar: "إِنِ ٱلْحُكْمُ إِلَّا لِلَّهِ ۖ عَلَيْهِ تَوَكَّلْتُ ۖ وَعَلَيْهِ فَلْيَتَوَكَّلِ ٱلْمُتَوَكِّلُونَ",
-    de: "Das Urteil ist allein Allahs. Auf Ihn verlasse ich mich; und auf Ihn sollen sich diejenigen verlassen, die sich (überhaupt auf jemanden) verlassen (wollen).",
-  },
-  76: {
-    color: "green",
-    tr: "fakat Allah ne dilerse o olur (ve Allah, bir şeyi dileyince onun sebeplerini de hazırlar). Biz, kimi dilersek onu böyle mertebe mertebe yükseltiriz. Ve her bir bilgi sahibinin üstünde daha iyi bir bilen (ve hepsinin üstünde her şeyi bilen olarak Allah) vardır.",
-    ar: "إِلَّآ أَن يَشَآءَ ٱللَّهُ ۚ نَرْفَعُ دَرَجَٰتٍۢ مَّن نَّشَآءُ ۗ وَفَوْقَ كُلِّ ذِى عِلْمٍ عَلِيمٌۭ",
-    de: "außer daß Allah es wollte. Wir erhöhen, wen Wir wollen, um Rangstufen. Und über jedem, der Wissen besitzt, steht einer, der (noch mehr) weiß.",
-  },
-  80: {
-    color: "green",
-    tr: "Allah, her zaman en hayırlı hükmü verendir.",
-    ar: "وَهُوَ خَيْرُ ٱلْحَٰكِمِينَ",
-    de: "Er ist der Beste derer, die Urteile fällen.",
-  },
-  86: {
-    color: "red",
-    tr: "Ben, bütün dertlerimi, keder ve hüznümü Allah’a arz ediyor, O’na şikâyette bulunuyorum.",
-    ar: "إِنَّمَآ أَشْكُوا۟ بَثِّى وَحُزْنِىٓ إِلَى ٱللَّهِ",
-    de: "Ich klage meinen unerträglichen Kummer und meine Trauer nur Allah (allein)",
-  },
-  87: {
-    color: "green",
-    tr: "Allah’ın rahmetinden asla ümidinizi kesmeyin. Şurası bir gerçek ki, O’na inanmayan kâfirler güruhu dışında hiç kimse Allah’ın rahmetinden ümit kesmez.",
-    ar: "وَلَا تَا۟يْـَٔسُوا۟ مِن رَّوْحِ ٱللَّهِ ۖ إِنَّهُۥ لَا يَا۟يْـَٔسُ مِن رَّوْحِ ٱللَّهِ إِلَّا ٱلْقَوْمُ ٱلْكَٰفِرُونَ",
-    de: "Und gebt nicht die Hoffnung auf das Erbarmen Allahs auf. Es gibt die Hoffnung … nur das ungläubige Volk auf.",
-  },
-  88: {
-    color: "green",
-    tr: "Hiç kuşkusuz Allah, fazladan iyilikte bulunanları bol bol mükâfatlandırır.",
-    ar: "إِنَّ ٱللَّهَ يَجْزِى ٱلْمُتَصَدِّقِينَ",
-    de: "Allah vergilt denjenigen, die Almosen geben.",
-  },
-  90: {
-    color: "green",
-    tr: "Doğrusu şu ki, kim O’na karşı derin saygı duyar, O’na karşı gelmekten sakınır ve O’na itaatla birlikte başına gelenlere de sabrederse, hiç şüphesiz Allah, böyle iyiliğe adanmış ve O’nu görürcesine davranan kimselerin mükâfatını asla zayi etmez.",
-    ar: "إِنَّهُۥ مَن يَتَّقِ وَيَصْبِرْ فَإِنَّ ٱللَّهَ لَا يُضِيعُ أَجْرَ ٱلْمُحْسِنِينَ",
-    de: "Gewiß, wer gottesfürchtig und standhaft ist — gewiß, Allah läßt den Lohn der Gutes Tuenden nicht verlorengehen.",
-  },
-  91: {
-    color: "green",
-    tr: "Allah’a yemin olsun ki, gerçekten Allah seni bize tercih etti; biz, başka değil, ancak bir yanlış içinde idik.",
-    ar: "تَٱللَّهِ لَقَدْ ءَاثَرَكَ ٱللَّهُ عَلَيْنَا وَإِن كُنَّا لَخَٰطِـِٔينَ",
-    de: "Bei Allah, Allah hat dich uns vorgezogen. Und wir haben wahrlich Verfehlungen begangen.",
-  },
-  92: {
-    color: "green",
-    tr: "Hayır! Bugün size hiçbir kınama yok! (Ben hakkımı çoktan helâl ettim;) Allah da sizi affetsin. Çünkü O, bütün merhamet edenlerin üstünde mutlak merhamet sahibidir.",
-    ar: "لَا تَثْرِيبَ عَلَيْكُمُ ٱلْيَوْمَ ۖ يَغْفِرُ ٱللَّهُ لَكُمْ ۖ وَهُوَ أَرْحَمُ ٱلرَّٰحِمِينَ",
-    de: "Keine Schelte soll heute über euch kommen. Allah vergibt euch, Er ist ja der Barmherzigste der Barmherzigen.",
-  },
-  98: {
-    color: "green",
-    tr: "Hiç şüphesiz O, Ğafûr (günahları çok bağışlayan)dır; Rahîm (bilhassa tevbe ile Kendisine yönelen mü’ min kullarına karşı hususî rahmeti pek bol olan)dır.",
-    ar: "إِنَّهُۥ هُوَ ٱلْغَفُورُ ٱلرَّحِيمُ",
-    de: "Er ist ja der Allvergebende und Barmherzige.",
-  },
-  100: {
-    color: "green",
-    tr: "Gerçekten Rabbim, her ne dilerse onu pek güzel şekilde ve insanların göremeyeceği bir incelik içinde yerine getirir. Şüphesiz O, evet O, Alîm (her şeyi hakkıyla bilen)dir; Hakîm (bütün hüküm ve icraatında pek çok hikmetler bulunan)dır.",
-    ar: "إِنَّ رَبِّى لَطِيفٌۭ لِّمَا يَشَآءُ ۚ إِنَّهُۥ هُوَ ٱلْعَلِيمُ ٱلْحَكِيمُ",
-    de: "Gewiß, mein Herr ist feinfühlig (in der Durchführung dessen), was Er will. Er ist ja der Allwissende und Allweise.",
-  },
-  101: {
-    color: "red",
-    tr: "Beni Müslüman olarak vefat ettir ve beni salihler içine kat!",
-    ar: "تَوَفَّنِى مُسْلِمًۭا وَأَلْحِقْنِى بِٱلصَّٰلِحِينَ",
-    de: "Berufe mich als (Dir) ergeben ab und nimm mich unter die Rechtschaffenen auf.",
-  },
-  108: {
-    color: "green",
-    tr: "İşte benim (iman, ihlâs ve Tevhid) yolum: Ben, (körü körüne ve taklide dayalı olarak değil,) görerek, delile dayanarak ve insanların idrakine hitap ederek Allah’a çağırıyorum: ben ve bana tâbi olanlar. Ve Allah’ı şirkin her türlüsünden tenzih ederim, asla O’na ortak tanıyanlardan değilim ben.",
-    ar: "قُلْ هَٰذِهِۦ سَبِيلِىٓ أَدْعُوٓا۟ إِلَى ٱللَّهِ ۚ عَلَىٰ بَصِيرَةٍ أَنَا۠ وَمَنِ ٱتَّبَعَنِى ۖ وَسُبْحَٰنَ ٱللَّهِ وَمَآ أَنَا۠ مِنَ ٱلْمُشْرِكِينَ",
-    de: "Sag: Das ist mein Weg: Ich rufe zu Allah … Preis sei Allah! Und ich gehöre nicht zu den Götzendienern.",
-  },
-};
-
-/* =========================
-   Text marking utils
-   - AR: loose regex (diacritics tolerant) + mark bg
-   - TR/DE: exact substring + only colored font
-   ========================= */
-
-function escapeRegexLiteral(s) {
-  return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function normalizeArabicSnippet(snippet) {
-  return String(snippet || "")
-    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, "")
-    .replace(/\u0640/g, "")
-    .trim();
-}
-
-function buildArabicLooseRegex(snippet) {
-  const base = normalizeArabicSnippet(snippet);
-  if (!base) return null;
-
-  const DIACR = "[\\u064B-\\u065F\\u0670\\u06D6-\\u06ED]*";
-  const TAT = "\\u0640*";
-  const WS = "\\s*";
-
-  const chars = Array.from(base);
-  const parts = [];
-
-  for (const ch of chars) {
-    if (/\s/.test(ch)) {
-      parts.push(WS);
-      continue;
-    }
-    const esc = escapeRegexLiteral(ch);
-    parts.push(`${TAT}${esc}${DIACR}`);
-  }
-
-  return new RegExp(parts.join(""), "g");
-}
-
-function applyRegexMark(text, regex, className, keyBase) {
-  const s = String(text ?? "");
-  if (!s || !regex) return [s];
-
-  regex.lastIndex = 0;
-  const out = [];
-  let last = 0;
-  let m;
-  let mi = 0;
-
-  while ((m = regex.exec(s)) !== null) {
-    const start = m.index;
-    const matchText = m[0] ?? "";
-    const end = start + matchText.length;
-
-    if (end <= last) {
-      regex.lastIndex = last + 1;
-      continue;
-    }
-
-    if (start > last) out.push(s.slice(last, start));
-    out.push(
-      <span className={className} key={`${keyBase}:m:${mi}`}>
-        {matchText}
-      </span>
-    );
-    last = end;
-    mi += 1;
-  }
-
-  if (last < s.length) out.push(s.slice(last));
-  return out.length ? out : [s];
-}
-
-function splitAndMarkPlain(text, needle, className, keyBase) {
-  const s = String(text ?? "");
-  const n = String(needle ?? "");
-  if (!s || !n) return [s];
-
-  const parts = s.split(n);
-  if (parts.length === 1) return [s];
-
-  const out = [];
-  for (let i = 0; i < parts.length; i += 1) {
-    if (parts[i]) out.push(parts[i]);
-    if (i !== parts.length - 1) {
-      out.push(
-        <span className={className} key={`${keyBase}:p:${i}`}>
-          {n}
-        </span>
-      );
-    }
-  }
-  return out;
-}
-
-function renderSegment(text, ayah, lang) {
-  const s = String(text ?? "");
-  const a = Number(ayah);
-  const seg = SEGMENTS[a];
-  if (!seg) return s;
-
-  const color = seg.color === "green" ? "green" : "red";
-
-  // AR: highlight + renk
-  if (lang === "ar") {
-    const className = color === "green" ? "mark markGreen" : "mark markRed";
-    return <span className={className}>{s}</span>;
-  }
-
-  // TR/DE: sadece renkli font, highlight yok
-  const className = color === "green" ? "fontGreen" : "fontRed";
-  return <span className={className}>{s}</span>;
-}
-
-  // TR/DE: ONLY colored font, no highlight background
-  const className = color === "green" ? "fontGreen" : "fontRed";
-  return splitAndMarkPlain(s, needle, className, `seg:${a}:${lang}`);
-}
-
 function SurahList({ surahs, selectedId, query, onQuery, onSelect }) {
   return (
     <aside className="sidebar">
@@ -634,6 +408,7 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const accumPxRef = useRef(0);
   const rafRef = useRef(0);
 
+  // sensitivity ↑
   const STEP_PX = 12;
 
   useEffect(() => {
@@ -852,15 +627,15 @@ function SinglePlayerPanel({
       <div className="singlePlayerCard">
         <div className="singlePlayerLines">
           <div className="singlePlayerLine singlePlayerLineAr" dir="rtl">
-            {renderSegment((verse?.ar || "—").trim(), ay, "ar")}
+            {renderColoredLine((verse?.ar || "—").trim(), ay, "ar")}
           </div>
 
           <div className="singlePlayerLine singlePlayerLineDe">
-            {renderSegment((verse?.de || "—").trim(), ay, "de")}
+            {renderColoredLine((verse?.de || "—").trim(), ay, "de")}
           </div>
 
           <div className="singlePlayerLine singlePlayerLineTr">
-            {renderSegment((verse?.tr || "—").trim(), ay, "tr")}
+            {renderColoredLine((verse?.tr || "—").trim(), ay, "tr")}
           </div>
 
           {/* dock altta sabit => içerik kesilmesin */}
@@ -883,7 +658,6 @@ function SinglePlayerPanel({
             ▶
           </button>
 
-          {/* SCALE KALDIRILDI: wheel artık minicik değil */}
           <IOSPickerWheelVertical3D disabled={dialDisabled} value={ay} onStep={onDialStep} />
 
           <button
@@ -1236,12 +1010,7 @@ function SyncPanel({
             <button className="btnSmall" type="button" onClick={setEndToT} disabled={!active}>
               Set END = t (E)
             </button>
-            <button
-              className="btnSmall"
-              type="button"
-              onClick={setEndToTAndNext}
-              disabled={!active}
-            >
+            <button className="btnSmall" type="button" onClick={setEndToTAndNext} disabled={!active}>
               END=t + Next (N)
             </button>
           </div>
@@ -1506,10 +1275,10 @@ function VersesTable({ verses, activeIndex, onRowClick, rowRefs }) {
             >
               <div className="cell colNo">{v.ayah}</div>
               <div className="cell colAr" dir="rtl">
-                {renderSegment((v.ar || "").trimStart(), v.ayah, "ar")}
+                {renderColoredLine((v.ar || "").trimStart(), v.ayah, "ar")}
               </div>
-              <div className="cell colDe">{renderSegment(v.de, v.ayah, "de")}</div>
-              <div className="cell colTr">{renderSegment(v.tr, v.ayah, "tr")}</div>
+              <div className="cell colDe">{renderColoredLine(v.de, v.ayah, "de")}</div>
+              <div className="cell colTr">{renderColoredLine(v.tr, v.ayah, "tr")}</div>
             </button>
           );
         })}
@@ -1708,6 +1477,7 @@ export default function App() {
     [seekTo]
   );
 
+  // Single Player açıkken: ayetler gelince 1. ayete konumlan (autoplay yok)
   useEffect(() => {
     if (!singleOn) return;
     if (!verses.length) return;
@@ -2100,7 +1870,7 @@ export default function App() {
             const base = cur >= 0 ? cur : 0;
             const next = clamp(base + dir, 0, Math.max(0, vs.length - 1));
 
-            // Çark: otomatik play tetikleme -> mevcut isPlaying durumuna göre
+            // ÇARK: autoplay yok; mevcut çalma durumuna göre
             seekVerse(next, isPlayingRef.current);
           }}
           repeatMode={repeatMode}
