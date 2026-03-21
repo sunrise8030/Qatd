@@ -1,6 +1,7 @@
 /* =========================
-   FILE: src/styles.css (FULL - ORIJINAL + EKLER)
+   FILE: src/styles.css (FULL - GÜNCEL)
    ========================= */
+
 /* src/styles.css */
 :root{
   --bg:#0b0f16;
@@ -15,6 +16,12 @@
   --w-ar: 1.1fr;
   --w-de: 1fr;
   --w-tr: 1fr;
+
+  /* Segment colors */
+  --markRed: rgba(235, 78, 62, 1);
+  --markRedBg: rgba(235, 78, 62, 0.18);
+  --markGreen: rgba(82, 210, 140, 1);
+  --markGreenBg: rgba(82, 210, 140, 0.16);
 }
 
 *{ box-sizing:border-box; }
@@ -448,6 +455,16 @@ html,body{
 }
 
 /* -------- Single Player (CENTERED overlay + blur BACK) -------- */
+@keyframes spBackdropInertiaIn{
+  0%   { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0px); }
+}
+@keyframes spBgFloat{
+  0%   { transform: translate3d(0,0,0) scale(1); }
+  50%  { transform: translate3d(10px,-8px,0) scale(1.02); }
+  100% { transform: translate3d(0,0,0) scale(1); }
+}
+
 .singlePlayerBackdrop{
   position: fixed;
   inset: 0;
@@ -458,6 +475,25 @@ html,body{
   display: grid;
   place-items: center;
   padding: 14px;
+
+  animation: spBackdropInertiaIn 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  overflow: hidden;
+}
+.singlePlayerBackdrop::before{
+  content:"";
+  position:absolute;
+  inset:-60px;
+  pointer-events:none;
+  opacity: 0.22;
+  background:
+    radial-gradient(900px 650px at 30% 25%, rgba(120,120,255,0.14), transparent 60%),
+    radial-gradient(900px 650px at 70% 45%, rgba(255,120,120,0.12), transparent 60%);
+  filter: blur(10px);
+  animation: spBgFloat 7.5s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce){
+  .singlePlayerBackdrop{ animation: none; }
+  .singlePlayerBackdrop::before{ animation: none; }
 }
 
 .singlePlayerCard{
@@ -676,28 +712,21 @@ html,body{
 }
 .spRBtn:active{ transform: translateY(1px); }
 
-/* === EK: Bottom dock (format bozmaz, sadece yeni class) === */
+/* === EK: Bottom dock === */
 .singlePlayerDockBottom{
   position: fixed !important;
-
   right: 14px !important;
   left: auto !important;
-
   bottom: calc(14px + env(safe-area-inset-bottom)) !important;
-
   top: auto !important;
   transform: none !important;
-
   z-index: 10001 !important;
-
-  width: min(640px, calc(100% - 28px)) !important; /* sağda net dursun */
+  width: min(640px, calc(100% - 28px)) !important;
   max-width: calc(100% - 28px) !important;
-
   padding: 10px !important;
   border-radius: 18px !important;
   border: 1px solid rgba(255,255,255,0.12) !important;
   background: rgba(0,0,0,0.20) !important;
-
   overflow-x: auto !important;
   overflow-y: hidden !important;
   -webkit-overflow-scrolling: touch !important;
@@ -711,51 +740,13 @@ html,body{
   white-space: nowrap;
 }
 
-/* === EK: Backdrop inertia (appShell’e dokunmaz) === */
-@keyframes spBackdropInertiaIn{
-  0%   { opacity: 0; transform: translateY(10px); }
-  100% { opacity: 1; transform: translateY(0px); }
-}
-.singlePlayerBackdrop{
-  animation: spBackdropInertiaIn 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  overflow: hidden;
-}
-.singlePlayerBackdrop::before{
-  content:"";
-  position:absolute;
-  inset:-60px;
-  pointer-events:none;
-  opacity: 0.22;
-  background:
-    radial-gradient(900px 650px at 30% 25%, rgba(120,120,255,0.14), transparent 60%),
-    radial-gradient(900px 650px at 70% 45%, rgba(255,120,120,0.12), transparent 60%);
-  filter: blur(10px);
-  animation: spBgFloat 7.5s ease-in-out infinite;
-}
-@keyframes spBgFloat{
-  0%   { transform: translate3d(0,0,0) scale(1); }
-  50%  { transform: translate3d(10px,-8px,0) scale(1.02); }
-  100% { transform: translate3d(0,0,0) scale(1); }
-}
-@media (prefers-reduced-motion: reduce){
-  .singlePlayerBackdrop{ animation: none; }
-  .singlePlayerBackdrop::before{ animation: none; }
-}
-
 /* =========================
-   EK: Segment colors
-   - AR: highlight + color
-   - TR/DE: color only
+   Segment marking styles
    ========================= */
-:root{
-  --markRed: rgba(235, 78, 62, 1);
-  --markRedBg: rgba(235, 78, 62, 0.18);
-  --markGreen: rgba(82, 210, 140, 1);
-  --markGreenBg: rgba(82, 210, 140, 0.16);
-}
 
+/* ✅ FIX: prevent "forced line breaks" feeling on RTL big text */
 .mark{
-  display:inline-block;
+  display:inline;
   padding: 0.10em 0.34em;
   border-radius: 0.55em;
   margin: 0 0.06em;
@@ -763,6 +754,8 @@ html,body{
     0 0 0 1px rgba(255,255,255,0.10) inset,
     0 18px 50px rgba(0,0,0,0.18);
   text-shadow: 0 2px 16px rgba(0,0,0,0.40);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 .markRed{ color: var(--markRed) !important; background: var(--markRedBg); }
 .markGreen{ color: var(--markGreen) !important; background: var(--markGreenBg); }
