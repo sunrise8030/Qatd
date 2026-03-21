@@ -1,5 +1,5 @@
 /* =========================
-   FILE: src/styles.css (FULL - ORIJINAL + EKLER + FONT COLORS + BIG WHEEL)
+   FILE: src/styles.css (FULL - ORIJINAL + EKLER)
    ========================= */
 /* src/styles.css */
 :root{
@@ -15,12 +15,6 @@
   --w-ar: 1.1fr;
   --w-de: 1fr;
   --w-tr: 1fr;
-
-  /* Segment colors */
-  --markRed: rgba(235, 78, 62, 1);
-  --markRedBg: rgba(235, 78, 62, 0.18);
-  --markGreen: rgba(82, 210, 140, 1);
-  --markGreenBg: rgba(82, 210, 140, 0.16);
 }
 
 *{ box-sizing:border-box; }
@@ -560,10 +554,10 @@ html,body{
   .spBtnPrimary{ min-width: 124px; height: 78px; font-size: 32px; }
 }
 
-/* Wheel (BÜYÜTÜLDÜ) */
+/* Wheel */
 .spPicker3D{
-  width: 150px;
-  height: 200px;
+  width: 120px;
+  height: 160px;
   border-radius: 18px;
   border: 1px solid rgba(255,255,255,0.16);
   background: rgba(0,0,0,0.18);
@@ -601,7 +595,7 @@ html,body{
   text-align:center;
   font-variant-numeric: tabular-nums;
   font-weight: 950;
-  font-size: 42px;
+  font-size: 34px;
   letter-spacing: 0.6px;
   color: rgba(255,255,255,0.20);
   transform-origin: center center;
@@ -682,21 +676,28 @@ html,body{
 }
 .spRBtn:active{ transform: translateY(1px); }
 
-/* === Bottom dock === */
+/* === EK: Bottom dock (format bozmaz, sadece yeni class) === */
 .singlePlayerDockBottom{
   position: fixed !important;
+
   right: 14px !important;
   left: auto !important;
+
   bottom: calc(14px + env(safe-area-inset-bottom)) !important;
+
   top: auto !important;
   transform: none !important;
+
   z-index: 10001 !important;
-  width: min(780px, calc(100% - 28px)) !important;
+
+  width: min(640px, calc(100% - 28px)) !important; /* sağda net dursun */
   max-width: calc(100% - 28px) !important;
+
   padding: 10px !important;
   border-radius: 18px !important;
   border: 1px solid rgba(255,255,255,0.12) !important;
   background: rgba(0,0,0,0.20) !important;
+
   overflow-x: auto !important;
   overflow-y: hidden !important;
   -webkit-overflow-scrolling: touch !important;
@@ -710,7 +711,7 @@ html,body{
   white-space: nowrap;
 }
 
-/* Backdrop inertia */
+/* === EK: Backdrop inertia (appShell’e dokunmaz) === */
 @keyframes spBackdropInertiaIn{
   0%   { opacity: 0; transform: translateY(10px); }
   100% { opacity: 1; transform: translateY(0px); }
@@ -742,10 +743,17 @@ html,body{
 }
 
 /* =========================
-   SEGMENT STYLES
-   - Arabic: markRed/markGreen => bg + colored font
-   - TR/DE: fontRed/fontGreen => colored font only
+   EK: Segment colors
+   - AR: highlight + color
+   - TR/DE: color only
    ========================= */
+:root{
+  --markRed: rgba(235, 78, 62, 1);
+  --markRedBg: rgba(235, 78, 62, 0.18);
+  --markGreen: rgba(82, 210, 140, 1);
+  --markGreenBg: rgba(82, 210, 140, 0.16);
+}
+
 .mark{
   display:inline-block;
   padding: 0.10em 0.34em;
