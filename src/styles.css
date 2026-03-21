@@ -17,9 +17,9 @@
   --w-tr: 1fr;
 
   /* Parlak kiremit kırmızısı */
-  --brickRed: rgba(210, 74, 62, 1);
-  --brickRedBg: rgba(210, 74, 62, 0.16);
-  --brickRedLine: rgba(255, 120, 105, 0.55);
+  --brick: rgba(220, 70, 58, 1);
+  --brickBg: rgba(220, 70, 58, 0.18);
+  --brickLine: rgba(255, 120, 105, 0.55);
 }
 
 *{ box-sizing:border-box; }
@@ -232,7 +232,7 @@ html,body{
 .mono{ font-variant-numeric:tabular-nums; }
 .muted{ color:var(--muted); }
 
-/* Single Player button (big, bright, 3D) */
+/* Single Player button */
 .btnSinglePlayer{
   padding: 14px 16px;
   border-radius: 14px;
@@ -258,6 +258,28 @@ html,body{
 }
 .btnSinglePlayer.on{
   background: linear-gradient(180deg, rgba(195,255,215,1), rgba(90,210,150,1));
+}
+
+/* === Highlight (parça bazlı) === */
+.hlBrickAr, .hlBrick{
+  display:inline;
+  padding: 0.06em 0.18em;
+  margin: 0 0.03em;
+  border-radius: 0.45em;
+  background: var(--brickBg);
+  box-shadow:
+    0 0 0 1px rgba(255, 120, 105, 0.20) inset,
+    0 16px 40px rgba(220, 70, 58, 0.10);
+  text-shadow: 0 2px 14px rgba(0,0,0,0.35);
+}
+
+.hlBrickAr{
+  color: var(--brick) !important;
+}
+
+.hlBrick{
+  color: rgba(255,255,255,0.98);
+  border-left: 2px solid rgba(220, 70, 58, 0.55);
 }
 
 /* Timeline */
@@ -450,18 +472,6 @@ html,body{
     grid-template-columns: var(--w-no) var(--w-ar) var(--w-tr);
   }
   .colDe{ display:none; }
-}
-
-/* === FULL ARABIC VERSE COLOR (Parlak kiremit kırmızısı) === */
-.arVerseHot{
-  color: var(--brickRed) !important;
-  background: var(--brickRedBg);
-  border-radius: 12px;
-  padding: 2px 8px 6px;
-  box-shadow:
-    0 0 0 1px rgba(255, 120, 105, 0.20) inset,
-    0 16px 40px rgba(210, 74, 62, 0.10);
-  text-shadow: 0 2px 14px rgba(0,0,0,0.35);
 }
 
 /* -------- Single Player (CENTERED overlay + blur BACK) -------- */
@@ -693,20 +703,15 @@ html,body{
 }
 .spRBtn:active{ transform: translateY(1px); }
 
-/* === Bottom dock (format bozmaz, sadece yeni class) === */
+/* === Bottom dock === */
 .singlePlayerDockBottom{
   position: fixed !important;
-
   right: 14px !important;
   left: auto !important;
-
   bottom: calc(14px + env(safe-area-inset-bottom)) !important;
-
   top: auto !important;
   transform: none !important;
-
   z-index: 10001 !important;
-
   width: min(640px, calc(100% - 28px)) !important;
   max-width: calc(100% - 28px) !important;
 
@@ -728,7 +733,7 @@ html,body{
   white-space: nowrap;
 }
 
-/* === Backdrop inertia (appShell’e dokunmaz) === */
+/* === Backdrop inertia === */
 @keyframes spBackdropInertiaIn{
   0%   { opacity: 0; transform: translateY(10px); }
   100% { opacity: 1; transform: translateY(0px); }
