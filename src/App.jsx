@@ -18,35 +18,38 @@ const SURAHES = [
 ];
 
 /**
- * Ayet renklendirme:
- * 1) JSON içinde destek:
- *    - { highlight: true }
- *    - { color: "#f5d76e" }  (veya rgba/hsla)
- *    - { className: "hlGold" } (CSS class)
- * 2) Buradan kural:
- *    - ayahNo: { color, className }
+ * فقط المطلوب:
+ * - Renk: kırmızı
+ * - Sadece Arapça
+ * - Sadece ilgili ayet parçaları (snippet)
+ *
+ * Not: Snippet eşleşmesi "birebir" string match ile çalışır.
+ * JSON'daki ar metni ile snippet birebir aynıysa boyar.
  */
-// App.jsx içinde, HIGHLIGHT_RULES = { ... } yerine bunu koy:
-const HIGHLIGHT_RULES = {
-  // 1) Yusuf (a.s.) sözleri / dua
-  33:  { color: "#f5d76e", className: "hlYusuf" },
-  101: { color: "#f5d76e", className: "hlYusuf" },
+const AR_HIGHLIGHTS = {
+  33: [
+    "قَالَ رَبِّ ٱلسِّجْنُ أَحَبُّ إِلَىَّ مِمَّا يَدْعُونَنِىٓ إِلَيْهِ ۖ",
+    "وَإِلَّا تَصِرْفْ عَنِّى كَيْدَهُنَّ أَصْبُ إِلَيْهِنَّ وَأَكُن مِّنَ ٱلْجَٰهِلِينَ",
+  ],
+  101: ["تَوَفَّنِى مُسْلِمًا وَأَلْحِقْنِى بِٱلصَّٰلِحِينَ"],
 
-  // 2) Yakub (a.s.) sözleri / teselli / tevekkül
-  18: { color: "#63f2d1", className: "hlYakub" },
-  64: { color: "#63f2d1", className: "hlYakub" },
-  66: { color: "#63f2d1", className: "hlYakub" },
-  67: { color: "#63f2d1", className: "hlYakub" },
-  83: { color: "#63f2d1", className: "hlYakub" },
-  86: { color: "#63f2d1", className: "hlYakub" },
-  87: { color: "#63f2d1", className: "hlYakub" },
-  98: { color: "#63f2d1", className: "hlYakub" },
+  18: ["فَصَبْرٌ جَمِيلٌ ۖ وَٱللَّهُ ٱلْمُسْتَعَانُ عَلَىٰ مَا تَصِفُونَ"],
+  64: ["فَٱللَّهُ خَيْرٌ حَٰفِظًا ۖ وَهُوَ أَرْحَمُ ٱلرَّٰحِمِينَ"],
+  66: ["ٱللَّهُ عَلَىٰ مَا نَقُولُ وَكِيلٌ"],
+  67: [
+    "إِنِ ٱلْحُكْمُ إِلَّا لِلَّهِ ۖ عَلَيْهِ تَوَكَّلْتُ ۖ وَعَلَيْهِ فَلْيَتَوَكَّلِ ٱلْمُتَوَكِّلُونَ",
+  ],
+  83: [
+    "فَصَبْرٌ جَمِيلٌ ۖ عَسَى ٱللَّهُ أَن يَأْتِيَنِى بِهِمْ جَمِيعًا ۚ إِنَّهُۥ هُوَ ٱلْعَلِيمُ ٱلْحَكِيمُ",
+  ],
+  86: ["إِنَّمَآ أَشْكُوا۟ بَثِّى وَحُزْنِىٓ إِلَى ٱللَّهِ"],
+  87: ["وَلَا تَا۟يْـَٔسُوا۟ مِن رَّوْحِ ٱللَّهِ"],
+  98: ["إِنَّهُۥ هُوَ ٱلْغَفُورُ ٱلرَّحِيمُ"],
 
-  // 3) Allah’ın ilke/öğüt cümleleri
-  21: { color: "#63b3ed", className: "hlIlke" },
-  76: { color: "#63b3ed", className: "hlIlke" },
-  90: { color: "#63b3ed", className: "hlIlke" },
-  92: { color: "#63b3ed", className: "hlIlke" },
+  21: ["وَٱللَّهُ غَالِبٌ عَلَىٰٓ أَمْرِهِۦ"],
+  76: ["وَفَوْقَ كُلِّ ذِى عِلْمٍ عَلِيمٌ"],
+  90: ["إِنَّ ٱللَّهَ لَا يُضِيعُ أَجْرَ ٱلْمُحْسِنِينَ"],
+  92: ["لَا تَثْرِيبَ عَلَيْكُمُ ٱلْيَوْمَ"],
 };
 
 function resolvePublicUrl(path) {
@@ -79,21 +82,6 @@ function tactilePulse(ms = 8) {
       navigator.vibrate(ms);
     }
   } catch {}
-}
-
-function getVerseHighlight(verse) {
-  const ay = Number(verse?.ayah);
-  const rule = Number.isFinite(ay) ? HIGHLIGHT_RULES[ay] : null;
-
-  const jsonClass = typeof verse?.className === "string" ? verse.className.trim() : "";
-  const jsonColor = typeof verse?.color === "string" ? verse.color.trim() : "";
-  const jsonHighlight = Boolean(verse?.highlight);
-
-  const className = (jsonClass || rule?.className || "").trim();
-  const color = (jsonColor || rule?.color || "").trim();
-
-  const on = jsonHighlight || Boolean(className) || Boolean(color) || Boolean(rule);
-  return { on, className, color };
 }
 
 // Overlap-safe
@@ -254,6 +242,50 @@ async function githubPutFile({ owner, repo, path, token, branch, message, conten
   return res.json();
 }
 
+function splitAndMark(str, snippet, markKeyPrefix) {
+  if (!snippet || !str) return [str];
+  const parts = String(str).split(String(snippet));
+  if (parts.length === 1) return [str];
+
+  const out = [];
+  for (let i = 0; i < parts.length; i += 1) {
+    const p = parts[i];
+    if (p) out.push(p);
+    if (i !== parts.length - 1) {
+      out.push(
+        <span className="arHl" key={`${markKeyPrefix}:${i}`}>
+          {snippet}
+        </span>
+      );
+    }
+  }
+  return out;
+}
+
+function renderArabicWithHighlights(arText, ayah) {
+  const text = String(arText || "");
+  const ay = Number(ayah);
+  const snippets = Number.isFinite(ay) ? AR_HIGHLIGHTS[ay] : null;
+  if (!snippets || !Array.isArray(snippets) || snippets.length === 0) return text;
+
+  let nodes = [text];
+  for (let sIdx = 0; sIdx < snippets.length; sIdx += 1) {
+    const snippet = snippets[sIdx];
+    const nextNodes = [];
+    for (let nIdx = 0; nIdx < nodes.length; nIdx += 1) {
+      const node = nodes[nIdx];
+      if (typeof node !== "string") {
+        nextNodes.push(node);
+        continue;
+      }
+      const parts = splitAndMark(node, snippet, `ayah:${ay}:snip:${sIdx}:node:${nIdx}`);
+      nextNodes.push(...parts);
+    }
+    nodes = nextNodes;
+  }
+  return nodes;
+}
+
 function SurahList({ surahs, selectedId, query, onQuery, onSelect }) {
   return (
     <aside className="sidebar">
@@ -410,7 +442,7 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
   const accumPxRef = useRef(0);
   const rafRef = useRef(0);
 
-  // Daha küçük STEP_PX => daha hassas
+  // Hassasiyet artırıldı:
   const STEP_PX = 12;
 
   useEffect(() => {
@@ -451,7 +483,7 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
       return;
     }
 
-    // Daha az decay => inertia daha uzun, daha hassas his
+    // Daha uzun inertia hissi:
     const DECAY = 0.0045;
     const MAX_MS = 1100;
     const startTs = performance.now();
@@ -515,7 +547,7 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
     stop();
 
     const dy = e.deltaY;
-    // Daha küçük bölen => daha hassas/seri step
+    // Wheel hassasiyet artırıldı:
     const steps = clamp(Math.round(Math.abs(dy) / 18), 1, 14);
     const dir = dy < 0 ? +1 : -1;
 
@@ -586,7 +618,6 @@ function IOSPickerWheelVertical3D({ disabled, value, onStep }) {
 /**
  * Single Player
  * - Bottom dock (fixed)
- * - No extra overlay panels
  */
 function SinglePlayerPanel({
   open,
@@ -625,25 +656,19 @@ function SinglePlayerPanel({
   if (!open) return null;
 
   const ay = Number(verse?.ayah || 0);
-  const hl = getVerseHighlight(verse);
-  const hlClass = hl.on ? `highlight ${hl.className || ""}`.trim() : "";
-  const hlStyle = hl.on && hl.color ? { "--hl": hl.color } : undefined;
 
   return (
     <div className="singlePlayerBackdrop" role="dialog" aria-modal="true" aria-label="Single Player">
-      <div className={`singlePlayerCard ${hlClass}`} style={hlStyle}>
+      <div className="singlePlayerCard">
         <div className="singlePlayerLines">
-          <div className={`singlePlayerLine singlePlayerLineAr ${hlClass}`} style={hlStyle} dir="rtl">
-            {(verse?.ar || "—").trim()}
+          {/* ONLY ARABIC gets highlights */}
+          <div className="singlePlayerLine singlePlayerLineAr" dir="rtl">
+            {renderArabicWithHighlights((verse?.ar || "—").trim(), verse?.ayah)}
           </div>
 
-          <div className={`singlePlayerLine singlePlayerLineDe ${hlClass}`} style={hlStyle}>
-            {(verse?.de || "—").trim()}
-          </div>
+          <div className="singlePlayerLine singlePlayerLineDe">{(verse?.de || "—").trim()}</div>
 
-          <div className={`singlePlayerLine singlePlayerLineTr ${hlClass}`} style={hlStyle}>
-            {(verse?.tr || "—").trim()}
-          </div>
+          <div className="singlePlayerLine singlePlayerLineTr">{(verse?.tr || "—").trim()}</div>
 
           <div style={{ height: 140 }} />
         </div>
@@ -1022,12 +1047,7 @@ function SyncPanel({
             <button className="btnSmall" type="button" onClick={setEndToT} disabled={!active}>
               Set END = t (E)
             </button>
-            <button
-              className="btnSmall"
-              type="button"
-              onClick={setEndToTAndNext}
-              disabled={!active}
-            >
+            <button className="btnSmall" type="button" onClick={setEndToTAndNext} disabled={!active}>
               END=t + Next (N)
             </button>
           </div>
@@ -1066,72 +1086,32 @@ function SyncPanel({
           <div className="syncRow">
             <div className="syncNudgeGroup">
               <span className="muted">Start:</span>
-              <button
-                className="btnTiny"
-                type="button"
-                onClick={() => nudgeStart(-0.1)}
-                disabled={!active}
-              >
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.1)} disabled={!active}>
                 -0.1
               </button>
-              <button
-                className="btnTiny"
-                type="button"
-                onClick={() => nudgeStart(+0.1)}
-                disabled={!active}
-              >
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.1)} disabled={!active}>
                 +0.1
               </button>
-              <button
-                className="btnTiny"
-                type="button"
-                onClick={() => nudgeStart(-0.5)}
-                disabled={!active}
-              >
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(-0.5)} disabled={!active}>
                 -0.5
               </button>
-              <button
-                className="btnTiny"
-                type="button"
-                onClick={() => nudgeStart(+0.5)}
-                disabled={!active}
-              >
+              <button className="btnTiny" type="button" onClick={() => nudgeStart(+0.5)} disabled={!active}>
                 +0.5
               </button>
             </div>
 
             <div className="syncNudgeGroup">
               <span className="muted">End:</span>
-              <button
-                className="btnTiny"
-                type="button"
-                onClick={() => nudgeEnd(-0.1)}
-                disabled={!active}
-              >
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.1)} disabled={!active}>
                 -0.1
               </button>
-              <button
-                className="btnTiny"
-                type="button"
-                onClick={() => nudgeEnd(+0.1)}
-                disabled={!active}
-              >
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.1)} disabled={!active}>
                 +0.1
               </button>
-              <button
-                className="btnTiny"
-                type="button"
-                onClick={() => nudgeEnd(-0.5)}
-                disabled={!active}
-              >
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(-0.5)} disabled={!active}>
                 -0.5
               </button>
-              <button
-                className="btnTiny"
-                type="button"
-                onClick={() => nudgeEnd(+0.5)}
-                disabled={!active}
-              >
+              <button className="btnTiny" type="button" onClick={() => nudgeEnd(+0.5)} disabled={!active}>
                 +0.5
               </button>
             </div>
@@ -1320,25 +1300,23 @@ function VersesTable({ verses, activeIndex, onRowClick, rowRefs }) {
       <div className="tableBody" role="table">
         {verses.map((v, idx) => {
           const active = idx === activeIndex;
-          const hl = getVerseHighlight(v);
-          const hlClass = hl.on ? `highlight ${hl.className || ""}`.trim() : "";
-          const hlStyle = hl.on && hl.color ? { "--hl": hl.color } : undefined;
-
           return (
             <button
               key={`${v.ayah}-${idx}`}
               type="button"
-              className={`row ${active ? "active" : ""} ${hlClass}`}
-              style={hlStyle}
+              className={`row ${active ? "active" : ""}`}
               onClick={() => onRowClick(idx)}
               ref={(el) => {
                 rowRefs.current[idx] = el;
               }}
             >
               <div className="cell colNo">{v.ayah}</div>
+
+              {/* ONLY ARABIC gets snippet highlights */}
               <div className="cell colAr" dir="rtl">
-                {(v.ar || "").trimStart()}
+                {renderArabicWithHighlights((v.ar || "").trimStart(), v.ayah)}
               </div>
+
               <div className="cell colDe">{v.de}</div>
               <div className="cell colTr">{v.tr}</div>
             </button>
@@ -1374,7 +1352,7 @@ export default function App() {
 
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
 
-  // Sayfa single player ile açılsın
+  // Sayfa single player ile yüklensin:
   const [singleOn, setSingleOn] = useState(true);
 
   // repeat: 0 off, 1 => 1 tekrar, 2 => 2 tekrar
@@ -1444,7 +1422,7 @@ export default function App() {
     setDuration(0);
     setIsPlaying(false);
 
-    // single player açık kalsın (sayfa açılışında true)
+    // her sure değişince de single açık kalsın:
     setSingleOn(true);
 
     setRepeatMode(0);
@@ -1468,9 +1446,7 @@ export default function App() {
         }
 
         const data = parseJsonTolerant(text, versesSrc);
-        if (!Array.isArray(data)) {
-          throw new Error(`Invalid verses JSON (expected array) | url=${versesSrc}`);
-        }
+        if (!Array.isArray(data)) throw new Error(`Invalid verses JSON (expected array) | url=${versesSrc}`);
 
         if (!cancelled) {
           rowRefs.current = [];
@@ -1544,7 +1520,7 @@ export default function App() {
     [seekTo]
   );
 
-  // Sayfa single player ile açılınca: ayetler gelince ilk ayete konumlan (autoplay yok)
+  // Single player açıkken: ayetler gelince 1. ayete konumlan (autoplay yok)
   useEffect(() => {
     if (!singleOn) return;
     if (!verses.length) return;
@@ -1987,7 +1963,19 @@ export default function App() {
                 onUpdateVerse={updateVerse}
                 onSeek={(t) => seekTo(t, false)}
                 onSeekVerse={(idx) => seekVerse(idx, true)}
-                onExportJson={exportJson}
+                onExportJson={() => {
+                  const blob = new Blob([JSON.stringify(versesRef.current, null, 2)], {
+                    type: "application/json",
+                  });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `${selectedSurah.slug}.json`;
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  URL.revokeObjectURL(url);
+                }}
                 onImportJson={importJsonFile}
                 onSaveDraft={saveDraft}
                 onRestoreDraft={restoreDraft}
