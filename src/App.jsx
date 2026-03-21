@@ -55,7 +55,7 @@ const SEGMENTS = {
   },
   34: {
     color: "green",
-    ar: "فَٱçإِنَّهُۥ هُوَ ٱلسَّمِيعُ ٱلْعَلِيمُ",
+    ar: "إِنَّهُۥ هُوَ ٱلسَّمِيعُ ٱلْعَلِيمُ",
     de: "Er ist ja der Allhörende und Allwissende.",
     tr: "Hiç şüphesiz O’dur Semî‘ (her şeyi, her duayı hakkıyla işiten); Alîm (her şeyi, herkesin durumunu hakkıyla bilen).”",
   },
