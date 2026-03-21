@@ -1,8 +1,7 @@
 /* =========================
-   FILE: src/styles.css (FULL - GÜNCEL)
+   FILE: src/styles.css (FULL - GÜNCEL / PERF SAFE)
    ========================= */
 
-/* src/styles.css */
 :root{
   --bg:#0b0f16;
   --panel:#0f1520;
@@ -17,7 +16,6 @@
   --w-de: 1fr;
   --w-tr: 1fr;
 
-  /* Segment colors */
   --markRed: rgba(235, 78, 62, 1);
   --markRedBg: rgba(235, 78, 62, 0.18);
   --markGreen: rgba(82, 210, 140, 1);
@@ -234,7 +232,7 @@ html,body{
 .mono{ font-variant-numeric:tabular-nums; }
 .muted{ color:var(--muted); }
 
-/* Single Player button (big, bright, 3D) */
+/* Single Player button */
 .btnSinglePlayer{
   padding: 14px 16px;
   border-radius: 14px;
@@ -392,7 +390,6 @@ html,body{
   color:inherit;
   cursor:pointer;
   align-items: stretch;
-
   background:
     linear-gradient(90deg,
       rgba(0,0,0,0.00) 0%,
@@ -408,9 +405,7 @@ html,body{
 
 .tableBody .row:nth-child(odd){ background-color: rgba(255,255,255,0.05); }
 .tableBody .row:nth-child(even){ background-color: rgba(0,0,0,0.18); }
-
 .row:hover{ filter: brightness(1.08); }
-
 .row.active{
   background-color: rgba(99,179,237,0.14) !important;
   box-shadow: 0 0 0 1px rgba(99,179,237,0.35) inset;
@@ -454,7 +449,7 @@ html,body{
   .colDe{ display:none; }
 }
 
-/* -------- Single Player (CENTERED overlay + blur BACK) -------- */
+/* Single Player overlay */
 @keyframes spBackdropInertiaIn{
   0%   { opacity: 0; transform: translateY(10px); }
   100% { opacity: 1; transform: translateY(0px); }
@@ -475,7 +470,6 @@ html,body{
   display: grid;
   place-items: center;
   padding: 14px;
-
   animation: spBackdropInertiaIn 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
   overflow: hidden;
 }
@@ -509,10 +503,7 @@ html,body{
   overflow: auto;
 }
 
-.singlePlayerLines{
-  display: grid;
-  gap: 10px;
-}
+.singlePlayerLines{ display: grid; gap: 10px; }
 
 .singlePlayerLine{
   border: 1px solid rgba(255,255,255,0.08);
@@ -520,9 +511,7 @@ html,body{
   padding: 12px 14px;
   background: rgba(0,0,0,0.14);
 }
-.singlePlayerLines > :nth-child(odd){
-  background: rgba(255,255,255,0.06);
-}
+.singlePlayerLines > :nth-child(odd){ background: rgba(255,255,255,0.06); }
 
 .singlePlayerLineAr{
   direction: rtl;
@@ -712,7 +701,7 @@ html,body{
 }
 .spRBtn:active{ transform: translateY(1px); }
 
-/* === EK: Bottom dock === */
+/* Bottom dock */
 .singlePlayerDockBottom{
   position: fixed !important;
   right: 14px !important;
@@ -740,11 +729,7 @@ html,body{
   white-space: nowrap;
 }
 
-/* =========================
-   Segment marking styles
-   ========================= */
-
-/* ✅ FIX: prevent "forced line breaks" feeling on RTL big text */
+/* Segment styles */
 .mark{
   display:inline;
   padding: 0.10em 0.34em;
