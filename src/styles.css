@@ -1,5 +1,5 @@
 /* =========================
-   FILE: src/styles.css (FULL - ORIJINAL + EKLER)
+   FILE: src/styles.css (FULL - ORIJINAL + EKLER + FONT COLORS + BIG WHEEL)
    ========================= */
 /* src/styles.css */
 :root{
@@ -15,6 +15,12 @@
   --w-ar: 1.1fr;
   --w-de: 1fr;
   --w-tr: 1fr;
+
+  /* Segment colors */
+  --markRed: rgba(235, 78, 62, 1);
+  --markRedBg: rgba(235, 78, 62, 0.18);
+  --markGreen: rgba(82, 210, 140, 1);
+  --markGreenBg: rgba(82, 210, 140, 0.16);
 }
 
 *{ box-sizing:border-box; }
@@ -554,10 +560,10 @@ html,body{
   .spBtnPrimary{ min-width: 124px; height: 78px; font-size: 32px; }
 }
 
-/* Wheel */
+/* Wheel (BÜYÜTÜLDÜ) */
 .spPicker3D{
-  width: 120px;
-  height: 160px;
+  width: 150px;
+  height: 200px;
   border-radius: 18px;
   border: 1px solid rgba(255,255,255,0.16);
   background: rgba(0,0,0,0.18);
@@ -595,7 +601,7 @@ html,body{
   text-align:center;
   font-variant-numeric: tabular-nums;
   font-weight: 950;
-  font-size: 34px;
+  font-size: 42px;
   letter-spacing: 0.6px;
   color: rgba(255,255,255,0.20);
   transform-origin: center center;
@@ -676,7 +682,7 @@ html,body{
 }
 .spRBtn:active{ transform: translateY(1px); }
 
-/* === EK: Bottom dock === */
+/* === Bottom dock === */
 .singlePlayerDockBottom{
   position: fixed !important;
   right: 14px !important;
@@ -685,7 +691,7 @@ html,body{
   top: auto !important;
   transform: none !important;
   z-index: 10001 !important;
-  width: min(640px, calc(100% - 28px)) !important;
+  width: min(780px, calc(100% - 28px)) !important;
   max-width: calc(100% - 28px) !important;
   padding: 10px !important;
   border-radius: 18px !important;
@@ -704,7 +710,7 @@ html,body{
   white-space: nowrap;
 }
 
-/* === EK: Backdrop inertia === */
+/* Backdrop inertia */
 @keyframes spBackdropInertiaIn{
   0%   { opacity: 0; transform: translateY(10px); }
   100% { opacity: 1; transform: translateY(0px); }
@@ -735,36 +741,23 @@ html,body{
   .singlePlayerBackdrop::before{ animation: none; }
 }
 
-/* ===== EK: error shown inside overlay ===== */
-.spInlineError{
-  margin-bottom: 10px;
-  border: 1px solid rgba(255,120,120,0.35);
-  background: rgba(255,120,120,0.14);
-  border-radius: 12px;
-  padding: 10px 12px;
-  color: rgba(255,255,255,0.92);
-  font-size: 13px;
-  line-height: 1.35;
-  white-space: pre-wrap;
-}
-
-/* ===== EK: segment styles ===== */
-:root{
-  --markRed: rgba(235, 78, 62, 1);
-  --markRedBg: rgba(235, 78, 62, 0.18);
-  --markGreen: rgba(82, 210, 140, 1);
-  --markGreenBg: rgba(82, 210, 140, 0.16);
-}
-
+/* =========================
+   SEGMENT STYLES
+   - Arabic: markRed/markGreen => bg + colored font
+   - TR/DE: fontRed/fontGreen => colored font only
+   ========================= */
 .mark{
-  display:inline;
+  display:inline-block;
   padding: 0.10em 0.34em;
   border-radius: 0.55em;
   margin: 0 0.06em;
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.10) inset,
+    0 18px 50px rgba(0,0,0,0.18);
+  text-shadow: 0 2px 16px rgba(0,0,0,0.40);
 }
 .markRed{ color: var(--markRed) !important; background: var(--markRedBg); }
 .markGreen{ color: var(--markGreen) !important; background: var(--markGreenBg); }
+
 .fontRed{ color: var(--markRed) !important; }
 .fontGreen{ color: var(--markGreen) !important; }
