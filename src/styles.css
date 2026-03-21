@@ -1,5 +1,5 @@
 /* =========================
-   FILE: src/styles.css (FULL - ORIJINAL + EKLER)
+   FILE: src/styles.css (FULL)
    ========================= */
 /* src/styles.css */
 :root{
@@ -447,6 +447,19 @@ html,body{
   .colDe{ display:none; }
 }
 
+/* === Arabic snippet highlight (RED) === */
+.arHl{
+  display:inline;
+  padding: 0.06em 0.14em;
+  margin: 0 0.02em;
+  border-radius: 0.35em;
+  background: rgba(255, 60, 60, 0.22);
+  box-shadow:
+    0 0 0 1px rgba(255, 80, 80, 0.35) inset,
+    0 10px 22px rgba(255, 30, 30, 0.10);
+  text-shadow: 0 2px 10px rgba(0,0,0,0.28);
+}
+
 /* -------- Single Player (CENTERED overlay + blur BACK) -------- */
 .singlePlayerBackdrop{
   position: fixed;
@@ -676,21 +689,16 @@ html,body{
 }
 .spRBtn:active{ transform: translateY(1px); }
 
-/* === EK: Bottom dock (format bozmaz, sadece yeni class) === */
+/* === Bottom dock === */
 .singlePlayerDockBottom{
   position: fixed !important;
-
   right: 14px !important;
   left: auto !important;
-
   bottom: calc(14px + env(safe-area-inset-bottom)) !important;
-
   top: auto !important;
   transform: none !important;
-
   z-index: 10001 !important;
-
-  width: min(640px, calc(100% - 28px)) !important; /* sağda net dursun */
+  width: min(640px, calc(100% - 28px)) !important;
   max-width: calc(100% - 28px) !important;
 
   padding: 10px !important;
@@ -711,7 +719,7 @@ html,body{
   white-space: nowrap;
 }
 
-/* === EK: Backdrop inertia (appShell’e dokunmaz) === */
+/* === Backdrop inertia === */
 @keyframes spBackdropInertiaIn{
   0%   { opacity: 0; transform: translateY(10px); }
   100% { opacity: 1; transform: translateY(0px); }
