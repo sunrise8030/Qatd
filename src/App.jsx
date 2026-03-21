@@ -1658,28 +1658,31 @@ const VerseRow = React.memo(function VerseRow({
   setRowRef,
   markSegment,
 }) {
+  const arText = (v.ar || "").trimStart();
+  const deText = v.de || "";
+  const trText = v.tr || "";
+
   return (
     <button
-      key={`${v.ayah}-${idx}`}
       type="button"
       className={`row ${active ? "active" : ""}`}
       onClick={() => onRowClick(idx)}
       ref={(el) => setRowRef(idx, el)}
     >
       <div className="cell colNo">{v.ayah}</div>
-     const arText = (v.ar || "").trimStart();
-const deText = (v.de || "");
-const trText = (v.tr || "");
 
-<div className="cell colAr" dir="rtl">
-  {active ? markSegment(arText, v.ayah, "ar") : arText}
-</div>
-<div className="cell colDe">
-  {active ? markSegment(deText, v.ayah, "de") : deText}
-</div>
-<div className="cell colTr">
-  {active ? markSegment(trText, v.ayah, "tr") : trText}
-</div>
+      <div className="cell colAr" dir="rtl">
+        {active ? markSegment(arText, v.ayah, "ar") : arText}
+      </div>
+
+      <div className="cell colDe">
+        {active ? markSegment(deText, v.ayah, "de") : deText}
+      </div>
+
+      <div className="cell colTr">
+        {active ? markSegment(trText, v.ayah, "tr") : trText}
+      </div>
+    </button>
   );
 });
 
