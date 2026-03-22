@@ -1,7 +1,15 @@
 [
   {
+    "ayah": 0,
+    "ar": "أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ\nبِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
+    "tr": "Kovulmuş şeytandan Allah’a sığınırım.\nRahmân ve Rahîm olan Allah’ın adıyla.",
+    "de": "Ich suche Zuflucht bei Allah vor dem verfluchten Satan.\nIm Namen Allahs, des Allerbarmers, des Barmherzigen.",
+    "start": 0.75,
+    "end": 15.74
+  },
+  {
     "ayah": 1,
-    "ar": "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ كٓهيعٓصٓ",
+    "ar": "كٓهيعٓصٓ",
     "de": "Kaf-Ha-Ya-'Ayn-Sad.",
     "tr": "KâfHâYâAynSâd.",
     "start": null,
