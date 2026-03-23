@@ -5,39 +5,39 @@
     "tr": "Kovulmuş şeytandan Allah’a sığınırım.\nRahmân ve Rahîm olan Allah’ın adıyla.",
     "de": "Ich suche Zuflucht bei Allah vor dem verfluchten Satan.\nIm Namen Allahs, des Allerbarmers, des Barmherzigen.",
     "start": 0.75,
-    "end": 8.05
+    "end": 13.517913
   },
   {
     "ayah": 1,
     "ar": "كٓهيعٓصٓ",
     "de": "Kaf-Ha-Ya-'Ayn-Sad.",
     "tr": "KâfHâYâAynSâd.",
-    "start": 19.04,
-    "end": 29.32
+    "start": 13.639999999999965,
+    "end": 27.455759
   },
   {
     "ayah": 2,
     "ar": "ذِكْرُ رَحْمَتِ رَبِّكَ عَبْدَهُۥ زَكَرِيَّآ",
     "de": "(Diese Verse sind) zum Gedenken an die Barmherzigkeit deines Herrn zu Seinem Diener Zakariyya.",
     "tr": "Bu, senin Rabbinin, kulu Zekeriya’ya olan lütf u ihsanına dair bir bahistir:",
-    "start": 29.32,
-    "end": 33.94
+    "start": 27.619999999999976,
+    "end": 32.867346
   },
   {
     "ayah": 3,
     "ar": "إِذْ نَادَىٰ رَبَّهُۥ نِدَآءً خَفِيًّۭا",
     "de": "Als er zu seinem Herrn im Verborgenen rief",
     "tr": "Bir defasında Zekeriya, Rabbisine gizlice niyaz etmişti.",
-    "start": 33.94,
-    "end": 39.94
+    "start": 33.139999999999986,
+    "end": 39.44
   },
   {
     "ayah": 4,
     "ar": "قَالَ رَبِّ إِنِّى وَهَنَ ٱلْعَظْمُ مِنِّى وَٱشْتَعَلَ ٱلرَّأْسُ شَيْبًۭا وَلَمْ أَكُنۢ بِدُعَآئِكَ رَبِّ شَقِيًّۭا",
     "de": "(und) sagte: \"Mein Herr, schwach sind mir die Knochen geworden, und in Altersgrauheit entfacht ist der Kopf. Und ich war im Bittgebet zu Dir, mein Herr, (noch) nie unglücklich.",
     "tr": "Şöyle demişti O: “Rabbim, kemiklerim zayıflayıp inceldi; başım, ihtiyarlıktan beyaz alevler gibi tutuştu; ve ben Rabbim, Sana hangi konuda dua etmişsem hiç mahrum ve bedbaht olmadım.",
-    "start": 40.46,
-    "end": 56.58
+    "start": 40.36,
+    "end": 54.27999999999999
   },
   {
     "ayah": 5,
@@ -45,7 +45,7 @@
     "de": "Gewiß, ich fürchte die Verwandten nach mir, und meine Frau ist unfruchtbar. So schenke mir von Dir aus einen nahen Verwandten,",
     "tr": "“Doğrusu, arkamdan bana mirasçı olacak yakınlarımdan ötürü endişeliyim. Karım da kısırdır. Ne olur, bana lütf u kereminden bir yakın (bir oğul) nasip et.",
     "start": 57.18,
-    "end": 73.41
+    "end": 72.91000000000003
   },
   {
     "ayah": 6,
@@ -53,23 +53,23 @@
     "de": "der mich beerbt und von der Sippe Ya'qubs erbt, und mach ihn, mein Herr, (Dir) wohlgefällig.\"",
     "tr": "“Bana mirasçı olduğu gibi, Yakup Ailesi ’ne de mirasçı olsun. Ve Rabbim, O’nu kendisinden razı olacağın bir kul eyle.”",
     "start": 73.41,
-    "end": 81.83
+    "end": 79.73000000000003
   },
   {
     "ayah": 7,
     "ar": "يَٰزَكَرِيَّآ إِنَّا نُبَشِّرُكَ بِغُلَٰمٍ ٱسْمُهُۥ يَحْيَىٰ لَمْ نَجْعَل لَّهُۥ مِن قَبْلُ سَمِيًّۭا",
     "de": "\"O Zakariyya, Wir verkünden dir einen Jungen, dessen Name Yahya ist, wie Wir zuvor noch niemandem Kennzeichen gleich den seinen gegeben haben.\"",
     "tr": "(Allah, melekler vasıtasıyla) “Ey Zekeriya!” (diye vahyetti): “Sana ismi Yahya olacak bir oğul müjdeliyoruz. Bu ismi daha önce kimseye vermedik (ve O’na bahşedeceğimiz üstün niteliklerle daha önce kimseyi övmedik).”",
-    "start": 84.59,
-    "end": 95.43
+    "start": 81.18999999999997,
+    "end": 94.93
   },
   {
     "ayah": 8,
     "ar": "قَالَ رَبِّ أَنَّىٰ يَكُونُ لِى غُلَٰمٌۭ وَكَانَتِ ٱمْرَأَتِى عَاقِرًۭا وَقَدْ بَلَغْتُ مِنَ ٱلْكِبَرِ عِتِيًّۭا",
     "de": "Er sagte: \"Mein Herr, wie soll ich einen Jungen haben, wo meine Frau unfruchtbar ist und ich vom hohen Alter bereits einen Dürrezustand erreicht habe?\"",
     "tr": "Zekeriya, (hayret içinde) “Rabbim, karım kısır, ben ise iyice ihtiyarlamışken benim nasıl, hangi yolla çocuğum olacak?! diye sordu.",
-    "start": 96.0,
-    "end": 110.18
+    "start": 96,
+    "end": 109.68
   },
   {
     "ayah": 9,
@@ -93,14 +93,14 @@
     "de": "So kam er zu seinem Volk aus dem Gebetsraum heraus und gab ihnen dann zu verstehen: \"Preist morgens und abends.\"",
     "tr": "Bunun üzerine Zekeriya mâ’betteki bölmesinden halkının karşısına çıktı ve onlara, “Sabah akşam Rabbinizi anın, O’nu tesbih edin!” diye işarette bulundu.",
     "start": 137.61,
-    "end": 151.27
+    "end": 146.77
   },
   {
     "ayah": 12,
     "ar": "يَٰيَحْيَىٰ خُذِ ٱلْكِتَٰبَ بِقُوَّةٍۢ ۖ وَءَاتَيْنَٰهُ ٱلْحُكْمَ صَبِيًّۭا",
     "de": "\"O Yahya, nimm die Schrift mit (aller) Kraft.\" Und Wir gaben ihm schon als Kind die Urteilskraft",
     "tr": "(Derken Yahya doğdu ve Cenabı Allah’a muhatap olacak çağa gelince, kendisine emrettik:) “Ey Yahya! Kitaba (Tevrat) var gücünle sarıl!” Daha çocukken O’na derin ve doğru anlayış, hikmet ve firaset bahşetmiştik.",
-    "start": 153.21,
+    "start": 151.41000000000003,
     "end": 161.13
   },
   {
@@ -117,22 +117,22 @@
     "de": "und gütig gegen seine Eltern, und er war weder gewalttätig noch widerspenstig.",
     "tr": "Anne–babasına karşı da çok içten ve çok iyi davranan hayırlı bir evlâttı; hiçbir zaman zorba ve isyankâr biri olmadı.",
     "start": 169.69,
-    "end": 177.55
+    "end": 177.755736
   },
   {
     "ayah": 15,
     "ar": "وَسَلَٰمٌ عَلَيْهِ يَوْمَ وُلِدَ وَيَوْمَ يَمُوتُ وَيَوْمَ يُبْعَثُ حَيًّۭا",
     "de": "Und Friede sei auf ihm am Tag, da er geboren wurde, und am Tag, da er stirbt, und am Tag, da er wieder zum Leben auferweckt wird.",
     "tr": "Selâm olsun O’na doğduğu gün de, vefat ettiği gün de ve diriltilip kabrinden kalkacağı gün de.",
-    "start": 177.55,
-    "end": 186.83
+    "start": 177.95,
+    "end": 185.33
   },
   {
     "ayah": 16,
     "ar": "وَٱذْكُرْ فِى ٱلْكِتَٰبِ مَرْيَمَ إِذِ ٱنتَبَذَتْ مِنْ أَهْلِهَا مَكَانًۭا شَرْقِيًّۭا",
     "de": "Und gedenke im Buch Maryams, als sie sich von ihren Angehörigen an einen östlichen Ort zurückzog.",
     "tr": "(Ey Rasûlüm,) Kitap’ta Meryem’i de an. O, ibadet ve tefekkür için ailesinden ayrılıp, Ma’bed’in doğuya bakan bir odasına çekilmişti.",
-    "start": 189.55,
+    "start": 187.05,
     "end": 197.51
   },
   {
@@ -181,23 +181,23 @@
     "de": "So empfing sie ihn und zog sich mit ihm zu einem fernen Ort zurück.",
     "tr": "Meryem, çocuğa hamile kaldı ve bu haliyle uzakça bir yere çekildi.",
     "start": 284.57,
-    "end": 292.17
+    "end": 292.175759
   },
   {
     "ayah": 23,
     "ar": "فَأَجَآءَهَا ٱلْمَخَاضُ إِلَىٰ جِذْعِ ٱلنَّخْلَةِ قَالَتْ يَٰلَيْتَنِى مِتُّ قَبْلَ هَٰذَا وَكُنتُ نَسْيًۭا مَّنسِيًّۭا",
     "de": "Die Wehen ließen sie zum Palmenstamm gehen. Sie sagte: \"O wäre ich doch zuvor gestorben und ganz und gar in Vergessenheit geraten!\"",
     "tr": "Derken, doğum sancısı O’nu bir hurma ağacına dayanmaya zorladı. (Evlenmeden çocuk sahibi olmayı insanlara nasıl anlatacağının endişeleri içinde) “Keşke” dedi, “bu iş başıma gelmeden önce öleydim de, adı sanı unutulup gitmiş biri olaydım!”",
-    "start": 294.37,
-    "end": 314.51
+    "start": 292.6700000000001,
+    "end": 312.51
   },
   {
     "ayah": 24,
     "ar": "فَنَادَىٰهَا مِن تَحْتِهَآ أَلَّا تَحْزَنِى قَدْ جَعَلَ رَبُّكِ تَحْتَكِ سَرِيًّۭا",
     "de": "Da rief er ihr von unten her zu: \"Sei nicht traurig; dein Herr hat ja unter dir ein Bächlein geschaffen.",
     "tr": "(Bir ses,) alt tarafından ona seslendi: “Üzülme; bak Rabbin senin alt tarafında akar bir su meydana getirdi.",
-    "start": 316.81,
-    "end": 324.73
+    "start": 314.81,
+    "end": 324.43000000000006
   },
   {
     "ayah": 25,
@@ -212,7 +212,7 @@
     "ar": "فَكُلِى وَٱشْرَبِى وَقَرِّى عَيْنًۭا ۖ فَإِمَّا تَرَيِنَّ مِنَ ٱلْبَشَرِ أَحَدًۭا فَقُولِىٓ إِنِّى نَذَرْتُ لِلرَّحْمَٰنِ صَوْمًۭا فَلَنْ أُكَلِّمَ ٱلْيَوْمَ إِنسِيًّۭا",
     "de": "So iß und trink und sei frohen Mutes'. Und wenn du nun jemanden von den Menschen sehen solltest, dann sag: Ich habe dem Allerbarmer Fasten gelobt, so werde ich heute mit keinem Menschenwesen sprechen.\"",
     "tr": "“Artık ye iç, gözün aydın olsun. Herhangi bir insana rastlayacak olursan, işaretle ‘Ben, Rahmân için oruç adadım. O bakımdan, bugün kimseyle konuşmayacağım!’ dersin.”",
-    "start": 341.43,
+    "start": 338.93,
     "end": 369.44
   },
   {
@@ -221,14 +221,14 @@
     "de": "Dann kam sie mit ihm zu ihrem Volk, ihn (mit sich) tragend. Sie sagten: \"O Maryam, du hast da ja etwas Unerhörtes begangen.",
     "tr": "Meryem, çocuğu kucağına alıp, O’nunla birlikte toplumuna geldi. “Meryem,” dediler, “gerçekte sen görülmedik bir iş yaptın!",
     "start": 371.94,
-    "end": 384.3
+    "end": 384.041428
   },
   {
     "ayah": 28,
     "ar": "يَٰٓأُخْتَ هَٰرُونَ مَا كَانَ أَبُوكِ ٱمْرَأَ سَوْءٍۢ وَمَا كَانَتْ أُمُّكِ بَغِيًّۭا",
     "de": "O Schwester Haruns, dein Vater war doch kein sündiger Mann, noch war deine Mutter eine Hure.\"",
     "tr": "“Ey Harun’un kız kardeşi, baban kötü bir adam değildi, annen de iffetsiz değildi.”",
-    "start": 388.48,
+    "start": 384.2800000000001,
     "end": 397.46
   },
   {
@@ -285,7 +285,7 @@
     "de": "Es steht Allah nicht an, Sich ein Kind zu nehmen. Preis sei Ihm! Wenn Er eine Angelegenheit bestimmt, so sagt Er dazu nur: ,Sei!', und so ist es.",
     "tr": "Allah için çocuk edinme gibi bir şey asla söz konusu olamaz; O, (yaratılmışa ait bu tür özelliklerden) mutlak manâda münezzehtir. Bir şeyin olmasına hükmettiği zaman ona sadece “Ol!” der ve o da oluverir (olma sürecine giriverir).",
     "start": 462.76,
-    "end": 483.0
+    "end": 483
   },
   {
     "ayah": 36,
@@ -300,7 +300,7 @@
     "ar": "فَٱخْتَلَفَ ٱلْأَحْزَابُ مِنۢ بَيْنِهِمْ ۖ فَوَيْلٌۭ لِّلَّذِينَ كَفَرُوا۟ مِن مَّشْهَدِ يَوْمٍ عَظِيمٍ",
     "de": "Doch die Gruppierungen wurden uneinig untereinander; dann wehe denjenigen, die ungläubig sind, vor dem Erleben eines gewaltigen Tages!",
     "tr": "Ne var ki, bilâhare gruplar (Yahudiler ve Hıristiyanlar) O’nun hakkında ihtilâfa düştüler. Bütün gerçeklerin meydana çıkıp, hesapların görüleceği büyük bir günün duruşmasından dolayı vay küfredenlerin başlarına geleceklere!",
-    "start": 501.19,
+    "start": 498.49000000000007,
     "end": 513.97
   },
   {
@@ -325,30 +325,30 @@
     "de": "Gewiß, Wir sind es, die Wir die Erde und (all die,) die auf ihr sind, erben werden. Und zu Uns werden sie zurückgebracht.",
     "tr": "Şurası bir gerçek ki, yeryüzüne ve yeryüzünde bulunan bütün şuurlu canlılara sonunda Biz vâris olacağız ve onların hepsi neticede Bizim huzurumuza getirileceklerdir.",
     "start": 543.88,
-    "end": 551.18
+    "end": 549.6799999999997
   },
   {
     "ayah": 41,
     "ar": "وَٱذْكُرْ فِى ٱلْكِتَٰبِ إِبْرَٰهِيمَ ۚ إِنَّهُۥ كَانَ صِدِّيقًۭا نَّبِيًّا",
     "de": "Und gedenke im Buch Ibrahims. Er war ein Wahrhaftiger und Prophet.",
     "tr": "Şimdi de Kitap’ta İbrahim’den bir bahis aç. O, gerçekten özü–sözü doğru bir insandı, bir peygamberdi.",
-    "start": 559.89,
-    "end": 566.94
+    "start": 555.09,
+    "end": 566.74
   },
   {
     "ayah": 42,
     "ar": "إِذْ قَالَ لِأَبِيهِ يَٰٓأَبَتِ لِمَ تَعْبُدُ مَا لَا يَسْمَعُ وَلَا يُبْصِرُ وَلَا يُغْنِى عَنكَ شَيْـًۭٔا",
     "de": "Als er zu seinem Vater sagte: \"O mein lieber Vater, warum dienst du dem, was nicht hört und nicht sieht und dir nichts nützt?",
     "tr": "Bir zaman geldi, atası (Âzer’e), “Babacığım” dedi, “niçin işitmeyen, görmeyen ve sana hiçbir faydası olmayan putlara tapıyorsun?",
-    "start": 566.94,
-    "end": 580.29
+    "start": 566.3399999999999,
+    "end": 579.29
   },
   {
     "ayah": 43,
     "ar": "يَٰٓأَبَتِ إِنِّى قَدْ جَآءَنِى مِنَ ٱلْعِلْمِ مَا لَمْ يَأْتِكَ فَٱتَّبِعْنِىٓ أَهْدِكَ صِرَٰطًۭا سَوِيًّۭا",
     "de": "O mein lieber Vater, gewiß, zu mir ist vom Wissen gekommen, was nicht zu dir gekommen ist. So folge mir, dann leite ich dich einen ebenen Weg.",
     "tr": "“Babacığım! İnan ki, sana ulaşmayan bir ilim geldi bana; o halde ne olur bana tâbi ol da seni dümdüz ve asla saptırmayan bir yola yönelteyim.",
-    "start": 582.85,
+    "start": 580.25,
     "end": 601.04
   },
   {
@@ -356,7 +356,7 @@
     "ar": "يَٰٓأَبَتِ لَا تَعْبُدِ ٱلشَّيْطَٰنَ ۖ إِنَّ ٱلشَّيْطَٰنَ كَانَ لِلرَّحْمَٰنِ عَصِيًّۭا",
     "de": "O mein lieber Vater, diene nicht dem Satan. Gewiß, der Satan ist gegen den Allerbarmer widerspenstig.",
     "tr": "“Babacığım! (Putlara tapman için yaptığı davete uyarak) sakın şeytana ibadet etme; gerçekten şeytan, Rahmân’a isyan içindedir.",
-    "start": 601.56,
+    "start": 600.0599999999998,
     "end": 613.93
   },
   {
@@ -364,7 +364,7 @@
     "ar": "يَٰٓأَبَتِ إِنِّىٓ أَخَافُ أَن يَمَسَّكَ عَذَابٌۭ مِّنَ ٱلرَّحْمَٰنِ فَتَكُونَ لِلشَّيْطَٰنِ وَلِيًّۭا",
     "de": "O mein lieber Vater, ich fürchte, daß dir Strafe vom Allerbarmer widerfährt, so daß du zu einem Gefolgsmann des Satans wirst.\"",
     "tr": "“Babacığım! Bu gidişle o Rahmân’dan sana bir cezanın gelip dokunmasından ve neticede şeytana tam bir dost, onun elinde bir âlet olmandan korkuyorum.”",
-    "start": 616.98,
+    "start": 614.18,
     "end": 627.55
   },
   {
@@ -396,23 +396,23 @@
     "ar": "فَلَمَّا ٱعْتَزَلَهُمْ وَمَا يَعْبُدُونَ مِن دُونِ ٱللَّهِ وَهَبْنَا لَهُۥٓ إِسْحَٰقَ وَيَعْقُوبَ ۖ وَكُلًّۭا جَعَلْنَا نَبِيًّۭا",
     "de": "Als er sich nun von ihnen und von dem, dem sie anstatt Allahs dienten, fernhielt, schenkten Wir ihm Ishaq und Ya'qub; und alle (beide) machten Wir zu Propheten.",
     "tr": "Böylece İbrahim onlardan ve Allah’ı bırakıp da ilâhlaştırdıkları ve kendilerine dua ettikleri her şeyden ayrıldı. Biz de kendisine İshak ve Yakub’u armağan ettik. Onların her birini peygamber kıldık.",
-    "start": 684.44,
-    "end": 701.56
+    "start": 681.5400000000001,
+    "end": 700.9599999999998
   },
   {
     "ayah": 50,
     "ar": "وَوَهَبْنَا لَهُم مِّن رَّحْمَتِنَا وَجَعَلْنَا لَهُمْ لِسَانَ صِدْقٍ عَلِيًّۭا",
     "de": "Und Wir schenkten ihnen (etwas) von Unserer Barmherzigkeit, und Wir verliehen ihnen einen hohen Ruf an Wahrhaftigkeit.",
     "tr": "Onlara rahmetimizden daha pek çok ihsanlarda bulunduk ve dillerde onlar için hayırlı, güzel ve yüce bir nam bıraktık.",
-    "start": 701.56,
-    "end": 708.32
+    "start": 701.4599999999999,
+    "end": 706.52
   },
   {
     "ayah": 51,
     "ar": "وَٱذْكُرْ فِى ٱلْكِتَٰبِ مُوسَىٰٓ ۚ إِنَّهُۥ كَانَ مُخْلَصًۭا وَكَانَ رَسُولًۭا نَّبِيًّۭا",
     "de": "Und gedenke im Buch Musas. Gewiß, er war auserlesen, und er war ein Gesandter und Prophet.",
     "tr": "Kitap’ta şimdi de Musa’dan söz et. Gerçekten O, bizzat Allah tarafından seçilip ihlâsa erdirilmiş bir kuldu; büyük bir rasûl ve nebî idi.",
-    "start": 714.74,
+    "start": 712.2399999999999,
     "end": 725.52
   },
   {
@@ -420,7 +420,7 @@
     "ar": "وَنَٰدَيْنَٰهُ مِن جَانِبِ ٱلطُّورِ ٱلْأَيْمَنِ وَقَرَّبْنَٰهُ نَجِيًّۭا",
     "de": "Wir riefen ihn von der rechten Seite des Berges und ließen ihn zu vertraulichem Gespräch näherkommen.",
     "tr": "Biz O’na Tur Dağı’nın sağ tarafından seslenmiş ve kendisiyle hususi konuşmak üzere O’nu huzurumuza almıştık.",
-    "start": 727.4,
+    "start": 725.5,
     "end": 731.6
   },
   {
@@ -428,7 +428,7 @@
     "ar": "وَوَهَبْنَا لَهُۥ مِن رَّحْمَتِنَآ أَخَاهُ هَٰرُونَ نَبِيًّۭا",
     "de": "Und Wir schenkten ihm aus Unserer Barmherzigkeit seinen Bruder Harun als Propheten.",
     "tr": "Kardeşi Harun’u da nebî ve yardımcı olarak lütf u keremimizden O’na ihsan etmiştik.",
-    "start": 734.78,
+    "start": 734.98,
     "end": 740.54
   },
   {
@@ -436,7 +436,7 @@
     "ar": "وَٱذْكُرْ فِى ٱلْكِتَٰبِ إِسْمَٰعِيلَ ۚ إِنَّهُۥ كَانَ صَادِقَ ٱلْوَعْدِ وَكَانَ رَسُولًۭا نَّبِيًّۭا",
     "de": "Und gedenke im Buch Isma'ils. Gewiß, er war wahrhaftig in seinem Versprechen, und er war ein Gesandter und Prophet.",
     "tr": "Kitap’ta İsmail’i de an. O, sözüne sadık bir insandı; rasûldü, nebî idi.",
-    "start": 750.78,
+    "start": 744.28,
     "end": 759.68
   },
   {
@@ -444,7 +444,7 @@
     "ar": "وَكَانَ يَأْمُرُ أَهْلَهُۥ بِٱلصَّلَوٰةِ وَٱلزَّكَوٰةِ وَكَانَ عِندَ رَبِّهِۦ مَرْضِيًّۭا",
     "de": "Und er pflegte seinen Angehörigen das Gebet und die Abgabe zu befehlen, und er war seinem Herrn wohlgefällig.",
     "tr": "Ailesi başta olmak üzere halkına namazı ve zekâtı emrederdi. Rabbi katında rıza mertebesine ulaşmış bir zattı.",
-    "start": 759.68,
+    "start": 758.68,
     "end": 769.9
   },
   {
@@ -452,7 +452,7 @@
     "ar": "وَٱذْكُرْ فِى ٱلْكِتَٰبِ إِدْرِيسَ ۚ إِنَّهُۥ كَانَ صِدِّيقًۭا نَّبِيًّۭا",
     "de": "Und gedenke im Buch Idris'. Er war ein Wahrhaftiger und Prophet.",
     "tr": "Kitap’ta İdris’i de zikret. Doğrusu O da, özüsözü dosdoğru bir insandı, bir nebî idi.",
-    "start": 772.5,
+    "start": 770.1,
     "end": 781.34
   },
   {
@@ -461,14 +461,14 @@
     "de": "Und Wir hoben ihn zu einem hohen Ort empor.",
     "tr": "Biz O’na yüce bir makam verdik ve O’nu yüce bir mekâna yükselttik.",
     "start": 781.34,
-    "end": 788.24
+    "end": 787.7399999999999
   },
   {
     "ayah": 58,
     "ar": "أُو۟لَٰٓئِكَ ٱلَّذِينَ أَنْعَمَ ٱللَّهُ عَلَيْهِم مِّنَ ٱلنَّبِيِّۦنَ مِن ذُرِّيَّةِ ءَادَمَ وَمِمَّنْ حَمَلْنَا مَعَ نُوحٍۢ وَمِن ذُرِّيَّةِ إِبْرَٰهِيمَ وَإِسْرَٰٓءِيلَ وَمِمَّنْ هَدَيْنَا وَٱجْتَبَيْنَآ ۚ إِذَا تُتْلَىٰ عَلَيْهِمْ ءَايَٰتُ ٱلرَّحْمَٰنِ خَرُّوا۟ سُجَّدًۭا وَبُكِيًّۭا ۩",
     "de": "Das sind diejenigen, denen Allah Gunst erwiesen hat, unter den Propheten aus der Nachkommenschaft Adams und von denjenigen, die Wir mit Nuh trugen, und aus der Nachkommenschaft Ibrahims und Isra'ils, und von denjenigen, die Wir rechtgeleitet und erwählt haben. Als ihnen die Zeichen des Allerbarmers verlesen wurden, fielen sie ehrerbietig und weinend nieder.",
     "tr": "Bütün bu zatlar, Allah’ın kendilerine hususi nimet (Kitap, nübüvvet, doğru düşünüp doğru karar verebilme kabiliyeti ve hikmet) bahşettiği peygamberlerden, Âdem neslinden, Nuh ile birlikte Gemi’de taşıdıklarımızın soyundan, İbrahim ve İsrail’in (Yakup) evlâtlarından ve hidayete erdirip seçtiğimiz kimselerdendir. Onlar, kendilerine Rahmân’ın âyetleri okunduğu zaman ağlayarak secdeye kapanırlardı.",
-    "start": 791.3,
+    "start": 785.8,
     "end": 829.54
   },
   {
@@ -484,7 +484,7 @@
     "ar": "إِلَّا مَن تَابَ وَءَامَنَ وَعَمِلَ صَٰلِحًۭا فَأُو۟لَٰٓئِكَ يَدْخُلُونَ ٱلْجَنَّةَ وَلَا يُظْلَمُونَ شَيْـًۭٔا",
     "de": "außer demjenigen, der bereut und glaubt und rechtschaffen handelt. Jene werden in den (Paradies)garten eingehen und ihnen wird in nichts Unrecht zugefügt",
     "tr": "Ancak, bu nesiller içinde de tevbe edip (gittikleri yoldan vazgeçen ve) iman ederek, imanları istikametinde sağlam, doğru, yerinde ve ıslaha yönelik işler yapanlar, evet bunlar Cennet’e girecek ve hiçbir şekilde haksızlığa uğratılmayacaklardır.",
-    "start": 842.93,
+    "start": 842.1299999999998,
     "end": 858.31
   },
   {
@@ -492,7 +492,7 @@
     "ar": "جَنَّٰتِ عَدْنٍ ٱلَّتِى وَعَدَ ٱلرَّحْمَٰنُ عِبَادَهُۥ بِٱلْغَيْبِ ۚ إِنَّهُۥ كَانَ وَعْدُهُۥ مَأْتِيًّۭا",
     "de": "in die Gärten Edens, die der Allerbarmer Seinen Dienern im Verborgenen versprochen hat. Sein Versprechen wird bestimmt erfüllt.",
     "tr": "Sonsuz nimet ve ebedî mutluluk cennetlerine ki, Rahmân o cennetleri kullarına o kullar onları görmeden ve onların idraklerinin ötesinde olarak va’detmiş, (o kulları da bu va’de inanmışlardır). O’nun va’di, mutlaka yerine gelir.",
-    "start": 862.17,
+    "start": 858.27,
     "end": 873.73
   },
   {
@@ -508,7 +508,7 @@
     "ar": "تِلْكَ ٱلْجَنَّةُ ٱلَّتِى نُورِثُ مِنْ عِبَادِنَا مَن كَانَ تَقِيًّۭا",
     "de": "Das ist der (Paradies)garten, den Wir denjenigen von Unseren Dienern zum Erbe geben, die gottesfürchtig sind.",
     "tr": "O Cennet ki, Biz ona kullarımız içinde kalbleri Bize karşı saygıyla dopdolu olan, günahlardan, dolayısıyla azabımızdan kaçınan ve tertemiz kalabilenleri vâris kılarız.",
-    "start": 890.17,
+    "start": 886.47,
     "end": 896.73
   },
   {
@@ -524,7 +524,7 @@
     "ar": "رَّبُّ ٱلسَّمَٰوَٰتِ وَٱلْأَرْضِ وَمَا بَيْنَهُمَا فَٱعْبُدْهُ وَٱصْطَبِرْ لِعِبَٰدَتِهِۦ ۚ هَلْ تَعْلَمُ لَهُۥ سَمِيًّۭا",
     "de": "(Er), der Herr der Himmel und der Erde und dessen, was dazwischen ist. So diene Ihm und sei beharrlich in Seinem Dienst. Weißt du (etwa) einen, der Kennzeichen gleich den Seinen besäße?1\"",
     "tr": "“Göklerin, yerin ve bunların arasında ne varsa hepsinin Rabbidir O. Şu halde O’na kulluk et ve O’na olan kulluğunda sabırlı ve ısrarlı ol. Hiç O’nun gibi olan başka birisini biliyor musun?”",
-    "start": 915.45,
+    "start": 913.0500000000001,
     "end": 926.15
   },
   {
@@ -532,7 +532,7 @@
     "ar": "وَيَقُولُ ٱلْإِنسَٰنُ أَءِذَا مَا مِتُّ لَسَوْفَ أُخْرَجُ حَيًّا",
     "de": "Der Mensch sagt: \"Werde ich, wenn ich erst einmal gestorben bin, wirklich wieder lebendig hervorgebracht werden?\"",
     "tr": "Böyle iken, o nankör ve inançsız insan, “Gerçekten ben öldükten sonra diriltilip kabrimden çıkarılacak mıyım?” der.",
-    "start": 931.55,
+    "start": 927.05,
     "end": 935.29
   },
   {
@@ -540,7 +540,7 @@
     "ar": "أَوَلَا يَذْكُرُ ٱلْإِنسَٰنُ أَنَّا خَلَقْنَٰهُ مِن قَبْلُ وَلَمْ يَكُ شَيْـًۭٔا",
     "de": "Gedenkt der Mensch denn nicht, daß Wir ihn zuvor erschaffen haben, da er (noch) nichts war?",
     "tr": "O insan hiç düşünmez, hiç aklına getirmez mi ki, o hiçbir şey değilken Biz kendisini yaratıp var ettik?",
-    "start": 936.91,
+    "start": 935.91,
     "end": 947.53
   },
   {
@@ -548,7 +548,7 @@
     "ar": "فَوَرَبِّكَ لَنَحْشُرَنَّهُمْ وَٱلشَّيَٰطِينَ ثُمَّ لَنُحْضِرَنَّهُمْ حَوْلَ جَهَنَّمَ جِثِيًّۭا",
     "de": "Bei deinem Herrn, Wir werden sie ganz gewiß versammeln, (sie) und die Satane. Hierauf werden Wir sie ganz gewiß rings um die Hölle herum auf den Knien herbeibringen.",
     "tr": "Rabbine andolsun ki, onları da, peşlerinden gittikleri insan ve cin şeytanlarını da diriltip huzurumuza toplayacak, sonra da hepsini Cehennem’in etrafında topluluklar halinde dizleri üstü çökertip yığacağız.",
-    "start": 947.53,
+    "start": 947.43,
     "end": 964.43
   },
   {
@@ -556,7 +556,7 @@
     "ar": "ثُمَّ لَنَنزِعَنَّ مِن كُلِّ شِيعَةٍ أَيُّهُمْ أَشَدُّ عَلَى ٱلرَّحْمَٰنِ عِتِيًّۭا",
     "de": "Hierauf werden Wir aus jedem Lager ganz gewiß denjenigen herausnehmen, der sich dem Allerbarmer am heftigsten widersetzt hat.",
     "tr": "Ardından, dünyada iken aynı inancı paylaşıp aynı yolda yürümüş her topluluk içinden, (kendilerini yaratıp, dünya hayatında hep rahmetle bürümüş ve rızıklandırmış olan) Rahmân’a karşı isyanda en fazla direten ve en ileri gidenleri çekip ayıracağız.",
-    "start": 965.99,
+    "start": 966.3900000000001,
     "end": 975.41
   },
   {
@@ -580,7 +580,7 @@
     "ar": "ثُمَّ نُنَجِّى ٱلَّذِينَ ٱتَّقَوا۟ وَّنَذَرُ ٱلظَّٰلِمِينَ فِيهَا جِثِيًّۭا",
     "de": "Hierauf erretten Wir diejenigen, die gottesfürchtig waren, und lassen die Ungerechten in ihr auf den Knien zurück.",
     "tr": "Şu kadar ki, kalbleri Rabbilerine karşı saygıyla dopdolu olan, O’na isyandan, dolayısıyla O’nun azabından kaçınanları kurtarır, (onları Cehennem’in yakmasına müsaade etmez, hattâ bazılarına onun hışırtısını bile duyurmaz), buna karşılık, (Allah’a şirk koşmak veya O’nu inkârla en büyük zulmü işleyen) zalimleri Cehennem’in içinde diz üstü bırakırız.",
-    "start": 998.99,
+    "start": 999.19,
     "end": 1008.29
   },
   {
@@ -588,7 +588,7 @@
     "ar": "وَإِذَا تُتْلَىٰ عَلَيْهِمْ ءَايَٰتُنَا بَيِّنَٰتٍۢ قَالَ ٱلَّذِينَ كَفَرُوا۟ لِلَّذِينَ ءَامَنُوٓا۟ أَىُّ ٱلْفَرِيقَيْنِ خَيْرٌۭ مَّقَامًۭا وَأَحْسَنُ نَدِيًّۭا",
     "de": "Und wenn ihnen Unsere Zeichen als klare Beweise verlesen werden, sagen diejenigen, die ungläubig sind, zu denjenigen, die glauben: \"Welcher der beiden Gruppen hat nun eine bessere Stellung und eine schönere Gesellschaft?\"",
     "tr": "Gerçeği apaçık gösteren ve her bakımdan anlaşılır âyetlerimiz insanlara okunduğunda o küfredenler, iman edenlere “Şöyle bir bakın,” diyorlar, “siz ve biz, evet hangimiz makam ve mevkî bakımından, sahip bulunduğumuz evler, meskenler açısından daha üstün, topluluk olarak daha muteberiz; hangimizin meclisleri, toplantıları daha şaşaalı?”",
-    "start": 1008.29,
+    "start": 1008.69,
     "end": 1033.07
   },
   {
@@ -604,7 +604,7 @@
     "ar": "قُلْ مَن كَانَ فِى ٱلضَّلَٰلَةِ فَلْيَمْدُدْ لَهُ ٱلرَّحْمَٰنُ مَدًّا ۚ حَتَّىٰٓ إِذَا رَأَوْا۟ مَا يُوعَدُونَ إِمَّا ٱلْعَذَابَ وَإِمَّا ٱلسَّاعَةَ فَسَيَعْلَمُونَ مَنْ هُوَ شَرٌّۭ مَّكَانًۭا وَأَضْعَفُ جُندًۭا",
     "de": "Sag: Wer sich im Irrtum befindet, den möge der Allerbarmer lange darin gewähren lassen. Wenn sie dann sehen, was ihnen angedroht ist, entweder die Strafe oder die Stunde, da werden sie wissen, wer sich in einer (noch) schlechteren Lage befindet und die schwächere Heerschar hat.",
     "tr": "(Rasûlüm,) de ki: “Kim sapkınlık içinde boğulup gitmişse, Rahmân öylelerinin dünyalığını arttırıp, kendilerine ömür de verse ne değişir! Nasıl olsa sonunda kendisiyle tehdit edildikleri cezayı veya Kıyamet’i kar şılarında bulacaklar ve işte o zaman kimin makamının daha düşük, meskenlerinin daha kötü, kim asker ve maiyetçe daha zayıfmış anlayacaklardır.”",
-    "start": 1043.08,
+    "start": 1043.38,
     "end": 1074.1
   },
   {
@@ -620,7 +620,7 @@
     "ar": "أَفَرَءَيْتَ ٱلَّذِى كَفَرَ بِـَٔايَٰتِنَا وَقَالَ لَأُوتَيَنَّ مَالًۭا وَوَلَدًا",
     "de": "Was meinst du wohl zu demjenigen, der Unsere Zeichen verleugnet und sagt: \"Mir werden ganz gewiß Besitz und Kinder gegeben\"?",
     "tr": "Bakmaz mısın şu âyetlerimizi inkâr eden ve “Siz ne derseniz deyin, (işte ben yolumda gidecek ve ceza, azap hiçbir şey görmeyeceğim; üstelik) bana mal da verilecek, evlât da verilecek!” diyen kişiye?",
-    "start": 1096.09,
+    "start": 1093.89,
     "end": 1104.75
   },
   {
@@ -628,7 +628,7 @@
     "ar": "أَطَّلَعَ ٱلْغَيْبَ أَمِ ٱتَّخَذَ عِندَ ٱلرَّحْمَٰنِ عَهْدًۭا",
     "de": "Hat er etwa Einblick in das Verborgene gewonnen, oder hat er vom Allerbarmer eine Verpflichtung entgegengenommen?",
     "tr": "Yoksa o, gaybı öğrenmenin yolunu buldu veya Rahmân’la yapılmış bir sözleşmesi mi var da (böyle diyor)?",
-    "start": 1104.75,
+    "start": 1104.9499999999998,
     "end": 1112.21
   },
   {
@@ -636,7 +636,7 @@
     "ar": "كَلَّا ۚ سَنَكْتُبُ مَا يَقُولُ وَنَمُدُّ لَهُۥ مِنَ ٱلْعَذَابِ مَدًّۭا",
     "de": "Keineswegs! Wir werden aufschreiben, was er sagt, und ihm die Strafe noch verlängern.",
     "tr": "Asla! Onun bu söylediklerini yazıp başına dolayacak ve karşılığında ona çektirdikçe çektireceğiz.",
-    "start": 1112.21,
+    "start": 1112.5099999999998,
     "end": 1118.29
   },
   {
@@ -644,7 +644,7 @@
     "ar": "وَنَرِثُهُۥ مَا يَقُولُ وَيَأْتِينَا فَرْدًۭا",
     "de": "Und Wir erben von ihm das, was er sagt, während er einzeln zu Uns kommt.",
     "tr": "Kendisi ölüp gidecek, sözü katımızda kalacak ve o, malı da evlâdı da kendisine hiç fayda vermez bir halde Bize tek başına gelecektir.",
-    "start": 1118.29,
+    "start": 1121.3899999999999,
     "end": 1126.99
   },
   {
@@ -652,7 +652,7 @@
     "ar": "وَٱتَّخَذُوا۟ مِن دُونِ ٱللَّهِ ءَالِهَةًۭ لِّيَكُونُوا۟ لَهُمْ عِزًّۭا",
     "de": "Und sie haben sich anstatt Allahs Götter genommen, damit sie ihnen zu Macht gereichen.",
     "tr": "Kendileri için izzet ve kuvvet sebebi olsun diye Allah’tan başka birtakım ilâhlar edindiler.",
-    "start": 1126.99,
+    "start": 1127.1899999999998,
     "end": 1135.87
   },
   {
@@ -660,7 +660,7 @@
     "ar": "كَلَّا ۚ سَيَكْفُرُونَ بِعِبَادَتِهِمْ وَيَكُونُونَ عَلَيْهِمْ ضِدًّا",
     "de": "Keineswegs! Sie werden den von ihnen (empfangenen) Dienst verleugnen und werden ihnen Gegner sein.",
     "tr": "Hayır, hayır! İlâh edindikleri o varlıklar (melekler, cinler, peygamberler, azizler, diktatörler), kendilerine yapılan tapınmayı reddedecek ve onlara düşman olacaklardır.",
-    "start": 1135.87,
+    "start": 1135.77,
     "end": 1142.43
   },
   {
@@ -668,7 +668,7 @@
     "ar": "أَلَمْ تَرَ أَنَّآ أَرْسَلْنَا ٱلشَّيَٰطِينَ عَلَى ٱلْكَٰفِرِينَ تَؤُزُّهُمْ أَزًّۭا",
     "de": "Siehst du nicht, daß Wir die Satane gegen die Ungläubigen gesandt haben, damit sie sie heftig aufreizen?",
     "tr": "Görmez misin ki, kâfirlere (inkârları sebebiyle) şeytanları musallat ediyoruz da, onları her türlü kötülüğe mümkün olan her yolla teşvik ve tahrik edip duruyorlar?",
-    "start": 1144.59,
+    "start": 1144.99,
     "end": 1157.37
   },
   {
@@ -676,7 +676,7 @@
     "ar": "فَلَا تَعْجَلْ عَلَيْهِمْ ۖ إِنَّمَا نَعُدُّ لَهُمْ عَدًّۭا",
     "de": "So wünsche nichts gegen sie zu beschleunigen; Wir zählen ihnen schon (die Tage) ab.",
     "tr": "Fakat (Rasûlüm), onlar hakkında acele etme, yaptıkları karşısında sabret. Biz, onların günlerini saymaktayız: (kendilerine tanıdığımız süreyi tamamlayacak, imtihan günleri bitecek ve başlarına gelecek gelecektir).",
-    "start": 1157.37,
+    "start": 1156.67,
     "end": 1162.26
   },
   {
@@ -692,7 +692,7 @@
     "ar": "وَنَسُوقُ ٱلْمُجْرِمِينَ إِلَىٰ جَهَنَّمَ وِرْدًۭا",
     "de": "und die Übeltäter, wie eine durstige Herde zur Tränke zur Hölle treiben,",
     "tr": "İşleri–güçleri günah hasadından ibaret inkârcı suçluları ise susamış olarak o yakıcı Cehennem’e süreceğiz.",
-    "start": 1170.54,
+    "start": 1170.7399999999998,
     "end": 1177.22
   },
   {
@@ -708,7 +708,7 @@
     "ar": "وَقَالُوا۟ ٱتَّخَذَ ٱلرَّحْمَٰنُ وَلَدًۭا",
     "de": "Und sie sagen: \"Der Allerbarmer hat Sich Kinder genommen.\"",
     "tr": "Bir de, “Rahmân çocuk edindi!” dediler.",
-    "start": 1186.44,
+    "start": 1186.94,
     "end": 1191.42
   },
   {
@@ -724,7 +724,7 @@
     "ar": "تَكَادُ ٱلسَّمَٰوَٰتُ يَتَفَطَّرْنَ مِنْهُ وَتَنشَقُّ ٱلْأَرْضُ وَتَخِرُّ ٱلْجِبَالُ هَدًّا",
     "de": "Beinahe brechen davon die Himmel auseinander, und (beinahe) spaltet sich die Erde, und (beinahe) stürzen die Berge in Trümmern zusammen,",
     "tr": "Bundan dolayı neredeyse gökler çatlayacak, yer yarılacak ve dağlar parçalanıp dağılacak,",
-    "start": 1195.22,
+    "start": 1195.4199999999998,
     "end": 1206.94
   },
   {
@@ -740,7 +740,7 @@
     "ar": "وَمَا يَنۢبَغِى لِلرَّحْمَٰنِ أَن يَتَّخِذَ وَلَدًا",
     "de": "Es ziemt dem Allerbarmer nicht, Sich Kinder zu nehmen.",
     "tr": "Halbuki çocuk edinmek, asla Rahmân’a yaraşır ve O’nun yapacağı bir şey değildir.",
-    "start": 1211.68,
+    "start": 1211.8799999999999,
     "end": 1216.8
   },
   {
@@ -748,7 +748,7 @@
     "ar": "إِن كُلُّ مَن فِى ٱلسَّمَٰوَٰتِ وَٱلْأَرْضِ إِلَّآ ءَاتِى ٱلرَّحْمَٰنِ عَبْدًۭا",
     "de": "Niemand in den Himmeln und auf der Erde wird zum Allerbarmer anders denn als Diener kommen (können).",
     "tr": "Göklerde ve yerde kim varsa, (yaratılışları, hayatları, vücutları ve kendilerini kuşatan cebrî şartlar itibariyle) ancak Rahmân’ın kudret ve iradesi altında ve (kendi adlarına hayır, şer, fayda, zarar, hayat, ölüm hiçbir şeye malik olmayıp,) her bakımdan O’na muhtaç birer kuldur.",
-    "start": 1219.38,
+    "start": 1219.58,
     "end": 1231.2
   },
   {
@@ -764,7 +764,7 @@
     "ar": "وَكُلُّهُمْ ءَاتِيهِ يَوْمَ ٱلْقِيَٰمَةِ فَرْدًا",
     "de": "Und sie alle werden zu Ihm am Tag der Auferstehung einzeln kommen.",
     "tr": "Ve onların hepsi, Kıyamet Günü O’nun huzuruna (mal, evlât, güç, makam gibi bütün dünyalıklardan, dünyadaki sebep, vasıta ve yardımcılardan soyunmuş) tek tek birer fert olarak gelecektir.",
-    "start": 1235.82,
+    "start": 1236.1199999999997,
     "end": 1242.58
   },
   {
@@ -772,7 +772,7 @@
     "ar": "إِنَّ ٱلَّذِينَ ءَامَنُوا۟ وَعَمِلُوا۟ ٱلصَّٰلِحَٰتِ سَيَجْعَلُ لَهُمُ ٱلرَّحْمَٰنُ وُدًّۭا",
     "de": "Gewiß, denjenigen, die glauben und rechtschaffene Werke tun, wird der Allerbarmer Liebe bereiten.",
     "tr": "Rahmân, iman edip imanları istikametinde sağlam, doğru, yerinde ve ıslaha yönelik işler yapanlar için (gök ve yer ehlinin gönüllerinde) bir sevgi var edecek (ve onlar, şu anda az ve güçsüz de olsalar, her tarafta kabul görecekler)dir.",
-    "start": 1242.58,
+    "start": 1242.88,
     "end": 1252.32
   },
   {
@@ -780,7 +780,7 @@
     "ar": "فَإِنَّمَا يَسَّرْنَٰهُ بِلِسَانِكَ لِتُبَشِّرَ بِهِ ٱلْمُتَّقِينَ وَتُنذِرَ بِهِۦ قَوْمًۭا لُّدًّۭا",
     "de": "Wir haben ihn eigens leicht gemacht in deiner Sprache, damit du durch ihn den Gottesfürchtigen frohe Botschaft verkündest und durch ihn hartnäckige Leute warnst.",
     "tr": "Kur’ân’ı senin dilinle indirip anlaşılmasını kolaylaştırıyoruz ki, kalberi Allah’a karşı saygıyla dopdolu olan, O’na isyandan ve böylece O’nun azabından kaçınanları onunla müjdeleyesin ve yine onunla inat ve düşmanlıkta direten bir topluluğu ise uyarasın.",
-    "start": 1257.18,
+    "start": 1253.78,
     "end": 1266.46
   },
   {
@@ -788,7 +788,7 @@
     "ar": "وَكَمْ أَهْلَكْنَا قَبْلَهُم مِّن قَرْنٍ هَلْ تُحِسُّ مِنْهُم مِّنْ أَحَدٍ أَوْ تَسْمَعُ لَهُمْ رِكْزًۢا",
     "de": "Und wie viele Geschlechter haben Wir vor ihnen vernichtet! Nimmst du noch irgend jemanden von ihnen wahr, oder hörst du von ihnen noch den geringsten Laut?",
     "tr": "Onlardan önce nice nesilleri helâk ettik. Şimdi o nesillerden varlığını hissettiğin veya sesini duyduğun tek bir kişi olsun var mıdır?",
-    "start": 1266.46,
+    "start": 1266.96,
     "end": 1277.42
   }
 ]
