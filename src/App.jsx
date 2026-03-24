@@ -1,5 +1,5 @@
 // =========================
-// FILE: src/App.jsx (FULL - MAX PERF, FUNCS SAFE)
+// FILE: src/App.jsx (FULL - MAX PERF, FUNCS SAFE)  // ✅ Git commit removed
 // =========================
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
@@ -16,15 +16,15 @@ const SURAHES = [
     versesUrl: "/data/yusuf.json",
   },
   {
-  id: 19,
-  slug: "meryem",
-  nameAr: "مريم",
-  nameTr: "Meryem",
-  nameDe: "Maryam",
-  ayahCount: 98,
-  audioUrl: "/audio/meryem.mp3",
-  versesUrl: "/data/meryem.json",
-},
+    id: 19,
+    slug: "meryem",
+    nameAr: "مريم",
+    nameTr: "Meryem",
+    nameDe: "Maryam",
+    ayahCount: 98,
+    audioUrl: "/audio/meryem.mp3",
+    versesUrl: "/data/meryem.json",
+  },
 ];
 
 /**
@@ -63,7 +63,7 @@ const SEGMENTS = {
     de: "Und wenn Du ihre List von mir nicht abwendest, werde ich mich zu ihnen hingezogen fühlen und zu den Toren gehören.",
     tr: "“Eğer fendlerini bozup beni onlardan kurtarmazsan, kayıp onlara meyleder ve cahillerden (doğru nedir, yanlış nedir bilmeyen, bilseler bile yapmamaları gerekeni bile bile yapanlardan) olurum.”",
   },
- 34: {
+  34: {
     color: "green",
     ar: "إِنَّهُۥ هُوَ ٱلسَّمِيعُ ٱلْعَلِيمُ",
     de: "Er ist ja der Allhörende und Allwissende.",
@@ -138,7 +138,7 @@ const SEGMENTS = {
   },
   90: {
     color: "green",
-    ar: "إِنَّ ٱللَّهَ لَا يُضِيعُ أَجْرَ ٱلْمُحْسِنِينَ",
+    ar: "إِنَّ ٱللَّهُ لَا يُضِيعُ أَجْرَ ٱلْمُحْسِنِينَ",
     de: "Gewiß, Allah läßt den Lohn der Gutes Tuenden nicht verlorengehen.",
     tr: "“Doğrusu şu ki, kim O’na karşı derin saygı duyar, O’na karşı gelmekten sakınır ve O’na itaatla birlikte başına gelenlere de sabrederse, hiç şüphesiz Allah, böyle iyiliğe adanmış ve O’nu görürcesine davranan kimselerin mükâfatını asla zayi etmez.”",
   },
@@ -245,7 +245,6 @@ function findActiveVerseIndexBinary(starts, ends, t) {
   const e = ends[best];
   if (Number.isFinite(e) && t < e) return best;
 
-  // If t is beyond end, still return closest start index (best)
   return best;
 }
 
@@ -342,78 +341,6 @@ function parseJsonTolerant(text, urlForMsg = "") {
     }
     throw new Error(`JSON parse failed | url=${urlForMsg} | msg=${msg}`);
   }
-}
-
-/* =========================
-   GitHub commit
-   ========================= */
-function base64EncodeUtf8(text) {
-  const bytes = new TextEncoder().encode(String(text ?? ""));
-  let bin = "";
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  }
-  return btoa(bin);
-}
-
-async function ghFetch(url, options) {
-  try {
-    return await fetch(url, options);
-  } catch {
-    throw new Error(
-      "Network error (fetch failed). Check: internet/firewall, adblock, VPN, GitHub blocked."
-    );
-  }
-}
-
-async function githubGetFileSha({ owner, repo, path, token, branch }) {
-  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path).replaceAll(
-    "%2F",
-    "/"
-  )}?ref=${encodeURIComponent(branch)}`;
-
-  const res = await ghFetch(url, {
-    headers: {
-      Accept: "application/vnd.github+json",
-      Authorization: `Bearer ${token}`,
-      "X-GitHub-Api-Version": "2022-11-28",
-    },
-  });
-
-  if (res.status === 404) return null;
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`GitHub GET failed: ${res.status} ${res.statusText} :: ${t}`);
-  }
-  const data = await res.json();
-  return data?.sha || null;
-}
-
-async function githubPutFile({ owner, repo, path, token, branch, message, contentBase64, sha }) {
-  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path).replaceAll(
-    "%2F",
-    "/"
-  )}`;
-
-  const body = { message, content: contentBase64, branch, ...(sha ? { sha } : {}) };
-
-  const res = await ghFetch(url, {
-    method: "PUT",
-    headers: {
-      Accept: "application/vnd.github+json",
-      Authorization: `Bearer ${token}`,
-      "X-GitHub-Api-Version": "2022-11-28",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`GitHub PUT failed: ${res.status} ${res.statusText} :: ${t}`);
-  }
-  return res.json();
 }
 
 /* =========================
@@ -1245,53 +1172,12 @@ function SyncPanel({
   onRestoreDraft,
   onClearDraft,
   onJumpFirstUntimed,
-  onCommitGithub,
 }) {
   const [startInput, setStartInput] = useState("");
   const [endInput, setEndInput] = useState("");
   const [jumpAyah, setJumpAyah] = useState("");
   const [jumpTime, setJumpTime] = useState("");
   const fileRef = useRef(null);
-
-  const [commitOpen, setCommitOpen] = useState(false);
-  const [ghRepo, setGhRepo] = useState("");
-  const [ghBranch, setGhBranch] = useState("main");
-  const [ghPath, setGhPath] = useState("public/data/yusuf.json");
-  const [ghToken, setGhToken] = useState("");
-  const [ghMsg, setGhMsg] = useState("");
-  const [ghRemember, setGhRemember] = useState(true);
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("qatd:ghcfg");
-      if (!saved) return;
-      const cfg = JSON.parse(saved);
-      if (cfg?.repo) setGhRepo(cfg.repo);
-      if (cfg?.branch) setGhBranch(cfg.branch);
-      if (cfg?.path) setGhPath(cfg.path);
-      if (cfg?.token) setGhToken(cfg.token);
-      if (cfg?.remember === false) setGhRemember(false);
-    } catch {}
-  }, []);
-
-  useEffect(() => {
-    try {
-      if (!ghRemember) {
-        localStorage.removeItem("qatd:ghcfg");
-        return;
-      }
-      localStorage.setItem(
-        "qatd:ghcfg",
-        JSON.stringify({
-          repo: ghRepo,
-          branch: ghBranch,
-          path: ghPath,
-          token: ghToken,
-          remember: true,
-        })
-      );
-    } catch {}
-  }, [ghRepo, ghBranch, ghPath, ghToken, ghRemember]);
 
   const active = activeIndex >= 0 ? verses[activeIndex] : null;
 
@@ -1362,36 +1248,6 @@ function SyncPanel({
     const t = Number(jumpTime);
     if (!Number.isFinite(t)) return;
     onSeek(t);
-  };
-
-  const doCommit = async () => {
-    const repoStr = ghRepo.trim();
-    const token = ghToken.trim();
-    const path = ghPath.trim();
-    const branch = ghBranch.trim() || "main";
-
-    if (!repoStr.includes("/")) {
-      alert("Repo format: owner/repo");
-      return;
-    }
-    if (!token) {
-      alert("Token required (fine-grained PAT: Contents RW on that repo).");
-      return;
-    }
-    if (!path) {
-      alert("File path required (e.g. public/data/yusuf.json)");
-      return;
-    }
-
-    const [owner, repo] = repoStr.split("/", 2);
-    const jsonText = JSON.stringify(verses, null, 2);
-    const content = base64EncodeUtf8(jsonText);
-    const message =
-      ghMsg.trim() ||
-      `sync: update ${path} (${new Date().toISOString().slice(0, 19).replace("T", " ")})`;
-
-    await onCommitGithub({ owner, repo, path, branch, token, message, content });
-    setGhMsg("");
   };
 
   return (
@@ -1551,105 +1407,6 @@ function SyncPanel({
               }}
             />
           </div>
-
-          <div className="syncRow">
-            <button className="btnSmall" type="button" onClick={() => setCommitOpen((x) => !x)}>
-              {commitOpen ? "Hide commit" : "Commit to GitHub"}
-            </button>
-
-            <button
-              className="btnSmall"
-              type="button"
-              onClick={async () => {
-                try {
-                  const r = await fetch("https://api.github.com/rate_limit");
-                  alert(`GitHub reachable ✅ (${r.status})`);
-                } catch {
-                  alert("GitHub not reachable ❌ (Failed to fetch). Check network/adblock/firewall.");
-                }
-              }}
-            >
-              Test GitHub
-            </button>
-          </div>
-
-          {commitOpen ? (
-            <>
-              <div className="syncRow">
-                <label className="miniLabel">
-                  Repo (owner/repo)
-                  <input
-                    className="miniInput"
-                    value={ghRepo}
-                    onChange={(e) => setGhRepo(e.target.value)}
-                    placeholder="yourname/yourrepo"
-                  />
-                </label>
-
-                <label className="miniLabel">
-                  Branch
-                  <input
-                    className="miniInput"
-                    value={ghBranch}
-                    onChange={(e) => setGhBranch(e.target.value)}
-                    placeholder="main"
-                  />
-                </label>
-              </div>
-
-              <div className="syncRow">
-                <label className="miniLabel">
-                  File path in repo
-                  <input
-                    className="miniInput"
-                    value={ghPath}
-                    onChange={(e) => setGhPath(e.target.value)}
-                    placeholder="public/data/yusuf.json"
-                  />
-                </label>
-
-                <label className="miniLabel">
-                  Commit message
-                  <input
-                    className="miniInput"
-                    value={ghMsg}
-                    onChange={(e) => setGhMsg(e.target.value)}
-                    placeholder="optional"
-                  />
-                </label>
-              </div>
-
-              <div className="syncRow">
-                <label className="miniLabel" style={{ minWidth: 290 }}>
-                  GitHub token (PAT)
-                  <input
-                    className="miniInput"
-                    value={ghToken}
-                    onChange={(e) => setGhToken(e.target.value)}
-                    placeholder="ghp_... / github_pat_..."
-                    type="password"
-                  />
-                </label>
-
-                <label className="chip" title="Store token in localStorage on this browser">
-                  <input
-                    type="checkbox"
-                    checked={ghRemember}
-                    onChange={(e) => setGhRemember(e.target.checked)}
-                  />
-                  Remember token
-                </label>
-
-                <button className="btnSmall" type="button" onClick={doCommit}>
-                  Commit now
-                </button>
-              </div>
-
-              <div className="syncRow muted">
-                Note: Needs PAT with <span className="mono">Contents: Read/Write</span> on that repo.
-              </div>
-            </>
-          ) : null}
         </div>
       </div>
     </div>
@@ -1774,7 +1531,7 @@ export default function App() {
   // UI throttle state
   const rafRef = useRef(0);
   const lastUiTsRef = useRef(0);
-  const UI_FPS = 12; // feels smooth; reduces renders
+  const UI_FPS = 12;
 
   const { markSegment, clearCache } = useMarkSegmentCached();
 
@@ -1783,14 +1540,13 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-  try {
-    const ua = navigator.userAgent || "";
-    const isSafari =
-      /safari/i.test(ua) && !/chrome|crios|chromium|android/i.test(ua);
-    document.documentElement.classList.toggle("isSafari", isSafari);
-  } catch {}
-}, []);
-  
+    try {
+      const ua = navigator.userAgent || "";
+      const isSafari = /safari/i.test(ua) && !/chrome|crios|chromium|android/i.test(ua);
+      document.documentElement.classList.toggle("isSafari", isSafari);
+    } catch {}
+  }, []);
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem("qatd:toolsCollapsed");
@@ -2045,7 +1801,6 @@ export default function App() {
         return next;
       });
 
-      // Verses changed => caches invalid
       clearCache();
     },
     [clearCache]
@@ -2342,18 +2097,6 @@ export default function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, [singleOn, onPlayPause, nudge, prevAyah, nextAyah, updateVerse, seekVerse, setA, setB]);
 
-  const commitGithub = useCallback(async ({ owner, repo, path, branch, token, message, content }) => {
-    try {
-      setError("");
-      const sha = await githubGetFileSha({ owner, repo, path, token, branch });
-      await githubPutFile({ owner, repo, path, token, branch, message, contentBase64: content, sha });
-      alert(`Committed ✅ ${owner}/${repo}:${branch}/${path}`);
-    } catch (e) {
-      console.error(e);
-      alert(String(e?.message || e));
-    }
-  }, []);
-
   const activeVerse = useMemo(() => (activeIndex >= 0 ? verses[activeIndex] : null), [
     activeIndex,
     verses,
@@ -2498,7 +2241,6 @@ export default function App() {
                 onRestoreDraft={restoreDraft}
                 onClearDraft={clearDraft}
                 onJumpFirstUntimed={jumpFirstUntimed}
-                onCommitGithub={commitGithub}
               />
             </>
           )}
