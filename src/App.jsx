@@ -1,5 +1,5 @@
 // =========================
-// FILE: src/App.jsx (FULL - MAX PERF, FUNCS SAFE)  // ✅ Git commit removed
+// FILE: src/App.jsx (FULL - 5 COLORS + FILE SEGMENTS + NO GITHUB COMMIT)
 // =========================
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
@@ -26,159 +26,6 @@ const SURAHES = [
     versesUrl: "/data/meryem.json",
   },
 ];
-
-/**
- * SEGMENTS: only the parts you provided are colored.
- * - ar: highlight + color
- * - tr/de: color only
- */
-const SEGMENTS = {
-  6: {
-    color: "green",
-    ar: "إِنَّ رَبَّكَ عَلِيمٌ حَكِيمٌۭ",
-    de: "Gewiß, dein Herr ist Allwissend und Allweise.",
-    tr: "“Şüphesiz ki Rabbin, (her şeyi) hakkıyla bilendir; her hüküm ve icraatında pek çok hikmetler bulunandır.”",
-  },
-  18: {
-    color: "green",
-    ar: "فَصَبْرٌۭ جَمِيلٌۭ ۖ وَٱللَّهُ ٱلْمُسْتَعَانُ عَلَىٰ مَا تَصِفُونَ",
-    de: "(So gilt es,) schöne Geduld (zu üben). Allah ist Derjenige, bei Dem Hilfe zu suchen ist gegen das, was ihr beschreibt.",
-    tr: "“Artık bana düşen, güzelce sabretmektir. Sizin bu anlattıklarınız karşısında yardımına müracaat edilecek sadece Allah var.”",
-  },
-  21: {
-    color: "green",
-    ar: "وَٱللَّهُ غَالِبٌ عَلَىٰٓ أَمْرِهِۦ وَلَٰكِنَّ أَكْثَرَ ٱلنَّاسِ لَا يَعْلَمُونَ",
-    de: "Und Allah ist in Seiner Angelegenheit überlegen. Aber die meisten Menschen wissen nicht.",
-    tr: "“Allah, neyi diler, neye hükmederse onu muhakkak yerine getirir. Ne var ki, insanların çoğu bunu bilmez.”",
-  },
-  22: {
-    color: "green",
-    ar: "وَكَذَٰلِكَ نَجْزِى ٱلْمُحْسِنِينَ",
-    de: "So vergelten Wir den Gutes Tuenden.",
-    tr: "“Kendilerini iyiliğe adamış, daima Allah’ı görüyormuşçasına ve Allah’ın kendilerini gördüğünün şuuru içinde davrananları işte böyle mükâfatlandırırız.”",
-  },
-  33: {
-    color: "red",
-    ar: "وَإِلَّا تَصْرِفْ عَنِّى كَيْدَهُنَّ أَصْبُ إِلَيْهِنَّ وَأَكُن مِّنَ ٱلْجَٰهِلِينَ",
-    de: "Und wenn Du ihre List von mir nicht abwendest, werde ich mich zu ihnen hingezogen fühlen und zu den Toren gehören.",
-    tr: "“Eğer fendlerini bozup beni onlardan kurtarmazsan, kayıp onlara meyleder ve cahillerden (doğru nedir, yanlış nedir bilmeyen, bilseler bile yapmamaları gerekeni bile bile yapanlardan) olurum.”",
-  },
-  34: {
-    color: "green",
-    ar: "إِنَّهُۥ هُوَ ٱلسَّمِيعُ ٱلْعَلِيمُ",
-    de: "Er ist ja der Allhörende und Allwissende.",
-    tr: "Hiç şüphesiz O’dur Semî‘ (her şeyi, her duayı hakkıyla işiten); Alîm (her şeyi, herkesin durumunu hakkıyla bilen).”",
-  },
-  40: {
-    color: "green",
-    ar: "إِنِ ٱلْحُكْمُ إِلَّا لِلَّهِ ۚ أَمَرَ أَلَّا تَعْبُدُوٓا۟ إِلَّآ إِيَّاهُ ۚ ذَٰلِكَ ٱلدِّينُ ٱلْقَيِّمُ وَلَٰكِنَّ أَكْثَرَ ٱلنَّاسِ لَا يَعْلَمُونَ",
-    de: "Das Urteil ist allein Allahs. Er hat befohlen, daß ihr nur Ihm dienen sollt. Das ist die richtige Religion. Aber die meisten Menschen wissen nicht.",
-    tr: "“Şurası bir gerçek ki, mutlak manâda hükmetme yetkisi sadece Allah’a aittir. O, Kendisinden başka hiç bir varlığa ibadet etmemenizi emretmiştir. Budur doğru ve her bakımdan sağlam din. Ne var ki, insanların çoğu bilmemekte ve bilgisizce hareket etmektedir.”",
-  },
-  // ✅ FIX: 12:53
-  53: {
-    color: "green",
-    ar: "إِنَّ ٱلنَّفْسَ لَأَمَّارَةٌۢ بِٱلسُّوٓءِ إِلَّا مَا رَحِمَ رَبِّىٓ ۚ إِنَّ رَبِّى غَفُورٌۭ رَّحِيمٌۭ",
-    de: "Die Seele gebietet fürwahr mit Nachdruck das Böse, außer daß mein Herr Sich erbarmt. Mein Herr ist Allvergebend und Barmherzig.",
-    tr: "“Çünkü nefis, daima ve ısrarla kötülüğü emreder; meğer ki Rabbim, hususî olarak merhamet edip koruya. Şurası bir gerçek ki Rabbim, günahları pek çok bağışlayandır; (bilhassa inanmış kullarına karşı) hususî rahmeti pek bol olandır.”",
-  },
-  56: {
-    color: "green",
-    ar: "نُصِيبُ بِرَحْمَتِنَا مَن نَّشَآءُ ۖ وَلَا نُضِيعُ أَجْرَ ٱلْمُحْسِنِينَ",
-    de: "Wir treffen mit Unserer Barmherzigkeit, wen Wir wollen, und Wir lassen den Lohn der Gutes Tuenden nicht verlorengehen.",
-    tr: "“Kimi dilersek ona bu şekilde hususî rahmetimizle muamele eder ve bütünüyle iyiliğe adanmış olarak, Allah’ı görür gibi, en azından O’nun kendilerini gördüğünün şuuru içinde davrananların mükâfatını asla zayi etmeyiz.”",
-  },
-  64: {
-    color: "green",
-    ar: "فَٱللَّهُ خَيْرٌ حَٰفِظًۭا ۖ وَهُوَ أَرْحَمُ ٱلرَّٰحِمِينَ",
-    de: "Allah ist besser als Behütender, und Er ist der Barmherzigste der Barmherzigen.",
-    tr: "“Ama Allah’tır gerçek hayırlı koruyucu ve O, bütün merhamet edenlerin üstünde mutlak merhamet sahibidir.”",
-  },
-  66: {
-    color: "green",
-    ar: "قَالَ ٱللَّهُ عَلَىٰ مَا نَقُولُ وَكِيلٌۭ",
-    de: "Allah ist Sachwalter über das, was wir (hier) sagen.",
-    tr: "“Allah konuştuklarımıza şahit ve gözeticidir; verilen sözlerin yerine gelip gelmemesi nihayette yine O’nun iznine ve kudretine bağlıdır.”",
-  },
-  67: {
-    color: "green",
-    ar: "إِنِ ٱلْحُكْمُ إِلَّا لِلَّهِ ۖ عَلَيْهِ تَوَكَّلْتُ ۖ وَعَلَيْهِ فَلْيَتَوَكَّلِ ٱلْمُتَوَكِّلُونَ",
-    de: "Das Urteil ist allein Allahs. Auf Ihn verlasse ich mich; und auf Ihn sollen sich diejenigen verlassen, die sich (überhaupt auf jemanden) verlassen (wollen).",
-    tr: "“Mutlak manâda bütün hüküm ve hakimiyet ancak Allah’ındır. Ancak O’na dayanır, O’na güvenirim. Kendisine dayanıp güvenecek bir güç ve makam arayan herkes (bütün insanlar), ancak O’na dayanıp güvenmelidirler.”",
-  },
-  76: {
-    color: "green",
-    ar: "إِلَّآ أَن يَشَآءَ ٱللَّهُ ۚ نَرْفَعُ دَرَجَٰتٍۢ مَّن نَّشَآءُ ۗ وَفَوْقَ كُلِّ ذِى عِلْمٍ عَلِيمٌۭ",
-    de: "außer daß Allah es wollte. Wir erhöhen, wen Wir wollen, um Rangstufen. Und über jedem, der Wissen besitzt, steht einer, der (noch mehr) weiß.",
-    tr: "“fakat Allah ne dilerse o olur (ve Allah, bir şeyi dileyince onun sebeplerini de hazırlar). Biz, kimi dilersek onu böyle mertebe mertebe yükseltiriz. Ve her bir bilgi sahibinin üstünde daha iyi bir bilen (ve hepsinin üstünde her şeyi bilen olarak Allah) vardır.”",
-  },
-  80: {
-    color: "green",
-    ar: "وَهُوَ خَيْرُ ٱلْحَٰكِمِينَ",
-    de: "Er ist der Beste derer, die Urteile fällen.",
-    tr: "“Allah, her zaman en hayırlı hükmü verendir.”",
-  },
-  86: {
-    color: "red",
-    ar: "إِنَّمَآ أَشْكُوا۟ بَثِّى وَحُزْنِىٓ إِلَى ٱللَّهِ",
-    de: "Ich klage meinen unerträglichen Kummer und meine Trauer nur Allah (allein)",
-    tr: "“Ben, bütün dertlerimi, keder ve hüznümü Allah’a arz ediyor, O’na şikâyette bulunuyorum.”",
-  },
-  87: {
-    color: "green",
-    ar: "وَلَا تَا۟يْـَٔسُوا۟ مِن رَّوْحِ ٱللَّهِ ۖ إِنَّهُۥ لَا يَا۟يْـَٔسُ مِن رَّوْحِ ٱللَّهِ إِلَّا ٱلْقَوْمُ ٱلْكَٰفِرُونَ",
-    de: "Und gebt nicht die Hoffnung auf das Erbarmen Allahs auf. Es gibt die Hoffnung auf das Erbarmen Allahs nur das ungläubige Volk auf.",
-    tr: "“Allah’ın rahmetinden asla ümidinizi kesmeyin. Şurası bir gerçek ki, O’na inanmayan kâfirler güruhu dışında hiç kimse Allah’ın rahmetinden ümit kesmez.”",
-  },
-  88: {
-    color: "green",
-    ar: "إِنَّ ٱللَّهَ يَجْزِى ٱلْمُتَصَدِّقِينَ",
-    de: "Allah vergilt denjenigen, die Almosen geben.",
-    tr: "“Hiç kuşkusuz Allah, fazladan iyilikte bulunanları bol bol mükâfatlandırır.”",
-  },
-  90: {
-    color: "green",
-    ar: "إِنَّ ٱللَّهُ لَا يُضِيعُ أَجْرَ ٱلْمُحْسِنِينَ",
-    de: "Gewiß, Allah läßt den Lohn der Gutes Tuenden nicht verlorengehen.",
-    tr: "“Doğrusu şu ki, kim O’na karşı derin saygı duyar, O’na karşı gelmekten sakınır ve O’na itaatla birlikte başına gelenlere de sabrederse, hiç şüphesiz Allah, böyle iyiliğe adanmış ve O’nu görürcesine davranan kimselerin mükâfatını asla zayi etmez.”",
-  },
-  91: {
-    color: "green",
-    ar: "تَٱللَّهِ لَقَدْ ءَاثَرَكَ ٱللَّهُ عَلَيْنَا وَإِن كُنَّا لَخَٰطِـِٔينَ",
-    de: "Bei Allah, Allah hat dich uns vorgezogen. Und wir haben wahrlich Verfehlungen begangen.",
-    tr: "“Allah’a yemin olsun ki, gerçekten Allah seni bize tercih etti; biz, başka değil, ancak bir yanlış içinde idik.”",
-  },
-  92: {
-    color: "green",
-    ar: "لَا تَثْرِيبَ عَلَيْكُمُ ٱلْيَوْمَ ۖ يَغْفِرُ ٱللَّهُ لَكُمْ ۖ وَهُوَ أَرْحَمُ ٱلرَّٰحِمِينَ",
-    de: "Keine Schelte soll heute über euch kommen. Allah vergibt euch, Er ist ja der Barmherzigste der Barmherzigen.",
-    tr: "“Hayır! Bugün size hiçbir kınama yok! (Ben hakkımı çoktan helâl ettim;) Allah da sizi affetsin. Çünkü O, bütün merhamet edenlerin üstünde mutlak merhamet sahibidir.”",
-  },
-  98: {
-    color: "green",
-    ar: "إِنَّهُۥ هُوَ ٱلْغَفُورُ ٱلرَّحِيمُ",
-    de: "Er ist ja der Allvergebende und Barmherzige.",
-    tr: "“Hiç şüphesiz O, Ğafûr (günahları çok bağışlayan)dır; Rahîm (bilhassa tevbe ile Kendisine yönelen mü’ min kullarına karşı hususî rahmeti pek bol olan)dır.”",
-  },
-  100: {
-    color: "green",
-    ar: "إِنَّ رَبِّى لَطِيفٌۭ لِّمَا يَشَآءُ ۚ إِنَّهُۥ هُوَ ٱلْعَلِيمُ ٱلْحَكِيمُ",
-    de: "Gewiß, mein Herr ist feinfühlig (in der Durchführung dessen), was Er will. Er ist ja der Allwissende und Allweise.",
-    tr: "“Gerçekten Rabbim, her ne dilerse onu pek güzel şekilde ve insanların göremeyeceği bir incelik içinde yerine getirir. Şüphesiz O, evet O, Alîm (her şeyi hakkıyla bilen)dir; Hakîm (bütün hüküm ve icraatında pek çok hikmetler bulunan)dır.”",
-  },
-  101: {
-    color: "red",
-    ar: "تَوَفَّنِى مُسْلِمًۭا وَأَلْحِقْنِى بِٱلصَّٰلِحِينَ",
-    de: "Berufe mich als (Dir) ergeben ab und nimm mich unter die Rechtschaffenen auf.",
-    tr: "“Beni Müslüman olarak vefat ettir ve beni salihler içine kat!”",
-  },
-  108: {
-    color: "green",
-    ar: "قُلْ هَٰذِهِۦ سَبِيلِىٓ أَدْعُوٓا۟ إِلَى ٱللَّهِ ۚ عَلَىٰ بَصِيرَةٍ أَنَا۠ وَمَنِ ٱتَّبَعَنِى ۖ وَسُبْحَٰنَ ٱللَّهِ وَمَآ أَنَا۠ مِنَ ٱلْمُشْرِكِينَ",
-    de: "Sag: Das ist mein Weg: Ich rufe zu Allah aufgrund eines sichtbaren Hinweises, ich und diejenigen, die mir folgen. Preis sei Allah! Und ich gehöre nicht zu den Götzendienern.",
-    tr: "“İşte benim (iman, ihlâs ve Tevhid) yolum: Ben, (körü körüne ve taklide dayalı olarak değil,) görerek, delile dayanarak ve insanların idrakine hitap ederek Allah’a çağırıyorum: ben ve bana tâbi olanlar. Ve Allah’ı şirkin her türlüsünden tenzih ederim, asla O’na ortak tanıyanlardan değilim ben.”",
-  },
-};
 
 function resolvePublicUrl(path) {
   const base = import.meta.env.BASE_URL || "/";
@@ -248,7 +95,6 @@ function findActiveVerseIndexBinary(starts, ends, t) {
   return best;
 }
 
-// Fallback (overlap-safe)
 function findActiveVerseIndexLinearOverlapSafe(verses, t) {
   if (!Array.isArray(verses) || verses.length === 0 || !Number.isFinite(t)) return -1;
 
@@ -344,8 +190,31 @@ function parseJsonTolerant(text, urlForMsg = "") {
 }
 
 /* =========================
-   Segment marking (robust + cached)
+   Segment marking (robust + cached) + 5 COLORS
    ========================= */
+
+const COLOR_AR_CLASS = {
+  green: "mark markGreen",
+  red: "mark markRed",
+  blue: "mark markBlue",
+  purple: "mark markPurple",
+  orange: "mark markOrange",
+};
+
+const COLOR_FONT_CLASS = {
+  green: "fontGreen",
+  red: "fontRed",
+  blue: "fontBlue",
+  purple: "fontPurple",
+  orange: "fontOrange",
+};
+
+function normalizeColor(c) {
+  const x = String(c || "").toLowerCase();
+  return x === "green" || x === "red" || x === "blue" || x === "purple" || x === "orange"
+    ? x
+    : "green";
+}
 
 function stripOuterQuotes(s) {
   const t = String(s ?? "").trim();
@@ -520,25 +389,26 @@ function splitAndMarkFirst(text, needle, className) {
   );
 }
 
-function markSegmentUncached(text, ayah, lang) {
+function markSegmentUncached(text, ayah, lang, segmentsMap) {
   const s = String(text ?? "");
   const a = Number(ayah);
-  const seg = SEGMENTS[a];
+
+  const seg = segmentsMap?.[String(a)] ?? segmentsMap?.[a];
   if (!seg) return s;
 
-  const color = seg.color === "green" ? "green" : "red";
+  const color = normalizeColor(seg.color);
   const rawNeedle = seg[lang];
   if (!rawNeedle) return s;
 
   if (lang === "ar") {
-    const cls = color === "green" ? "mark markGreen" : "mark markRed";
+    const cls = COLOR_AR_CLASS[color] || COLOR_AR_CLASS.green;
     const mapped = markArabicByNormalizedMapping(s, rawNeedle, cls);
     if (mapped) return mapped;
     const rx = buildArabicLooseRegex(rawNeedle);
     return applyRegexMarkFirst(s, rx, cls);
   }
 
-  const cls = color === "green" ? "fontGreen" : "fontRed";
+  const cls = COLOR_FONT_CLASS[color] || COLOR_FONT_CLASS.green;
   const needle = stripOuterQuotes(rawNeedle);
 
   const direct = splitAndMarkFirst(s, needle, cls);
@@ -554,23 +424,26 @@ function markSegmentUncached(text, ayah, lang) {
   return <span className={cls}>{s}</span>;
 }
 
-function useMarkSegmentCached() {
+function useMarkSegmentCached(segmentsMap) {
   const cacheRef = useRef(new Map());
 
   const clear = useCallback(() => {
     cacheRef.current.clear();
   }, []);
 
-  const markSegment = useCallback((text, ayah, lang) => {
-    const s = String(text ?? "");
-    const key = `${Number(ayah) || 0}|${lang}|${s}`;
-    const hit = cacheRef.current.get(key);
-    if (hit !== undefined) return hit;
+  const markSegment = useCallback(
+    (text, ayah, lang) => {
+      const s = String(text ?? "");
+      const key = `${Number(ayah) || 0}|${lang}|${s}|${segmentsMap ? 1 : 0}`;
+      const hit = cacheRef.current.get(key);
+      if (hit !== undefined) return hit;
 
-    const out = markSegmentUncached(s, ayah, lang);
-    cacheRef.current.set(key, out);
-    return out;
-  }, []);
+      const out = markSegmentUncached(s, ayah, lang, segmentsMap);
+      cacheRef.current.set(key, out);
+      return out;
+    },
+    [segmentsMap]
+  );
 
   return { markSegment, clearCache: clear };
 }
@@ -1490,6 +1363,7 @@ export default function App() {
   const [query, setQuery] = useState("");
   const [selectedSurah, setSelectedSurah] = useState(SURAHES[0]);
   const [verses, setVerses] = useState([]);
+  const [segments, setSegments] = useState({});
   const [error, setError] = useState("");
 
   const audioRef = useRef(null);
@@ -1497,7 +1371,6 @@ export default function App() {
 
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // ✅ THROTTLED UI time (max perf)
   const [uiTime, setUiTime] = useState(0);
 
   const [duration, setDuration] = useState(0);
@@ -1515,25 +1388,21 @@ export default function App() {
   const [toolsCollapsed, setToolsCollapsed] = useState(true);
   const [singleOn, setSingleOn] = useState(true);
 
-  // repeat: 0 off, 1 => 1 tekrar, 2 => 2 tekrar
   const [repeatMode, setRepeatMode] = useState(0);
   const repeatStateRef = useRef({ idx: -1, done: 0, armed: true, lastFire: 0 });
 
-  // Refs for zero-re-render logic
   const versesRef = useRef(verses);
   const activeIndexRef = useRef(activeIndex);
   const durationRef = useRef(duration);
   const isPlayingRef = useRef(isPlaying);
 
-  // Real time ref (never throttled) for precise sync
   const currentTimeRef = useRef(0);
 
-  // UI throttle state
   const rafRef = useRef(0);
   const lastUiTsRef = useRef(0);
   const UI_FPS = 12;
 
-  const { markSegment, clearCache } = useMarkSegmentCached();
+  const { markSegment, clearCache } = useMarkSegmentCached(segments);
 
   useEffect(() => {
     document.title = "Türkçe-Almanca Kur’an Player";
@@ -1591,7 +1460,12 @@ export default function App() {
     [selectedSurah]
   );
 
-  // Precompute starts/ends for binary search
+  // segments: /data/${slug}_col.json
+  const segmentsSrc = useMemo(() => {
+    if (!selectedSurah) return "";
+    return resolvePublicUrl(`/data/${selectedSurah.slug}_col.json`);
+  }, [selectedSurah]);
+
   const { starts, ends, monotonic } = useMemo(() => {
     const s = [];
     const e = [];
@@ -1607,7 +1481,7 @@ export default function App() {
     return { starts: s, ends: e, monotonic: ok };
   }, [verses]);
 
-  // Load verses
+  // Load verses + reset
   useEffect(() => {
     let cancelled = false;
 
@@ -1638,7 +1512,10 @@ export default function App() {
 
         if (!res.ok) {
           throw new Error(
-            `Fetch failed: ${res.status} ${res.statusText} | url=${versesSrc} | body=${text.slice(0, 160)}`
+            `Fetch failed: ${res.status} ${res.statusText} | url=${versesSrc} | body=${text.slice(
+              0,
+              160
+            )}`
           );
         }
 
@@ -1660,6 +1537,39 @@ export default function App() {
       cancelled = true;
     };
   }, [versesSrc, clearCache]);
+
+  // Load segments
+  useEffect(() => {
+    let cancelled = false;
+    setSegments({});
+    clearCache();
+
+    (async () => {
+      if (!segmentsSrc) return;
+      try {
+        const res = await fetch(segmentsSrc, { cache: "no-store" });
+        if (res.status === 404) {
+          if (!cancelled) setSegments({});
+          return;
+        }
+        const text = await res.text();
+        if (!res.ok) throw new Error(`Segments fetch failed: ${res.status} ${res.statusText}`);
+        const data = parseJsonTolerant(text, segmentsSrc);
+        if (!data || typeof data !== "object" || Array.isArray(data)) {
+          throw new Error("Segments JSON must be an object map: { ayah: {color,ar,de,tr} }");
+        }
+        if (!cancelled) setSegments(data);
+        clearCache();
+      } catch (e) {
+        console.error("[segments] load failed:", e);
+        if (!cancelled) setSegments({});
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [segmentsSrc, clearCache]);
 
   // Audio listeners + throttled UI time updates
   useEffect(() => {
@@ -1916,7 +1826,7 @@ export default function App() {
     });
   }, [seekTo, monotonic, starts, ends]);
 
-  // Repeat engine (uses real time ref)
+  // Repeat engine
   useEffect(() => {
     const a = audioRef.current;
     const vs = versesRef.current;
@@ -1976,7 +1886,7 @@ export default function App() {
     setUiTime(s);
   }, [uiTime, repeatMode, monotonic, starts, ends]);
 
-  // Loop AB / Loop ayah (uses real time ref)
+  // Loop AB / Loop ayah
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
@@ -2013,7 +1923,7 @@ export default function App() {
     }
   }, [uiTime, verses, loopAyah, loopAB, aPoint, bPoint, monotonic, starts, ends]);
 
-  // Active index update (only when changes)
+  // Active index update
   useEffect(() => {
     if (!verses.length) return;
 
@@ -2130,6 +2040,7 @@ export default function App() {
         <span className="badge">Slug: {selectedSurah.slug}</span>
         <span className="badge">Ayahs: {selectedSurah.ayahCount}</span>
         <span className="badge">Loaded: {verses.length}</span>
+        <span className="badge">Segments: {Object.keys(segments || {}).length}</span>
       </div>
     </div>
   ) : null;
