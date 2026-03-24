@@ -20,6 +20,16 @@
   --markRedBg: rgba(235, 78, 62, 0.18);
   --markGreen: rgba(82, 210, 140, 1);
   --markGreenBg: rgba(82, 210, 140, 0.16);
+
+  /* ✅ 5-color add */
+  --markBlue: rgba(99, 179, 237, 1);
+  --markBlueBg: rgba(99, 179, 237, 0.16);
+
+  --markPurple: rgba(171, 128, 255, 1);
+  --markPurpleBg: rgba(171, 128, 255, 0.16);
+
+  --markOrange: rgba(255, 175, 90, 1);
+  --markOrangeBg: rgba(255, 175, 90, 0.16);
 }
 
 *{ box-sizing:border-box; }
@@ -742,11 +752,23 @@ html,body{
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
+
 .markRed{ color: var(--markRed) !important; background: var(--markRedBg); }
 .markGreen{ color: var(--markGreen) !important; background: var(--markGreenBg); }
 
+/* ✅ 5-color add */
+.markBlue{ color: var(--markBlue) !important; background: var(--markBlueBg); }
+.markPurple{ color: var(--markPurple) !important; background: var(--markPurpleBg); }
+.markOrange{ color: var(--markOrange) !important; background: var(--markOrangeBg); }
+
 .fontRed{ color: var(--markRed) !important; }
 .fontGreen{ color: var(--markGreen) !important; }
+
+/* ✅ 5-color add */
+.fontBlue{ color: var(--markBlue) !important; }
+.fontPurple{ color: var(--markPurple) !important; }
+.fontOrange{ color: var(--markOrange) !important; }
+
 /* =========================
    PERF: Safari fallback (disable expensive effects)
    ========================= */
@@ -770,9 +792,9 @@ html,body{
 .isSafari .surahHeader,
 .isSafari .tableWrap,
 .isSafari .singlePlayerCard{
-  box-shadow: none !important; /* büyük shadow Safari’de pahalı */
+  box-shadow: none !important;
 }
 
 .isSafari .row:hover{
-  filter: none !important; /* hover brightness repaint tetikliyor */
+  filter: none !important;
 }
