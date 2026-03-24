@@ -1,16 +1,4 @@
 {
-  "0": {
-    "color": "blue",
-    "ar": "أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ",
-    "tr": "Kovulmuş şeytandan Allah’a sığınırım.",
-    "de": "Ich suche Zuflucht bei Allah vor dem verfluchten Satan."
-  },
-  "0b": {
-    "color": "purple",
-    "ar": "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
-    "tr": "Rahmân ve Rahîm olan Allah’ın adıyla.",
-    "de": "Im Namen Allahs, des Allerbarmers, des Barmherzigen."
-  },
   "3": {
     "color": "blue",
     "ar": "نَادَىٰ رَبَّهُۥ نِدَآءً خَفِيًّۭا",
