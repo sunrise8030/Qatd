@@ -1,5 +1,5 @@
 // =========================
-// FILE: src/App.jsx (FULL - 5 COLORS + FILE SEGMENTS + NO GITHUB COMMIT)
+// FILE: src/App.jsx (FULL - 5 COLORS + FILE SEGMENTS (MAP/ARRAY) + NO GITHUB COMMIT + CACHE FIX)
 // =========================
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
@@ -424,6 +424,10 @@ function markSegmentUncached(text, ayah, lang, segmentsMap) {
   return <span className={cls}>{s}</span>;
 }
 
+/**
+ * ✅ CACHE FIX: cache key must include segments "version" (count)
+ * otherwise it caches "no highlight" while segments still empty {}.
+ */
 function useMarkSegmentCached(segmentsMap) {
   const cacheRef = useRef(new Map());
 
@@ -431,10 +435,19 @@ function useMarkSegmentCached(segmentsMap) {
     cacheRef.current.clear();
   }, []);
 
+  const segmentsVersion = useMemo(() => {
+    try {
+      return segmentsMap ? Object.keys(segmentsMap).length : 0;
+    } catch {
+      return 0;
+    }
+  }, [segmentsMap]);
+
   const markSegment = useCallback(
     (text, ayah, lang) => {
       const s = String(text ?? "");
-      const key = `${Number(ayah) || 0}|${lang}|${s}|${segmentsMap ? 1 : 0}`;
+      const key = `${Number(ayah) || 0}|${lang}|${s}|v${segmentsVersion}`;
+
       const hit = cacheRef.current.get(key);
       if (hit !== undefined) return hit;
 
@@ -442,7 +455,7 @@ function useMarkSegmentCached(segmentsMap) {
       cacheRef.current.set(key, out);
       return out;
     },
-    [segmentsMap]
+    [segmentsMap, segmentsVersion]
   );
 
   return { markSegment, clearCache: clear };
@@ -1290,14 +1303,7 @@ function SyncPanel({
    Verses Table (MEMO)
    ========================= */
 
-const VerseRow = React.memo(function VerseRow({
-  v,
-  idx,
-  active,
-  onRowClick,
-  setRowRef,
-  markSegment,
-}) {
+const VerseRow = React.memo(function VerseRow({ v, idx, active, onRowClick, setRowRef, markSegment }) {
   const arText = (v.ar || "").trimStart();
   const deText = v.de || "";
   const trText = v.tr || "";
@@ -1315,13 +1321,9 @@ const VerseRow = React.memo(function VerseRow({
         {active ? markSegment(arText, v.ayah, "ar") : arText}
       </div>
 
-      <div className="cell colDe">
-        {active ? markSegment(deText, v.ayah, "de") : deText}
-      </div>
+      <div className="cell colDe">{active ? markSegment(deText, v.ayah, "de") : deText}</div>
 
-      <div className="cell colTr">
-        {active ? markSegment(trText, v.ayah, "tr") : trText}
-      </div>
+      <div className="cell colTr">{active ? markSegment(trText, v.ayah, "tr") : trText}</div>
     </button>
   );
 });
@@ -1370,9 +1372,7 @@ export default function App() {
   const rowRefs = useRef([]);
 
   const [isPlaying, setIsPlaying] = useState(false);
-
   const [uiTime, setUiTime] = useState(0);
-
   const [duration, setDuration] = useState(0);
   const [activeIndex, setActiveIndex] = useState(-1);
 
@@ -1460,7 +1460,7 @@ export default function App() {
     [selectedSurah]
   );
 
-  // segments: /data/${slug}_col.json
+  // segments: /data/${slug}_col.json (supports MAP or ARRAY)
   const segmentsSrc = useMemo(() => {
     if (!selectedSurah) return "";
     return resolvePublicUrl(`/data/${selectedSurah.slug}_col.json`);
@@ -1538,27 +1538,48 @@ export default function App() {
     };
   }, [versesSrc, clearCache]);
 
-  // Load segments
+  // Load segments (MAP or ARRAY)
   useEffect(() => {
     let cancelled = false;
     setSegments({});
     clearCache();
 
+    const toMap = (arr) => {
+      const m = {};
+      for (const it of arr || []) {
+        const ay = Number(it?.ayah);
+        if (!Number.isFinite(ay)) continue;
+        const color = normalizeColor(it?.color);
+        const ar = typeof it?.ar === "string" ? it.ar : "";
+        const de = typeof it?.de === "string" ? it.de : "";
+        const tr = typeof it?.tr === "string" ? it.tr : "";
+        if (!ar && !de && !tr) continue;
+        m[String(ay)] = { color, ar, de, tr };
+      }
+      return m;
+    };
+
     (async () => {
       if (!segmentsSrc) return;
       try {
         const res = await fetch(segmentsSrc, { cache: "no-store" });
+
         if (res.status === 404) {
           if (!cancelled) setSegments({});
           return;
         }
+
         const text = await res.text();
         if (!res.ok) throw new Error(`Segments fetch failed: ${res.status} ${res.statusText}`);
+
         const data = parseJsonTolerant(text, segmentsSrc);
-        if (!data || typeof data !== "object" || Array.isArray(data)) {
-          throw new Error("Segments JSON must be an object map: { ayah: {color,ar,de,tr} }");
-        }
-        if (!cancelled) setSegments(data);
+
+        let map = {};
+        if (Array.isArray(data)) map = toMap(data);
+        else if (data && typeof data === "object") map = data;
+        else throw new Error("Segments JSON must be an array or an object map");
+
+        if (!cancelled) setSegments(map);
         clearCache();
       } catch (e) {
         console.error("[segments] load failed:", e);
@@ -1766,20 +1787,17 @@ export default function App() {
     } catch {}
   }, [draftKey]);
 
-  const restoreDraft = useCallback(
-    () => {
-      try {
-        const raw = localStorage.getItem(draftKey);
-        if (!raw) return;
-        const parsed = JSON.parse(raw);
-        if (!Array.isArray(parsed)) return;
-        setVerses(parsed);
-        versesRef.current = parsed;
-        clearCache();
-      } catch {}
-    },
-    [draftKey, clearCache]
-  );
+  const restoreDraft = useCallback(() => {
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return;
+      setVerses(parsed);
+      versesRef.current = parsed;
+      clearCache();
+    } catch {}
+  }, [draftKey, clearCache]);
 
   const clearDraft = useCallback(() => {
     try {
@@ -1848,9 +1866,7 @@ export default function App() {
     const e = Number(v?.end);
     if (!Number.isFinite(s) || !Number.isFinite(e) || e <= s) return;
 
-    const st = repeatStateRef.current;
-
-    if (st.idx !== idx) {
+    if (repeatStateRef.current.idx !== idx) {
       repeatStateRef.current = { idx, done: 0, armed: true, lastFire: 0 };
       return;
     }
